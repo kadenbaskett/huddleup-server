@@ -7,8 +7,9 @@ class StatssController {
   public getStats = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const data: string = await this.statsService.getStats();
+      const resData = { data: data, message: '/getStats results' };
 
-      res.status(200).json({ data: data, message: 'getStats' });
+      res.status(200).json(resData);
     } catch (error) {
       next(error);
     }
