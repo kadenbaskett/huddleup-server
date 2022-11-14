@@ -15,7 +15,7 @@ class UserService {
 
   public async findUserById(userId: number): Promise<User> {
     const findUser: User = this.users.find(user => user.id === userId);
-    if (!findUser) throw new HttpException(409, "User doesn't exist");
+    if (!findUser) throw new HttpException(409, 'User doesn\'t exist');
 
     return findUser;
   }
@@ -28,7 +28,7 @@ class UserService {
 
     const hashedPassword = await hash(userData.password, 10);
     const createUserData: User = { id: this.users.length + 1, ...userData, password: hashedPassword };
-    this.users = [...this.users, createUserData];
+    this.users = [ ...this.users, createUserData ];
 
     return createUserData;
   }
@@ -37,7 +37,7 @@ class UserService {
     if (isEmpty(userData)) throw new HttpException(400, 'userData is empty');
 
     const findUser: User = this.users.find(user => user.id === userId);
-    if (!findUser) throw new HttpException(409, "User doesn't exist");
+    if (!findUser) throw new HttpException(409, 'User doesn\'t exist');
 
     const hashedPassword = await hash(userData.password, 10);
     const updateUserData: User[] = this.users.map((user: User) => {
@@ -50,7 +50,7 @@ class UserService {
 
   public async deleteUser(userId: number): Promise<User[]> {
     const findUser: User = this.users.find(user => user.id === userId);
-    if (!findUser) throw new HttpException(409, "User doesn't exist");
+    if (!findUser) throw new HttpException(409, 'User doesn\'t exist');
 
     const deleteUserData: User[] = this.users.filter(user => user.id !== findUser.id);
     return deleteUserData;

@@ -14,7 +14,7 @@ describe('Testing Users', () => {
     it('response statusCode 200 / findAll', () => {
       const findUser: User[] = userModel;
       const usersRoute = new UserRoute();
-      const app = new App([usersRoute]);
+      const app = new App([ usersRoute ]);
 
       return request(app.getServer()).get(`${usersRoute.path}`).expect(200, { data: findUser, message: 'findAll' });
     });
@@ -25,7 +25,7 @@ describe('Testing Users', () => {
       const userId = 1;
       const findUser: User = userModel.find(user => user.id === userId);
       const usersRoute = new UserRoute();
-      const app = new App([usersRoute]);
+      const app = new App([ usersRoute ]);
 
       return request(app.getServer()).get(`${usersRoute.path}/${userId}`).expect(200, { data: findUser, message: 'findOne' });
     });
@@ -38,7 +38,7 @@ describe('Testing Users', () => {
         password: 'password',
       };
       const usersRoute = new UserRoute();
-      const app = new App([usersRoute]);
+      const app = new App([ usersRoute ]);
 
       return request(app.getServer()).post(`${usersRoute.path}`).send(userData).expect(201);
     });
@@ -52,7 +52,7 @@ describe('Testing Users', () => {
         password: 'password',
       };
       const usersRoute = new UserRoute();
-      const app = new App([usersRoute]);
+      const app = new App([ usersRoute ]);
 
       return request(app.getServer()).put(`${usersRoute.path}/${userId}`).send(userData).expect(200);
     });
@@ -63,7 +63,7 @@ describe('Testing Users', () => {
       const userId = 1;
       const deleteUser: User[] = userModel.filter(user => user.id !== userId);
       const usersRoute = new UserRoute();
-      const app = new App([usersRoute]);
+      const app = new App([ usersRoute ]);
 
       return request(app.getServer()).delete(`${usersRoute.path}/${userId}`).expect(200, { data: deleteUser, message: 'deleted' });
     });

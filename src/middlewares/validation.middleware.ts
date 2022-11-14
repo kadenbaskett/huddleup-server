@@ -4,7 +4,7 @@ import { RequestHandler } from 'express';
 import { HttpException } from '@exceptions/HttpException';
 
 const validationMiddleware = (
-  type: any,
+  type: never,
   value: string | 'body' | 'query' | 'params' = 'body',
   skipMissingProperties = false,
   whitelist = true,

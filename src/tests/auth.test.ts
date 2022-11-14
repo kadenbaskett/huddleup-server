@@ -15,7 +15,7 @@ describe('Testing Auth', () => {
         password: 'password',
       };
       const authRoute = new AuthRoute();
-      const app = new App([authRoute]);
+      const app = new App([ authRoute ]);
 
       return request(app.getServer()).post('/signup').send(userData);
     });
@@ -29,7 +29,7 @@ describe('Testing Auth', () => {
       };
 
       const authRoute = new AuthRoute();
-      const app = new App([authRoute]);
+      const app = new App([ authRoute ]);
 
       return request(app.getServer())
         .post('/login')
