@@ -1,7 +1,6 @@
 import axios from 'axios';
 
 class StatsService {
-
   private async getRequest(url: string): Promise<any> {
     const key = '92b33b3c766b4421923b11b00b62adc5';
     const headers = { 'Ocp-Apim-Subscription-Key': key };

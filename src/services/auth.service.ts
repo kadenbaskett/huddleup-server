@@ -12,7 +12,7 @@ class AuthService {
   public users = userModel;
 
   public async signup(userData: CreateUserDto): Promise<User> {
-    if (isEmpty(userData)) throw new HttpException(400, "userData is empty");
+    if (isEmpty(userData)) throw new HttpException(400, 'userData is empty');
 
     const findUser: User = this.users.find(user => user.email === userData.email);
     if (findUser) throw new HttpException(409, `This email ${userData.email} already exists`);
@@ -24,7 +24,7 @@ class AuthService {
   }
 
   public async login(userData: CreateUserDto): Promise<{ cookie: string; findUser: User }> {
-    if (isEmpty(userData)) throw new HttpException(400, "userData is empty");
+    if (isEmpty(userData)) throw new HttpException(400, 'userData is empty');
 
     const findUser: User = this.users.find(user => user.email === userData.email);
     if (!findUser) throw new HttpException(409, `This email ${userData.email} was not found`);
@@ -39,7 +39,7 @@ class AuthService {
   }
 
   public async logout(userData: User): Promise<User> {
-    if (isEmpty(userData)) throw new HttpException(400, "userData is empty");
+    if (isEmpty(userData)) throw new HttpException(400, 'userData is empty');
 
     const findUser: User = this.users.find(user => user.email === userData.email && user.password === userData.password);
     if (!findUser) throw new HttpException(409, "User doesn't exist");
