@@ -29,6 +29,9 @@ class StatsService {
     }
   }
 
+
+  // General NFL endpoints with no params
+
   public async getNFLTeams(): Promise<respObj> {
     const url = this.baseURL + 'Teams';
     return await this.getRequest(url);
@@ -59,9 +62,21 @@ class StatsService {
     return await this.getRequest(url);
   }
 
-  public async getPlayerDetails(playerID: number): Promise<respObj> {
-    playerID = 732;
-    const url = this.baseURL + 'Player/' + playerID;
+  public async getTopFantasyPlayersByADP(): Promise<respObj> {
+    const url = this.baseURL + 'FantasyPlayers';
+    return await this.getRequest(url);
+  }
+
+  public async getAllPlayersDetails(): Promise<respObj> {
+    const url = this.baseURL + 'Players';
+    return await this.getRequest(url);
+  }
+
+
+  // Endpoints requiring params but unrelated to individual players
+  
+  public async getAllTeamSchedules(season: number): Promise<respObj> {
+    const url = this.baseURL + 'Schedules/' + season;
     return await this.getRequest(url);
   }
 
@@ -70,19 +85,23 @@ class StatsService {
     return await this.getRequest(url);
   }
 
+  public async getAllPlayersProjectedGameStats(season: number, week: number): Promise<respObj> {
+    const url = this.baseURL + 'PlayerGameProjectionStatsByWeek/' + season + '/' + week;
+    return await this.getRequest(url);
+  }
+
+
+  // Endpoints requiring PlayerID params
+
+  public async getPlayerDetails(playerID: number): Promise<respObj> {
+    playerID = 732;
+    const url = this.baseURL + 'Player/' + playerID;
+    return await this.getRequest(url);
+  }
+
   public async getPlayerNews(playerID: number): Promise<respObj> {
     playerID = 732;
     const url = this.baseURL + 'NewsByPlayerID/' + playerID;
-    return await this.getRequest(url);
-  }
-  
-  public async getAllPlayersDetails(): Promise<respObj> {
-    const url = this.baseURL + 'Players';
-    return await this.getRequest(url);
-  }
-  
-  public async getAllTeamSchedules(season: number): Promise<respObj> {
-    const url = this.baseURL + 'Schedules/' + season;
     return await this.getRequest(url);
   }
   
@@ -96,22 +115,14 @@ class StatsService {
     const url = this.baseURL + 'PlayerGameStatsByWeek/' + season + '/' + playerID;
     return await this.getRequest(url);
   }
-  
-  public async getTopFantasyPlayersByADP(): Promise<respObj> {
-    const url = this.baseURL + 'FantasyPlayers';
-    return await this.getRequest(url);
-  }
-  
+
   public async getPlayerProjectedSeasonStats(playerID: number, season: number): Promise<respObj> {
     const url = this.baseURL + 'PlayerSeasonProjectionStatsByPlayerID/' + season + '/' + playerID;
     return await this.getRequest(url);
   }
 
 
-  public async getPlayersProjectedGameStats(season: number, week: number): Promise<respObj> {
-    const url = this.baseURL + 'PlayerGameProjectionStatsByWeek/' + season + '/' + week;
-    return await this.getRequest(url);
-  }
+  
   
 
 }
