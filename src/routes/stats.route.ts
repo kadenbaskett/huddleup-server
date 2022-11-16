@@ -13,7 +13,9 @@ class StatsRoute implements Routes {
 
   private initializeRoutes() {
     this.router.get(`${this.path}/teams`, this.statsController.getNFLTeams);
-    // this.router.get(`${this.path}/:id(\\d+)`, this.usersController.getUserById);
+    this.router.get(`${this.path}/players/topfantasy`, this.statsController.getTopPlayersByADP);
+    this.router.get(`${this.path}/players/details`, this.statsController.getAllPlayersDetails);
+    this.router.get(`${this.path}/player/details/:playerID(\\d+)`, this.statsController.getIndividualPlayerDatails);
   }
 }
 
