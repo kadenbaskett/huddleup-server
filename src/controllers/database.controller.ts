@@ -9,7 +9,7 @@ class DatabaseController {
       await this.service.createLeague();
       await this.service.getLeagues();
     
-      res.status(200);
+      res.sendStatus(200);
   };
 
 }

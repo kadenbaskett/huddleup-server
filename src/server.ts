@@ -10,6 +10,8 @@ validateEnv();
 
 const routes = [ 
     new IndexRoute(), 
+    new UsersRoute(), 
+    new AuthRoute(), 
     new StatsRoute(), 
     new DatabaseRoute(),
 ];
