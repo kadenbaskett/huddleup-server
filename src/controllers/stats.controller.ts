@@ -3,7 +3,7 @@ import statsService from '@services/stats.service';
 import { respObj } from '@interfaces/respobj.interface';
 
 
-class StatssController {
+class StatsController {
   public statsService = new statsService();
 
   public getNFLTeams = async (req: Request, res: Response): Promise<void> => {
@@ -62,4 +62,4 @@ class StatssController {
 
 }
 
-export default StatssController;
+export default StatsController;
