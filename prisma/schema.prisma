@@ -163,7 +163,7 @@ model TeamSettings {
   Team           Team?
 }
 
-// We need a way to differentiate a week 1 roster before and after a transaction (I think...)
+// We will keep history of the roster that played each week, and with the current week, we will track the current roster as players are added/dropped
 model Roster {
   id      Int            @id @default(autoincrement())
   team    Team           @relation(fields: [teamId], references: [id])

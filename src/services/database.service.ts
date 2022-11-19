@@ -16,7 +16,8 @@ class DatabaseService {
                 name: 'Hunter Renfroe Fan Club',
             },
         });
-        console.log(league);
+
+        return league;
     }
 
     public async getLeagues()
@@ -55,9 +56,14 @@ class DatabaseService {
         return null;
     }
 
-    public async get(userId: number)
+    public async submitTransaction()
     {
         return null;
+    }
+
+    public async submitTrade()
+    {
+        return null;   
     }
 
 }
