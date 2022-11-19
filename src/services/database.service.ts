@@ -25,6 +25,40 @@ class DatabaseService {
         console.log(leagues);
     }
 
+    public async getTeamsInLeague(leagueId: number)
+    {
+        return null;
+    }
+
+    public async getTeamDetails(teamId: number)
+    {
+        return null;
+    }
+
+    public async getTeamRoster(teamId: number)
+    {
+        return null;
+    }
+
+    public async getLeagueDetails(leagueId: number)
+    {
+        return null;
+    }
+
+    public async getUsersLeagues(userId: number)
+    {
+        return null;
+    }
+
+    public async getUsersTeams(userId: number)
+    {
+        return null;
+    }
+
+    public async get(userId: number)
+    {
+        return null;
+    }
 
 }
 

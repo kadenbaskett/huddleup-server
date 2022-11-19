@@ -10,15 +10,204 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// MODELS FOR LEAGUE SETTINGS 
+
 model League {
+  id               Int            @id @default(autoincrement())
+  teams            Team[]
+  commissioner     Int // Id of the user who is the commish
+  settings         LeagueSettings @relation(fields: [leagueSettingsId], references: [id])
+  leagueSettingsId Int
+}
+
+// There's a 1-to-1 relation between league settings and all the other settings, but we might want to change that
+model LeagueSettings {
+  id                 Int              @id @default(autoincrement())
+  numTeams           Int
+  name               String
+  summary            String
+  draftSettings      DraftSettings    @relation(fields: [draftSettingsId], references: [id])
+  rosterSettings     RosterSettings   @relation(fields: [rosterSettingsId], references: [id])
+  scoringSettings    ScoringSettings  @relation(fields: [scoringSettingsId], references: [id])
+  waiverSettings     WaiverSettings   @relation(fields: [waiverSettingsId], references: [id])
+  tradeSettings      TradeSettings    @relation(fields: [tradeSettingsId], references: [id])
+  scheduleSettings   ScheduleSettings @relation(fields: [scheduleSettingsId], references: [id])
+  publicJoin         Boolean
+  publicView         Boolean
+  League             League[]
+  draftSettingsId    Int              @unique
+  rosterSettingsId   Int              @unique
+  scoringSettingsId  Int              @unique
+  waiverSettingsId   Int              @unique
+  tradeSettingsId    Int              @unique
+  scheduleSettingsId Int              @unique
+}
+
+// From these numbers you can calculate the number of starts/total number of roster spots
+model RosterSettings {
+  id             Int             @id @default(autoincrement())
+  numQB          Int
+  numRB          Int
+  numWR          Int
+  numTE          Int
+  numFlex        Int
+  numDEF         Int
+  numKicker      Int
+  numIR          Int
+  benchSpots     Int
+  LeagueSettings LeagueSettings?
+}
+
+model ScoringSettings {
+  id                           Int   @id @default(autoincrement())
+  passYardPoints               Float
+  passTouchdownPoints          Float
+  interceptionThrownPoints     Float
+  twoPointConversionPassPoints Float
+
+  rushYardPoints               Float
+  rushTouchdownPoints          Float
+  twoPointConversionRushPoints Float
+
+  recYardPoints                   Float
+  recTouchdownPoints              Float
+  pointsPerReception              Float
+  twoPointConversionReceivePoints Float
+
+  patMadePoints          Float // Extra point after TD
+  patMissedPoints        Float
+  fieldGoalPointsPerYard Float
+
+  fumbleLostPoints Float
+
+  // Leave out DST/ST and Kickers for now
+  LeagueSettings LeagueSettings?
+}
+
+model WaiverSettings {
+  id                Int             @id @default(autoincrement())
+  lineupLockTime    Int // 0 -> lock at individual game time (for now we should just keep this as the only option)
+  aquisitionLimit   Int
+  waiverPeriodHours Int
+  waiverOrder       Int // 0-> reverse standings each week (this should be default and only option for now)
+  LeagueSettings    LeagueSettings?
+}
+
+model TradeSettings {
+  id                     Int             @id @default(autoincrement())
+  seasonTradeLimit       Int
+  tradeDeadline          DateTime
+  tradeReviewPeriodHours Int
+  votesToVetoTrade       Float // mayde have this be a percentage of the league?
+  LeagueSettings         LeagueSettings?
+}
+
+model ScheduleSettings {
+  id                              Int @id @default(autoincrement())
+  seasonStartWeek                 Int
+  seasonEndWeek                   Int
+  playoffStartWeek                Int
+  playoffEndWeek                  Int
+  numTeamsInPlayoffs              Int
+  weeksPerPlayoffMatchup          Int
+  playoffSeedTiebreaker           Int // just make this points for
+  playoffHomefieldAdvantagePoints Int // just default to 0 for now
+
+  // Maybe make the default playoff format be automatic, we select number of teams on bye automatically
+  LeagueSettings LeagueSettings?
+}
+
+// We should only support snake draft for now
+model DraftSettings {
+  id              Int             @id @default(autoincrement())
+  date            DateTime
+  //order           Int[] // list of team Ids
+  orderGeneration Int // Default to random?
+  secondsPerPick  Int
+  //type            Int // 0 -> snake draft
+  //rounds      Int // may not be necessary, we can figure this out based on roster settings
+  LeagueSettings  LeagueSettings?
+}
+
+// END OF LEAGUE SETTINGS 
+
+model Team {
+  id              Int          @id @default(autoincrement())
+  league          League       @relation(fields: [leagueId], references: [id])
+  settings        TeamSettings @relation(fields: [teamSettingsId], references: [id])
+  numTransactions Int
+  numTrades       Int
+  playerWatchList Int // NFL stats API id's
+  rosters         Roster[] // Every week is a new instance of a roster
+  matchups        Matchup[]
+
+  leagueId       Int
+  teamSettingsId Int @unique
+}
+
+model Matchup {
   id    Int    @id @default(autoincrement())
-  name  String
+  week  Int
   teams Team[]
 }
 
-model Team {
-  id       Int    @id @default(autoincrement())
-  name     String
-  league   League @relation(fields: [leagueId], references: [id])
-  leagueId Int
+model TeamSettings {
+  id             Int     @id @default(autoincrement())
+  name           String
+  abbreviation   String
+  usesVoting     Boolean
+  hasTeamCaptain Boolean
+  // teamCaptain   Manager?
+  // managers  Manager[]
+  // logo   String
+  Team           Team?
+}
+
+// We need a way to differentiate a week 1 roster before and after a transaction (I think...)
+model Roster {
+  id      Int            @id @default(autoincrement())
+  team    Team           @relation(fields: [teamId], references: [id])
+  teamId  Int
+  week    Int
+  season  Int
+  players RosterPlayer[]
+}
+
+// Map player id to the position in the lineup (bench, flex, WR, etc)
+model RosterPlayer {
+  id             Int     @id @default(autoincrement())
+  playerId       Int // NFL stats API player ID
+  rosterPosition Int // Necessary because (for example) an RB could be in the RB slot, flex slot, bench, or IR
+  Roster         Roster? @relation(fields: [rosterId], references: [id])
+  rosterId       Int?
+  Trade          Trade?  @relation(fields: [tradeId], references: [id])
+  tradeId        Int?
+}
+
+model Transaction {
+  id             Int          @id @default(autoincrement())
+  submissionDate DateTime
+  playersToAdd   AddPlayer[]
+  playersToDrop  DropPlayer[]
+}
+
+model AddPlayer {
+  id             Int          @id @default(autoincrement())
+  playerId       Int // NFL stats API player ID
+  rosterPosition Int // Necessary because (for example) an RB could be in the RB slot, flex slot, bench, or IR
+  Transaction    Transaction? @relation(fields: [transactionId], references: [id])
+  transactionId  Int?
+}
+
+model DropPlayer {
+  id             Int          @id @default(autoincrement())
+  playerId       Int // NFL stats API player ID
+  rosterPosition Int // Necessary because (for example) an RB could be in the RB slot, flex slot, bench, or IR
+  Transaction    Transaction? @relation(fields: [transactionId], references: [id])
+  transactionId  Int?
+}
+
+model Trade {
+  id      Int            @id @default(autoincrement())
+  players RosterPlayer[]
 }
