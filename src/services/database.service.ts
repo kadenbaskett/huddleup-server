@@ -46,6 +46,11 @@ class DatabaseService {
         return null;
     }
 
+    public async getLeagueSettings(leagueId: number)
+    {
+        return null;
+    }
+
     public async getUsersLeagues(userId: number)
     {
         return null;
@@ -65,6 +70,27 @@ class DatabaseService {
     {
         return null;   
     }
+
+    public async getTeamSchedule()
+    {
+        return null;
+    }
+
+    public async getPlayers()
+    {
+        return null;
+    }
+
+    public async getLeagueSchedule()
+    {
+        return null;   
+    }
+
+    public async getStandings()
+    {
+        return null;
+    }
+
 
 }
 
