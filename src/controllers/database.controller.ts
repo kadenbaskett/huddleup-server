@@ -12,6 +12,10 @@ class DatabaseController {
       res.sendStatus(200);
   };
 
+  public empty = async (req: Request, res: Response): Promise<void> => {
+      res.sendStatus(200);
+  };
+
 }
 
 export default DatabaseController;
