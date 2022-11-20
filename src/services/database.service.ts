@@ -11,31 +11,38 @@ class DatabaseService {
 
     public async createLeague()
     {
-        const league = await this.client.league.create({
-            data: {
-                name: 'Hunter Renfroe Fan Club',
-            },
-        });
+        try {
+            const league = await this.client.league.create({
+                data: {
+                    name: 'Hunter Renfroe Fan Club',
+                },
+            });
 
-        return league;
+            return league;
+        }
+        catch(e) {
+            return null;
+        }
     }
 
     public async getLeagues()
     {
-        const leagues = await this.client.league.findMany();
-        console.log(leagues);
+        try {
+            return await this.client.league.findMany();
+        }
+        catch(e) {
+            return null;
+        }
     }
 
     public async getTeamsInLeague(leagueId: number)
     {
-        try
-        {
+        try {
             return await this.client.team.findMany({
                 where: { leagueId: leagueId },
             });
         }
-        catch(e)
-        {
+        catch(e) {
             return null;
         }
     }

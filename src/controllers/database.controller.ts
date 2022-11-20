@@ -3,19 +3,30 @@ import databaseService from '@services/database.service';
 
 
 class DatabaseController {
-  public service = new databaseService();
 
-  public createLeague = async (req: Request, res: Response): Promise<void> => {
-      await this.service.createLeague();
-      await this.service.getLeagues();
-    
-      res.sendStatus(200);
-  };
+  public service: databaseService;
+
+  constructor()
+  {
+      this.service = new databaseService();
+  }
 
   public empty = async (req: Request, res: Response): Promise<void> => {
       res.sendStatus(200);
   };
 
+  public createLeague = async (req: Request, res: Response): Promise<void> => {
+      const league = await this.service.createLeague();
+
+      if(league)
+      {
+        res.sendStatus(200);
+      }
+      else
+      {
+        res.sendStatus(400);
+      }
+  };
 
   public getTeamsInLeague = async (req: Request, res: Response): Promise<void> => {
       const leagueId = Number(req.params.leagueId);
@@ -29,7 +40,6 @@ class DatabaseController {
       {
         res.sendStatus(400);
       }
-
   };
 
 
