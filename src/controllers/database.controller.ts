@@ -16,6 +16,23 @@ class DatabaseController {
       res.sendStatus(200);
   };
 
+
+  public getTeamsInLeague = async (req: Request, res: Response): Promise<void> => {
+      const leagueId = Number(req.params.leagueId);
+      const teams = await this.service.getTeamsInLeague(leagueId);
+
+      if(teams)
+      {
+        res.status(200).json(teams);
+      }
+      else
+      {
+        res.sendStatus(400);
+      }
+
+  };
+
+
 }
 
 export default DatabaseController;

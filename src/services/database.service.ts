@@ -28,7 +28,16 @@ class DatabaseService {
 
     public async getTeamsInLeague(leagueId: number)
     {
-        return null;
+        try
+        {
+            return await this.client.team.findMany({
+                where: { leagueId: leagueId },
+            });
+        }
+        catch(e)
+        {
+            return null;
+        }
     }
 
     public async getTeamDetails(teamId: number)
