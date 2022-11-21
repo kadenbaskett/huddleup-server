@@ -1,14 +1,18 @@
 import { Request, Response } from 'express';
-import databaseService from '@services/database.service';
+import DatabaseService from '@services/database.service';
+import StatsService from '@/services/stats.service';
 
 
 class DatabaseController {
 
-  public service: databaseService;
+  public databaseService: DatabaseService;
+  private statsService: StatsService;
 
   constructor()
   {
-      this.service = new databaseService();
+      this.databaseService = new DatabaseService();
+
+      this.statsService = new StatsService();
   }
 
   public empty = async (req: Request, res: Response): Promise<void> => {
@@ -16,7 +20,7 @@ class DatabaseController {
   };
 
   public createLeague = async (req: Request, res: Response): Promise<void> => {
-      const league = await this.service.createLeague();
+      const league = await this.databaseService.createLeague();
 
       if(league)
       {
@@ -30,11 +34,28 @@ class DatabaseController {
 
   public getTeamsInLeague = async (req: Request, res: Response): Promise<void> => {
       const leagueId = Number(req.params.leagueId);
-      const teams = await this.service.getTeamsInLeague(leagueId);
+      const teams = await this.databaseService.getTeamsInLeague(leagueId);
 
       if(teams)
       {
         res.status(200).json(teams);
+      }
+      else
+      {
+        res.sendStatus(400);
+      }
+  };
+
+  public getLeaguePlayers = async (req: Request, res: Response): Promise<void> => {
+      const leagueId = Number(req.params.leagueId);
+      const leaguePlayers = await this.databaseService.getLeaguePlayers(leagueId);
+      const topPlayers = await this.statsService.getTopFantasyPlayersByADP();
+      const players = [];
+
+
+      if(players)
+      {
+        res.status(200).json(players);
       }
       else
       {
