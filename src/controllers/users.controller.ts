@@ -89,7 +89,7 @@ class UsersController {
         .catch((error) => {
           const errorCode = error.code;
           const errorMessage = error.message;
-          console.log('Error creating user. Code: ' + errorCode + ', Message: ' + errorMessage);
+          console.log('Error signing user in. Code: ' + errorCode + ', Message: ' + errorMessage);
         });
 
     } catch (error) {
