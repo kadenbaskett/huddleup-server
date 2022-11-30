@@ -80,7 +80,7 @@ class UsersController {
       signInWithEmailAndPassword(auth, req.body.email, req.body.password)
     .then(cred => {
       console.log('User logged in succesfully! Creds: ', cred);
-      res.status(200).json({ data: cred, message: 'logged in' });
+      res.status(200).json({ data: cred.user.getIdToken(), message: 'logged in' });
     })
     .catch(error => {
       const errorCode = error.code;
