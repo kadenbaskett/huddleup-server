@@ -79,13 +79,13 @@ class UsersController {
       //authorize with firebase
       signInWithEmailAndPassword(auth, req.body.email, req.body.password)
     .then(cred => {
-      console.log('User signed in succesfully! Creds: ', cred);
-      res.status(200).json({ data: cred, message: 'signed in' });
+      console.log('User logged in succesfully! Creds: ', cred);
+      res.status(200).json({ data: cred, message: 'logged in' });
     })
     .catch(error => {
       const errorCode = error.code;
       const errorMessage = error.message;
-      console.log('Error signing user in. Code: ' + errorCode + ', Message: ' + errorMessage); });
+      console.log('Error logging user in. Code: ' + errorCode + ', Message: ' + errorMessage); });
     } catch (error) {
       next(error);
     }
