@@ -4,7 +4,7 @@ import { User } from '@interfaces/users.interface';
 import userService from '@services/users.service';
 
 import { initializeApp } from 'firebase/app';
-import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 // import { getAnalytics } from 'firebase/analytics';
 
 // test Huddle Up Firebase configuration
@@ -77,21 +77,15 @@ class UsersController {
   public loginUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       //authorize with firebase
-      createUserWithEmailAndPassword(auth, req.body.email, req.body.password)
-        .then((userCredential) => {
-          // user created and signed in
-          console.log('User signedin succesfully.');
-          const user = userCredential.user;
-
-          //return JWT and username
-          res.status(201).json({ data: user, message: 'created' });
-        })
-        .catch((error) => {
-          const errorCode = error.code;
-          const errorMessage = error.message;
-          console.log('Error signing user in. Code: ' + errorCode + ', Message: ' + errorMessage);
-        });
-
+      signInWithEmailAndPassword(auth, req.body.email, req.body.password)
+    .then(cred => {
+      console.log('User signed in succesfully! Creds: ', cred);
+      res.status(200).json({ data: cred, message: 'signed in' });
+    })
+    .catch(error => {
+      const errorCode = error.code;
+      const errorMessage = error.message;
+      console.log('Error signing user in. Code: ' + errorCode + ', Message: ' + errorMessage); });
     } catch (error) {
       next(error);
     }
