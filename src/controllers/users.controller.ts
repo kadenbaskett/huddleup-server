@@ -3,6 +3,27 @@ import { CreateUserDto } from '@dtos/users.dto';
 import { User } from '@interfaces/users.interface';
 import userService from '@services/users.service';
 
+import { initializeApp } from 'firebase/app';
+import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
+// import { getAnalytics } from 'firebase/analytics';
+
+// test Huddle Up Firebase configuration
+const firebaseConfig = {
+  apiKey: 'AIzaSyC3VhVqA-zR0mOA9-sUwTw-0JohqqIxPCY',
+  authDomain: 'test-fanhuddle.firebaseapp.com',
+  projectId: 'test-fanhuddle',
+  storageBucket: 'test-fanhuddle.appspot.com',
+  messagingSenderId: '526044775750',
+  appId: '1:526044775750:web:d8242c7328c52df3b55147',
+  measurementId: 'G-NX81Y3HZPH',
+};
+
+// initialize Firebase app
+const app = initializeApp(firebaseConfig);
+const auth = getAuth();
+// const analytics = getAnalytics(app);
+console.log(app); //just to get past linter
+
 class UsersController {
   public userService = new userService();
 
@@ -29,10 +50,48 @@ class UsersController {
 
   public createUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const userData: CreateUserDto = req.body;
-      const createUserData: User = await this.userService.createUser(userData);
+      // create user in firebase
+      createUserWithEmailAndPassword(auth, req.body.email, req.body.password)
+        .then((userCredential) => {
+          // user created and signed in
+          console.log('User created succesfully.');
+          const user = userCredential.user;
 
-      res.status(201).json({ data: createUserData, message: 'created' });
+          // add user to database
+          // const userData: CreateUserDto = req.body;
+          // const createUserData: User = await this.userService.createUser(userData);
+
+          res.status(201).json({ data: user, message: 'created' });
+        })
+        .catch((error) => {
+          const errorCode = error.code;
+          const errorMessage = error.message;
+          console.log('Error creating user. Code: ' + errorCode + ', Message: ' + errorMessage);
+        });
+
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public loginUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      //authorize with firebase
+      createUserWithEmailAndPassword(auth, req.body.email, req.body.password)
+        .then((userCredential) => {
+          // user created and signed in
+          console.log('User signedin succesfully.');
+          const user = userCredential.user;
+
+          //return JWT and username
+          res.status(201).json({ data: user, message: 'created' });
+        })
+        .catch((error) => {
+          const errorCode = error.code;
+          const errorMessage = error.message;
+          console.log('Error creating user. Code: ' + errorCode + ', Message: ' + errorMessage);
+        });
+
     } catch (error) {
       next(error);
     }
