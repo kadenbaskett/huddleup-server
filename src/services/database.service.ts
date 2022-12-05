@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { League, PrismaClient, NFLGame, Player, NFLTeam } from '@prisma/client';
 
 class DatabaseService {
 
@@ -9,8 +9,31 @@ class DatabaseService {
         this.client = new PrismaClient();
     }
 
-    /*
-    public async getPlayerDetails(external_player_id): Promise<Player>
+
+    // **************** SETTERS & UPDATERS ********************** //
+
+    public async createLeague(): Promise<League>
+    {
+        try {
+            const league: League = await this.client.league.create({
+                data: {
+                    teams: null,
+                    commissioner_id: 0,
+                    settings: null,
+                },
+            });
+
+            return league;
+        }
+        catch(e) {
+           return null; 
+        }
+    }
+
+
+    // **************** GETTERS ********************** //
+
+    public async getPlayerDetails(external_player_id: number): Promise<Player>
     {
         try {
             const player = await this.client.player.findFirstOrThrow({
@@ -26,7 +49,31 @@ class DatabaseService {
         }
     }
 
-    public async getTeamNFLGames(external_team_id: number): Promise<NFLGame[]>
+    public async getAllPlayersDetails(): Promise<Player[]>
+    {
+        try {
+            return await this.client.player.findMany();
+        }
+        catch(e)
+        {
+            console.log(e);
+            return null;
+        }
+    }
+
+    public async getNFLTeams(): Promise<NFLTeam[]>
+    {
+        try {
+            return await this.client.nFLTeam.findMany();
+        }
+        catch(e)
+        {
+            console.log(e);
+            return null;
+        }
+    }
+
+    public async getNFLTeamGames(external_team_id: number): Promise<NFLGame[]>
     {
         try {
             const games = this.client.nFLGame.findMany({
@@ -47,25 +94,8 @@ class DatabaseService {
             return null;
         }
     }
-    */
 
-    // public async createLeague(): Promise<League>
-    // {
-    //     try {
-    //         const league: League = await this.client.league.create({
-    //             data: {
-    //                 teams: null,
-    //                 commissioner: 0,
-    //                 settings: null,
-    //             },
-    //         });
 
-    //         return league;
-    //     }
-    //     catch(e) {
-    //        return null; 
-    //     }
-    // }
 }
 
 export default DatabaseService;

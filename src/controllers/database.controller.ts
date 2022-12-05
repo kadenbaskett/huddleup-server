@@ -1,23 +1,22 @@
 import { Request, Response } from 'express';
 import DatabaseService from '@services/database.service';
-import StatsService from '@/services/stats.service';
 
 
 class DatabaseController {
 
   public databaseService: DatabaseService;
-  private statsService: StatsService;
 
   constructor()
   {
       this.databaseService = new DatabaseService();
-
-      this.statsService = new StatsService();
   }
 
   public empty = async (req: Request, res: Response): Promise<void> => {
       res.sendStatus(200);
   };
+
+
+  // **************** SETTERS & UPDATERS ********************** //
 
   public createLeague = async (req: Request, res: Response): Promise<void> => {
       const league = await this.databaseService.createLeague();
@@ -32,9 +31,10 @@ class DatabaseController {
       }
   };
 
-  public getTeamsInLeague = async (req: Request, res: Response): Promise<void> => {
-      const leagueId = Number(req.params.leagueId);
-      const teams = await this.databaseService.getTeamsInLeague(leagueId);
+  // **************** GETTERS ********************** //
+
+  public getNFLTeams = async (req: Request, res: Response): Promise<void> => {
+      const teams = await this.databaseService.getNFLTeams();
 
       if(teams)
       {
@@ -46,16 +46,41 @@ class DatabaseController {
       }
   };
 
-  public getLeaguePlayers = async (req: Request, res: Response): Promise<void> => {
-      const leagueId = Number(req.params.leagueId);
-      const leaguePlayers = await this.databaseService.getLeaguePlayers(leagueId);
-      const topPlayers = await this.statsService.getTopFantasyPlayersByADP();
-      const players = [];
 
+  public getAllPlayersDetails = async (req: Request, res: Response): Promise<void> => {
+      const players = await this.databaseService.getAllPlayersDetails();
 
       if(players)
       {
         res.status(200).json(players);
+      }
+      else
+      {
+        res.sendStatus(400);
+      }
+  };
+
+  public getIndividualPlayerDatails = async (req: Request, res: Response): Promise<void> => {
+      const playerID = Number(req.params.playerID);
+      const player = await this.databaseService.getPlayerDetails(playerID);
+
+      if(player)
+      {
+        res.status(200).json(player);
+      }
+      else
+      {
+        res.sendStatus(400);
+      }
+  };
+
+  public getNFLTeamGames = async (req: Request, res: Response): Promise<void> => {
+      const teamID = Number(req.params.teamID);
+      const games = await this.databaseService.getNFLTeamGames(teamID);
+
+      if(games)
+      {
+        res.status(200).json(games);
       }
       else
       {
