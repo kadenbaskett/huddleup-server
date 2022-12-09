@@ -12,7 +12,15 @@ class DatabaseRoute implements Routes {
   }
 
   private initializeRoutes() {
-    this.router.post(`${this.path}/leagues/create`, this.controller.createLeague);
+
+    //************* POST ROUTES  **************/
+    this.router.post(`${this.path}/league`, this.controller.createLeague);
+
+
+    //************* GET ROUTES  **************/
+    this.router.get(`${this.path}/players`, this.controller.getAllPlayersDetails);
+    this.router.get(`${this.path}/players/stats`, this.controller.getAllPlayersStats);
+    this.router.get(`${this.path}/players/stats/:playerId(\\d+)`, this.controller.getIndividualPlayerStats);
 
     this.router.get(`${this.path}/leagues/teams/:leagueId(\\d+)`, this.controller.empty);
     this.router.get(`${this.path}/leagues/settings/:leagueId(\\d+)`, this.controller.empty);

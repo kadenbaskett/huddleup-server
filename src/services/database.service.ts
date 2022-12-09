@@ -1,4 +1,4 @@
-import { League, PrismaClient, NFLGame, Player, NFLTeam } from '@prisma/client';
+import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats } from '@prisma/client';
 
 class DatabaseService {
 
@@ -52,7 +52,45 @@ class DatabaseService {
     public async getAllPlayersDetails(): Promise<Player[]>
     {
         try {
-            return await this.client.player.findMany();
+            return await this.client.player.findMany({
+                include: {
+                    nfl_team: true,
+                },
+            });
+        }
+        catch(e)
+        {
+            console.log(e);
+            return null;
+        }
+    }
+
+
+    public async getAllPlayersStats(): Promise<PlayerGameStats[]>
+    {
+        try {
+            const timeframe = await this.client.timeframe.findFirstOrThrow();
+            // TODO use current season as filter
+            const allGames = await this.client.playerGameStats.findMany();
+
+            return allGames;
+        }
+        catch(e)
+        {
+            console.log(e);
+            return null;
+        }
+    }
+
+    // TODO also filter by season
+    public async getPlayerGameLogs(player_id: number): Promise<PlayerGameStats[]>
+    {
+        try {
+            const allGames = await this.client.playerGameStats.findMany({
+                where: { external_player_id: player_id },
+            });
+
+            return allGames;
         }
         catch(e)
         {

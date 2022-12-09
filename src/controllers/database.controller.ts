@@ -60,9 +60,39 @@ class DatabaseController {
       }
   };
 
-  public getIndividualPlayerDatails = async (req: Request, res: Response): Promise<void> => {
-      const playerID = Number(req.params.playerID);
+
+  public getAllPlayersStats = async (req: Request, res: Response): Promise<void> => {
+      const players = await this.databaseService.getAllPlayersStats();
+      console.log(players);
+
+      if(players)
+      {
+        res.status(200).json(players);
+      }
+      else
+      {
+        res.sendStatus(400);
+      }
+  };
+
+  public getIndividualPlayerDetails = async (req: Request, res: Response): Promise<void> => {
+      const playerID = Number(req.params.playerId);
       const player = await this.databaseService.getPlayerDetails(playerID);
+
+      if(player)
+      {
+        res.status(200).json(player);
+      }
+      else
+      {
+        res.sendStatus(400);
+      }
+  };
+
+  public getIndividualPlayerStats = async (req: Request, res: Response): Promise<void> => {
+      const playerID = Number(req.params.playerId);
+      console.log(playerID);
+      const player = await this.databaseService.getPlayerGameLogs(playerID);
 
       if(player)
       {
