@@ -118,6 +118,19 @@ class DatabaseController {
       }
   };
 
+  public getPublicLeagues = async (req: Request, res: Response): Promise<void> => {
+      const leagues = await this.databaseService.getPublicLeagues();
+
+      if(leagues)
+      {
+        res.status(200).json(leagues);
+      }
+      else
+      {
+        res.sendStatus(400);
+      }
+  };
+
 
   public getNFLTeamGames = async (req: Request, res: Response): Promise<void> => {
       const teamID = Number(req.params.teamID);

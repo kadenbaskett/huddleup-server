@@ -1,4 +1,5 @@
 import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats } from '@prisma/client';
+import { isDataURI } from 'class-validator';
 
 class DatabaseService {
 
@@ -66,10 +67,42 @@ class DatabaseService {
     }
 
 
-    public async getUserLeagues(userID: number): Promise<League[]>
+    public async getUserLeagues(userID: number): Promise<any>
+    {
+        try {
+            return await this.client.user.findFirst({
+                where: {
+                    id: userID,
+                },
+                select: {
+                    League: true,
+                },
+                // include: {
+                //     teams: {
+                //         include: {
+                //             rosters: true,
+                //         },
+                //     },
+                // },
+            });
+        }
+        catch(e)
+        {
+            console.log(e);
+            return null;
+        }
+    }
+
+
+    public async getPublicLeagues(): Promise<League[]>
     {
         try {
             return await this.client.league.findMany({
+                where: {
+                    settings: {
+                        public_view: true,
+                    },
+                },
                 include: {
                     teams: {
                         include: {

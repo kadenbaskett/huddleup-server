@@ -10,29 +10,29 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// MODELS FOR LEAGUE SETTINGS 
-
 model League {
   id              Int             @id @default(autoincrement())
+  name            String
   teams           Team[]
-  commissioner_id Int // The user id of the commish
+  commissioner    User            @relation(fields: [commissioner_id], references: [id])
+  commissioner_id Int
   settings        LeagueSettings?
 }
 
 model LeagueSettings {
-  id                 Int              @id @default(autoincrement())
-  num_teams          Int
-  summary            String
-  draft_settings      DraftSettings    @relation(fields: [draft_settings_id], references: [id])
-  roster_settings     RosterSettings   @relation(fields: [roster_settings_id], references: [id])
-  scoring_settings    ScoringSettings  @relation(fields: [scoring_settings_id], references: [id])
-  waiver_settings     WaiverSettings   @relation(fields: [waiver_settings_id], references: [id])
-  trade_settings      TradeSettings    @relation(fields: [trade_settings_id], references: [id])
-  schedule_settings   ScheduleSettings @relation(fields: [schedule_settings_id], references: [id])
-  public_join         Boolean
-  public_view         Boolean
-  league             League           @relation(fields: [league_id], references: [id])
-  league_id          Int              @unique
+  id                   Int              @id @default(autoincrement())
+  num_teams            Int
+  summary              String
+  public_join          Boolean
+  public_view          Boolean
+  draft_settings       DraftSettings    @relation(fields: [draft_settings_id], references: [id])
+  roster_settings      RosterSettings   @relation(fields: [roster_settings_id], references: [id])
+  scoring_settings     ScoringSettings  @relation(fields: [scoring_settings_id], references: [id])
+  waiver_settings      WaiverSettings   @relation(fields: [waiver_settings_id], references: [id])
+  trade_settings       TradeSettings    @relation(fields: [trade_settings_id], references: [id])
+  schedule_settings    ScheduleSettings @relation(fields: [schedule_settings_id], references: [id])
+  league               League           @relation(fields: [league_id], references: [id])
+  league_id            Int              @unique
   draft_settings_id    Int              @unique
   roster_settings_id   Int              @unique
   scoring_settings_id  Int              @unique
@@ -53,14 +53,13 @@ model DraftSettings {
 // This is necessary becasue we cant use Prisma to store a list of integers in the draft settings
 model DraftOrder {
   id                Int            @id @default(autoincrement())
+  pick_number       Int
   draft_settings    DraftSettings? @relation(fields: [draft_settings_id], references: [id])
-  draft_settings_id Int?
+  draft_settings_id Int
   team              Team           @relation(fields: [team_id], references: [id])
   team_id           Int
-  pick_number       Int
 }
 
-// From these numbers you can calculate the number of starts/total number of roster spots
 model RosterSettings {
   id                Int             @id @default(autoincrement())
   num_qb            Int
@@ -68,9 +67,9 @@ model RosterSettings {
   num_wr            Int
   num_te            Int
   num_flex          Int
-  roster_size_limit Int
   num_ir            Int
   num_def           Int
+  roster_size_limit Int
   league_settings   LeagueSettings?
 }
 
@@ -111,16 +110,33 @@ model WaiverSettings {
 
 // END OF LEAGUE SETTINGS 
 
+model User {
+  id           Int          @id @default(autoincrement())
+  username     String
+  email        String
+  user_to_team UserToTeam[]
+  leagues_user_is_commish       League[]
+}
+
+model UserToTeam {
+  id         Int     @id @default(autoincrement())
+  user       User    @relation(fields: [user_id], references: [id])
+  user_id    Int
+  team       Team    @relation(fields: [team_id], references: [id])
+  team_id    Int
+  is_captain Boolean
+}
+
 model Team {
   id               Int          @id @default(autoincrement())
   name             String
-  captain          Int // Should point to a user...if we end up using a captain
   league           League       @relation(fields: [league_id], references: [id])
   league_id        Int
   settings         TeamSettings @relation(fields: [team_settings_id], references: [id])
   team_settings_id Int          @unique
-  draft_order       DraftOrder[]
-  rosters           Roster[]
+  draft_order      DraftOrder[]
+  rosters          Roster[]
+  managers         UserToTeam[]
 }
 
 model TeamSettings {
@@ -131,30 +147,26 @@ model TeamSettings {
 // We will keep history of the roster that played each week, and with the current week, we will track the current roster as players are added/dropped
 model Roster {
   id      Int            @id @default(autoincrement())
-  team    Team           @relation(fields: [teamId], references: [id])
-  teamId  Int
   week    Int
   season  Int
+  team    Team           @relation(fields: [team_id], references: [id])
+  team_id Int
   players RosterPlayer[]
 }
 
 // Map player id to the position in the lineup (bench, flex, WR, etc)
-// Should position be stored as an Int (and then use an enum) or as a String?
 model RosterPlayer {
   id          Int     @id @default(autoincrement())
   external_id Int // NFL stats API player ID
   position    String // Necessary because (for example) an RB could be in the RB slot, flex slot, bench, or IR
   roster      Roster? @relation(fields: [roster_id], references: [id])
-  roster_id    Int?
+  roster_id   Int?
 }
 
 // TODO how to track transactions, waivers, trades, and league matchups
 model Transaction {
-  id             Int          @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 }
-
-
-
 
 //***************** MODELS USED FOR STORING API DATA ***************************
 
@@ -166,50 +178,51 @@ model Timeframe {
   @@unique([current_season, current_week])
 }
 
-// TODO does a team need a season/year
 model NFLTeam {
-  id          Int       @id @default(autoincrement())
-  external_id Int       @unique
-  key         String
-  city        String
-  name        String
-  players     Player[]
-  home_games  NFLGame[] @relation("home_team")
-  away_games  NFLGame[] @relation("away_team")
+  id              Int               @id @default(autoincrement())
+  external_id     Int               @unique
+  key             String
+  city            String
+  name            String
+  season          Int
+  current_players Player[]
+  home_games      NFLGame[]         @relation("home_team")
+  away_games      NFLGame[]         @relation("away_team")
+  player_game_stats PlayerGameStats[]
 }
 
-// TODO what happens when a player changes teams mid season
 model Player {
-  id                   Int     @id @default(autoincrement())
-  external_id          Int     @unique
-  nfl_team             NFLTeam @relation(fields: [nfl_team_external_id], references: [external_id])
-  nfl_team_external_id Int
-  first_name           String
-  last_name            String
-  position             String
-  status               String
-  photo_url            String
+  id                           Int               @id @default(autoincrement())
+  external_id                  Int               @unique
+  first_name                   String
+  last_name                    String
+  position                     String
+  status                       String
+  photo_url                    String
+  current_nfl_team             NFLTeam           @relation(fields: [current_nfl_team_external_id], references: [external_id])
+  current_nfl_team_external_id Int
+  player_game_stats            PlayerGameStats[]
 }
 
 model NFLGame {
-  id                Int      @id @default(autoincrement())
-  external_id       Int      @unique
+  id                Int               @id @default(autoincrement())
+  external_id       Int               @unique
   season            Int
   week              Int
-  date              DateTime
-  away_team         NFLTeam  @relation("away_team", fields: [away_team_id], references: [external_id])
-  away_team_id      Int
-  home_team         NFLTeam  @relation("home_team", fields: [home_team_id], references: [external_id])
-  home_team_id      Int
-  status            String
   external_score_id Int
   home_score        Int
   away_score        Int
+  date              DateTime
+  status            String
+  away_team         NFLTeam           @relation("away_team", fields: [away_team_id], references: [external_id])
+  away_team_id      Int
+  home_team         NFLTeam           @relation("home_team", fields: [home_team_id], references: [external_id])
+  home_team_id      Int
+  player_game_stats PlayerGameStats[]
 }
 
-// TODO add foriegn key relation for external player and game ids?
 model PlayerGameStats {
-  id                              Int   @id @default(autoincrement())
+  id                              Int     @id @default(autoincrement())
   external_player_id              Int
   external_game_id                Int
   pass_yards                      Int
@@ -226,8 +239,13 @@ model PlayerGameStats {
   two_point_conversion_passes     Int
   two_point_conversion_receptions Int
   two_point_conversion_runs       Int
+  team                            NFLTeam @relation(fields: [team_id], references: [id])
+  team_id                         Int
+  player                          Player  @relation(fields: [player_id], references: [id])
+  player_id                       Int
+  game                            NFLGame @relation(fields: [game_id], references: [id])
+  game_id                         Int
 
+  // TODO should we use the external or internal ids for the uniqueness constraint?
   @@unique([external_game_id, external_player_id])
 }
-
-

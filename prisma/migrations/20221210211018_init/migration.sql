@@ -1,6 +1,7 @@
 -- CreateTable
 CREATE TABLE `League` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR(191) NOT NULL,
     `commissioner_id` INTEGER NOT NULL,
 
     PRIMARY KEY (`id`)
@@ -44,9 +45,9 @@ CREATE TABLE `DraftSettings` (
 -- CreateTable
 CREATE TABLE `DraftOrder` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `draft_settings_id` INTEGER NULL,
-    `team_id` INTEGER NOT NULL,
     `pick_number` INTEGER NOT NULL,
+    `draft_settings_id` INTEGER NOT NULL,
+    `team_id` INTEGER NOT NULL,
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -59,9 +60,9 @@ CREATE TABLE `RosterSettings` (
     `num_wr` INTEGER NOT NULL,
     `num_te` INTEGER NOT NULL,
     `num_flex` INTEGER NOT NULL,
-    `roster_size_limit` INTEGER NOT NULL,
     `num_ir` INTEGER NOT NULL,
     `num_def` INTEGER NOT NULL,
+    `roster_size_limit` INTEGER NOT NULL,
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -110,10 +111,28 @@ CREATE TABLE `WaiverSettings` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
+CREATE TABLE `User` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `username` VARCHAR(191) NOT NULL,
+    `email` VARCHAR(191) NOT NULL,
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `UserToTeam` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `user_id` INTEGER NOT NULL,
+    `team_id` INTEGER NOT NULL,
+    `is_captain` BOOLEAN NOT NULL,
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `Team` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(191) NOT NULL,
-    `captain` INTEGER NOT NULL,
     `league_id` INTEGER NOT NULL,
     `team_settings_id` INTEGER NOT NULL,
 
@@ -131,9 +150,9 @@ CREATE TABLE `TeamSettings` (
 -- CreateTable
 CREATE TABLE `Roster` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `teamId` INTEGER NOT NULL,
     `week` INTEGER NOT NULL,
     `season` INTEGER NOT NULL,
+    `team_id` INTEGER NOT NULL,
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -172,6 +191,7 @@ CREATE TABLE `NFLTeam` (
     `key` VARCHAR(191) NOT NULL,
     `city` VARCHAR(191) NOT NULL,
     `name` VARCHAR(191) NOT NULL,
+    `season` INTEGER NOT NULL,
 
     UNIQUE INDEX `NFLTeam_external_id_key`(`external_id`),
     PRIMARY KEY (`id`)
@@ -181,12 +201,12 @@ CREATE TABLE `NFLTeam` (
 CREATE TABLE `Player` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `external_id` INTEGER NOT NULL,
-    `nfl_team_external_id` INTEGER NOT NULL,
     `first_name` VARCHAR(191) NOT NULL,
     `last_name` VARCHAR(191) NOT NULL,
     `position` VARCHAR(191) NOT NULL,
     `status` VARCHAR(191) NOT NULL,
     `photo_url` VARCHAR(191) NOT NULL,
+    `current_nfl_team_external_id` INTEGER NOT NULL,
 
     UNIQUE INDEX `Player_external_id_key`(`external_id`),
     PRIMARY KEY (`id`)
@@ -198,13 +218,13 @@ CREATE TABLE `NFLGame` (
     `external_id` INTEGER NOT NULL,
     `season` INTEGER NOT NULL,
     `week` INTEGER NOT NULL,
-    `date` DATETIME(3) NOT NULL,
-    `away_team_id` INTEGER NOT NULL,
-    `home_team_id` INTEGER NOT NULL,
-    `status` VARCHAR(191) NOT NULL,
     `external_score_id` INTEGER NOT NULL,
     `home_score` INTEGER NOT NULL,
     `away_score` INTEGER NOT NULL,
+    `date` DATETIME(3) NOT NULL,
+    `status` VARCHAR(191) NOT NULL,
+    `away_team_id` INTEGER NOT NULL,
+    `home_team_id` INTEGER NOT NULL,
 
     UNIQUE INDEX `NFLGame_external_id_key`(`external_id`),
     PRIMARY KEY (`id`)
@@ -229,10 +249,16 @@ CREATE TABLE `PlayerGameStats` (
     `two_point_conversion_passes` INTEGER NOT NULL,
     `two_point_conversion_receptions` INTEGER NOT NULL,
     `two_point_conversion_runs` INTEGER NOT NULL,
+    `team_id` INTEGER NOT NULL,
+    `player_id` INTEGER NOT NULL,
+    `game_id` INTEGER NOT NULL,
 
     UNIQUE INDEX `PlayerGameStats_external_game_id_external_player_id_key`(`external_game_id`, `external_player_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- AddForeignKey
+ALTER TABLE `League` ADD CONSTRAINT `League_commissioner_id_fkey` FOREIGN KEY (`commissioner_id`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `LeagueSettings` ADD CONSTRAINT `LeagueSettings_draft_settings_id_fkey` FOREIGN KEY (`draft_settings_id`) REFERENCES `DraftSettings`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -256,10 +282,16 @@ ALTER TABLE `LeagueSettings` ADD CONSTRAINT `LeagueSettings_schedule_settings_id
 ALTER TABLE `LeagueSettings` ADD CONSTRAINT `LeagueSettings_league_id_fkey` FOREIGN KEY (`league_id`) REFERENCES `League`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `DraftOrder` ADD CONSTRAINT `DraftOrder_draft_settings_id_fkey` FOREIGN KEY (`draft_settings_id`) REFERENCES `DraftSettings`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `DraftOrder` ADD CONSTRAINT `DraftOrder_draft_settings_id_fkey` FOREIGN KEY (`draft_settings_id`) REFERENCES `DraftSettings`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `DraftOrder` ADD CONSTRAINT `DraftOrder_team_id_fkey` FOREIGN KEY (`team_id`) REFERENCES `Team`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `UserToTeam` ADD CONSTRAINT `UserToTeam_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `UserToTeam` ADD CONSTRAINT `UserToTeam_team_id_fkey` FOREIGN KEY (`team_id`) REFERENCES `Team`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Team` ADD CONSTRAINT `Team_league_id_fkey` FOREIGN KEY (`league_id`) REFERENCES `League`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -268,16 +300,25 @@ ALTER TABLE `Team` ADD CONSTRAINT `Team_league_id_fkey` FOREIGN KEY (`league_id`
 ALTER TABLE `Team` ADD CONSTRAINT `Team_team_settings_id_fkey` FOREIGN KEY (`team_settings_id`) REFERENCES `TeamSettings`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Roster` ADD CONSTRAINT `Roster_teamId_fkey` FOREIGN KEY (`teamId`) REFERENCES `Team`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `Roster` ADD CONSTRAINT `Roster_team_id_fkey` FOREIGN KEY (`team_id`) REFERENCES `Team`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `RosterPlayer` ADD CONSTRAINT `RosterPlayer_roster_id_fkey` FOREIGN KEY (`roster_id`) REFERENCES `Roster`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Player` ADD CONSTRAINT `Player_nfl_team_external_id_fkey` FOREIGN KEY (`nfl_team_external_id`) REFERENCES `NFLTeam`(`external_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `Player` ADD CONSTRAINT `Player_current_nfl_team_external_id_fkey` FOREIGN KEY (`current_nfl_team_external_id`) REFERENCES `NFLTeam`(`external_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `NFLGame` ADD CONSTRAINT `NFLGame_away_team_id_fkey` FOREIGN KEY (`away_team_id`) REFERENCES `NFLTeam`(`external_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `NFLGame` ADD CONSTRAINT `NFLGame_home_team_id_fkey` FOREIGN KEY (`home_team_id`) REFERENCES `NFLTeam`(`external_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `PlayerGameStats` ADD CONSTRAINT `PlayerGameStats_team_id_fkey` FOREIGN KEY (`team_id`) REFERENCES `NFLTeam`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `PlayerGameStats` ADD CONSTRAINT `PlayerGameStats_player_id_fkey` FOREIGN KEY (`player_id`) REFERENCES `Player`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `PlayerGameStats` ADD CONSTRAINT `PlayerGameStats_game_id_fkey` FOREIGN KEY (`game_id`) REFERENCES `NFLGame`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
