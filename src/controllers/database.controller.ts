@@ -19,7 +19,7 @@ class DatabaseController {
   // **************** SETTERS & UPDATERS ********************** //
 
   public createLeague = async (req: Request, res: Response): Promise<void> => {
-      const league = await this.databaseService.createLeague();
+      const league = await this.databaseService.createLeague(0, 'name');
 
       if(league)
       {
@@ -89,6 +89,7 @@ class DatabaseController {
       }
   };
 
+
   public getIndividualPlayerStats = async (req: Request, res: Response): Promise<void> => {
       const playerID = Number(req.params.playerId);
       const player = await this.databaseService.getPlayerGameLogs(playerID);
@@ -117,6 +118,51 @@ class DatabaseController {
         res.sendStatus(400);
       }
   };
+
+
+  public getUserTeams = async (req: Request, res: Response): Promise<void> => {
+      const teamId = Number(req.params.teamId);
+      const teams = await this.databaseService.getUserTeams(teamId);
+
+      if(teams)
+      {
+        res.status(200).json(teams);
+      }
+      else
+      {
+        res.sendStatus(400);
+      }
+  };
+
+  public getCurrentTeamRoster = async (req: Request, res: Response): Promise<void> => {
+      const teamId = Number(req.params.teamId);
+      const roster = await this.databaseService.getCurrentTeamRoster(teamId);
+
+      if(roster)
+      {
+        res.status(200).json(roster);
+      }
+      else
+      {
+        res.sendStatus(400);
+      }
+  };
+
+  public getTeamRoster = async (req: Request, res: Response): Promise<void> => {
+      const teamId = Number(req.params.teamId);
+      const week = Number(req.params.week);
+      const roster = await this.databaseService.getTeamRoster(teamId, week);
+
+      if(roster)
+      {
+        res.status(200).json(roster);
+      }
+      else
+      {
+        res.sendStatus(400);
+      }
+  };
+
 
   public getPublicLeagues = async (req: Request, res: Response): Promise<void> => {
       const leagues = await this.databaseService.getPublicLeagues();

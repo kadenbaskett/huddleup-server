@@ -19,11 +19,17 @@ class DatabaseRoute implements Routes {
 
     //************* GET ROUTES  **************/
     this.router.get(`${this.path}/players`, this.controller.getAllPlayersDetails);
+    this.router.get(`${this.path}/players/:playerId(\\d+)`, this.controller.getIndividualPlayerDetails);
     this.router.get(`${this.path}/players/stats`, this.controller.getAllPlayersStats);
     this.router.get(`${this.path}/players/stats/:playerId(\\d+)`, this.controller.getIndividualPlayerStats);
+    // this.router.get(`${this.path}/players/stats/current/:playerId(\\d+)`, this.controller.getCurrentPlayerStats);
 
-    this.router.get(`${this.path}/user/leagues/:userId(\\d+)`, this.controller.getUserLeagues);
+    this.router.get(`${this.path}/leagues/user/:userId(\\d+)`, this.controller.getUserLeagues);
     this.router.get(`${this.path}/leagues/public`, this.controller.getPublicLeagues);
+
+    this.router.get(`${this.path}/teams/user/:userId(\\d+)`, this.controller.getUserTeams);
+    this.router.get(`${this.path}/teams/currentroster/:teamId(\\d+)`, this.controller.getCurrentTeamRoster);
+    this.router.get(`${this.path}/teams/roster/:teamId(\\d+)/:week`, this.controller.getTeamRoster);
 
     //************* UNIMPLEMENTED  **************/
     this.router.get(`${this.path}/leagues/teams/:leagueId(\\d+)`, this.controller.empty);

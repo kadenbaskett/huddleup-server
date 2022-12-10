@@ -1,5 +1,4 @@
-import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats } from '@prisma/client';
-import { isDataURI } from 'class-validator';
+import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster } from '@prisma/client';
 
 class DatabaseService {
 
@@ -13,14 +12,13 @@ class DatabaseService {
 
     // **************** SETTERS & UPDATERS ********************** //
 
-    public async createLeague(): Promise<League>
+    public async createLeague(commissioner_id: number, name: string): Promise<League>
     {
         try {
             const league: League = await this.client.league.create({
                 data: {
-                    teams: null,
-                    commissioner_id: 0,
-                    settings: null,
+                    commissioner_id: commissioner_id,
+                    name: name,
                 },
             });
 
@@ -55,7 +53,7 @@ class DatabaseService {
         try {
             return await this.client.player.findMany({
                 include: {
-                    nfl_team: true,
+                    current_nfl_team: true,
                 },
             });
         }
@@ -67,23 +65,100 @@ class DatabaseService {
     }
 
 
-    public async getUserLeagues(userID: number): Promise<any>
+    public async getUserTeams(userID: number): Promise<Team[]>
     {
         try {
-            return await this.client.user.findFirst({
+            return await this.client.team.findMany({
                 where: {
-                    id: userID,
+                    managers: {
+                        some: {
+                            user_id: userID,
+                        },
+                    },
                 },
-                select: {
-                    League: true,
+            });
+        }
+        catch(e)
+        {
+            console.log(e);
+            return null;
+        }
+    }
+
+
+    public async getTeamRoster(teamID: number, week: number): Promise<Roster>
+    {
+        try {
+            const timeframe = await this.client.timeframe.findFirstOrThrow();
+            
+            if(timeframe)
+            {
+                return await this.client.roster.findFirstOrThrow({
+                    where: {
+                        team_id: teamID,
+                        week: week,
+                    },
+                    include: {
+                        players: true,
+                    },
+                });
+            }
+            else {
+                return null;
+            }
+        }
+        catch(e)
+        {
+            console.log(e);
+            return null;
+        }
+    }
+
+
+    public async getCurrentTeamRoster(teamID: number): Promise<Roster[]>
+    {
+        try {
+            const timeframe = await this.client.timeframe.findFirstOrThrow();
+            
+            if(timeframe)
+            {
+                return await this.client.roster.findMany({
+                    where: {
+                        team_id: teamID,
+                        week: timeframe.current_week,
+                    },
+                    include: {
+                        players: true,
+                    },
+                });
+            }
+            else {
+                return null;
+            }
+        }
+        catch(e)
+        {
+            console.log(e);
+            return null;
+        }
+    }
+
+
+    public async getUserLeagues(userID: number): Promise<League[]>
+    {
+        try {
+            return await this.client.league.findMany({
+                where: {
+                    teams: {
+                        some: {
+                            managers: {
+                                some: {
+                                    user_id: userID,
+                                },
+                            },
+                        },
+                    },
                 },
-                // include: {
-                //     teams: {
-                //         include: {
-                //             rosters: true,
-                //         },
-                //     },
-                // },
             });
         }
         catch(e)
@@ -119,15 +194,27 @@ class DatabaseService {
         }
     }
 
-
     public async getAllPlayersStats(): Promise<PlayerGameStats[]>
     {
         try {
             const timeframe = await this.client.timeframe.findFirstOrThrow();
-            // TODO use current season as filter
-            const allGames = await this.client.playerGameStats.findMany();
 
-            return allGames;
+            if(timeframe)
+            {
+                const allGames = await this.client.playerGameStats.findMany({
+                    where: {
+                        team: {
+                            season: timeframe.current_season,
+                        },
+                    },
+                });
+
+                return allGames;
+            }
+            else
+            {
+                return null;
+            }
         }
         catch(e)
         {
@@ -136,12 +223,16 @@ class DatabaseService {
         }
     }
 
-    // TODO also filter by season
     public async getPlayerGameLogs(player_id: number): Promise<PlayerGameStats[]>
     {
         try {
             const allGames = await this.client.playerGameStats.findMany({
-                where: { external_player_id: player_id },
+                where: { 
+                    external_player_id: player_id,
+                    team: {
+                        season: 2022,
+                    },
+                },
             });
 
             return allGames;
