@@ -91,7 +91,6 @@ class DatabaseController {
 
   public getIndividualPlayerStats = async (req: Request, res: Response): Promise<void> => {
       const playerID = Number(req.params.playerId);
-      console.log(playerID);
       const player = await this.databaseService.getPlayerGameLogs(playerID);
 
       if(player)
@@ -103,6 +102,22 @@ class DatabaseController {
         res.sendStatus(400);
       }
   };
+
+
+  public getUserLeagues = async (req: Request, res: Response): Promise<void> => {
+      const userId = Number(req.params.userId);
+      const leagues = await this.databaseService.getUserLeagues(userId);
+
+      if(leagues)
+      {
+        res.status(200).json(leagues);
+      }
+      else
+      {
+        res.sendStatus(400);
+      }
+  };
+
 
   public getNFLTeamGames = async (req: Request, res: Response): Promise<void> => {
       const teamID = Number(req.params.teamID);

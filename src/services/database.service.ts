@@ -66,6 +66,27 @@ class DatabaseService {
     }
 
 
+    public async getUserLeagues(userID: number): Promise<League[]>
+    {
+        try {
+            return await this.client.league.findMany({
+                include: {
+                    teams: {
+                        include: {
+                            rosters: true,
+                        },
+                    },
+                },
+            });
+        }
+        catch(e)
+        {
+            console.log(e);
+            return null;
+        }
+    }
+
+
     public async getAllPlayersStats(): Promise<PlayerGameStats[]>
     {
         try {
