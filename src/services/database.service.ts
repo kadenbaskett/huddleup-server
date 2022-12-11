@@ -1,4 +1,4 @@
-import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster, RosterPlayer } from '@prisma/client';
+import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster, RosterPlayer, Timeframe } from '@prisma/client';
 
 class DatabaseService {
 
@@ -56,6 +56,18 @@ class DatabaseService {
                     current_nfl_team: true,
                 },
             });
+        }
+        catch(e)
+        {
+            console.log(e);
+            return null;
+        }
+    }
+
+    public async getTimeframe(): Promise<Timeframe>
+    {
+        try {
+            return await this.client.timeframe.findFirstOrThrow();
         }
         catch(e)
         {

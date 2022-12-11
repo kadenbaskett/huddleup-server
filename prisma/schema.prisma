@@ -224,6 +224,8 @@ model NFLGame {
   player_game_stats PlayerGameStats[]
 }
 
+// rec_td, fumbles
+// double check the two point conversion stuff
 model PlayerGameStats {
   id                              Int     @id @default(autoincrement())
   external_player_id              Int

@@ -60,10 +60,21 @@ class DatabaseController {
       }
   };
 
+  public getTimeframe = async (req: Request, res: Response): Promise<void> => {
+      const timeframe = await this.databaseService.getTimeframe();
+
+      if(timeframe)
+      {
+        res.status(200).json(timeframe);
+      }
+      else
+      {
+        res.sendStatus(400);
+      }
+  };
 
   public getAllPlayersStats = async (req: Request, res: Response): Promise<void> => {
       const players = await this.databaseService.getAllPlayersStats();
-      console.log(players);
 
       if(players)
       {
