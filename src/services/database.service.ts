@@ -1,4 +1,4 @@
-import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster } from '@prisma/client';
+import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster, RosterPlayer } from '@prisma/client';
 
 class DatabaseService {
 
@@ -174,9 +174,9 @@ class DatabaseService {
         try {
             return await this.client.league.findMany({
                 where: {
-                    settings: {
-                        public_view: true,
-                    },
+                    // settings: {
+                    //     public_view: true,
+                    // },
                 },
                 include: {
                     teams: {
@@ -186,6 +186,53 @@ class DatabaseService {
                     },
                 },
             });
+        }
+        catch(e)
+        {
+            console.log(e);
+            return null;
+        }
+    }
+
+    public async getLeaguePlayers(leagueId: number): Promise<Player[]>
+    {
+        try {
+            const timeframe = await this.client.timeframe.findFirstOrThrow();
+
+            if(timeframe)
+            {
+                const players = await this.client.player.findMany({
+                    where: {
+
+                    },
+                    include: {
+                        roster_players: {
+                            where: {
+                                roster: {
+                                    team: {
+                                        league_id: leagueId, 
+                                    },
+                                    week: timeframe.current_week,
+                                },
+                            },
+                        },
+                        player_game_stats: {
+                            where: {
+                                game: {
+                                    season: timeframe.current_season,
+                                },
+                            },
+                        },
+                        current_nfl_team: true,
+                    },
+                });
+
+                return players;
+            }
+            else
+            {
+                return null;
+            }
         }
         catch(e)
         {

@@ -111,11 +111,11 @@ model WaiverSettings {
 // END OF LEAGUE SETTINGS 
 
 model User {
-  id           Int          @id @default(autoincrement())
-  username     String
-  email        String
-  user_to_team UserToTeam[]
-  leagues_user_is_commish       League[]
+  id                      Int          @id @default(autoincrement())
+  username                String
+  email                   String
+  user_to_team            UserToTeam[]
+  leagues_user_is_commish League[]
 }
 
 model UserToTeam {
@@ -158,6 +158,8 @@ model Roster {
 model RosterPlayer {
   id          Int     @id @default(autoincrement())
   external_id Int // NFL stats API player ID
+  player      Player?  @relation(fields: [player_id], references: [id])
+  player_id   Int?
   position    String // Necessary because (for example) an RB could be in the RB slot, flex slot, bench, or IR
   roster      Roster? @relation(fields: [roster_id], references: [id])
   roster_id   Int?
@@ -179,15 +181,15 @@ model Timeframe {
 }
 
 model NFLTeam {
-  id              Int               @id @default(autoincrement())
-  external_id     Int               @unique
-  key             String
-  city            String
-  name            String
-  season          Int
-  current_players Player[]
-  home_games      NFLGame[]         @relation("home_team")
-  away_games      NFLGame[]         @relation("away_team")
+  id                Int               @id @default(autoincrement())
+  external_id       Int               @unique
+  key               String
+  city              String
+  name              String
+  season            Int
+  current_players   Player[]
+  home_games        NFLGame[]         @relation("home_team")
+  away_games        NFLGame[]         @relation("away_team")
   player_game_stats PlayerGameStats[]
 }
 
@@ -202,6 +204,7 @@ model Player {
   current_nfl_team             NFLTeam           @relation(fields: [current_nfl_team_external_id], references: [external_id])
   current_nfl_team_external_id Int
   player_game_stats            PlayerGameStats[]
+  roster_players               RosterPlayer[]
 }
 
 model NFLGame {
