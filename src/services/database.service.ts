@@ -143,6 +143,47 @@ class DatabaseService {
         }
     }
 
+    public async getLeagueInfo(leagueId: number): Promise<League>
+    {
+        try {
+            return await this.client.league.findFirstOrThrow({
+                where: {
+                    id: leagueId,
+                },
+                include: {
+                    teams: {
+                        include: {
+                            rosters: {
+                                include: {
+                                    players: {
+                                        include: {
+                                            player: {
+                                                include: {
+                                                    player_game_stats: true,
+                                                    current_nfl_team: true,
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                            managers: {
+                                include: {
+                                    user: true,
+                                },
+                            },
+                        },
+                    },
+                },
+            });
+        }
+        catch(e)
+        {
+            console.log(e);
+            return null;
+        }
+    }
+
 
     public async getUserLeagues(userID: number): Promise<League[]>
     {
