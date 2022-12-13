@@ -15,9 +15,13 @@ class DatabaseRoute implements Routes {
 
     //************* POST ROUTES  **************/
     this.router.post(`${this.path}/league`, this.controller.createLeague);
+    this.router.post(`${this.path}/user`, this.controller.createUser);
 
 
     //************* GET ROUTES  **************/
+    // TODO add regular expression for the email
+    this.router.get(`${this.path}/user/:email`, this.controller.getUser);
+
     this.router.get(`${this.path}/players`, this.controller.getAllPlayersDetails);
     this.router.get(`${this.path}/players/:playerId(\\d+)`, this.controller.getIndividualPlayerDetails);
     this.router.get(`${this.path}/players/stats`, this.controller.getAllPlayersStats);
