@@ -1,4 +1,4 @@
-import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster, RosterPlayer, Timeframe } from '@prisma/client';
+import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster, RosterPlayer, Timeframe, User } from '@prisma/client';
 
 class DatabaseService {
 
@@ -29,8 +29,39 @@ class DatabaseService {
         }
     }
 
+    public async createUser(username: string, email: string): Promise<User>
+    {
+        try {
+            const user: User = await this.client.user.create({
+                data: {
+                    username,
+                    email,
+                },
+            });
+
+            return user;
+        }
+        catch(e) {
+           return null; 
+        }
+    }
+
 
     // **************** GETTERS ********************** //
+
+    public async getUser(email: string): Promise<User>
+    {
+        try {
+            const user: User = await this.client.user.findFirstOrThrow({
+                where: { email },
+            });
+
+            return user;
+        }
+        catch(e) {
+           return null; 
+        }
+    }
 
     public async getPlayerDetails(external_player_id: number): Promise<Player>
     {

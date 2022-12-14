@@ -31,7 +31,36 @@ class DatabaseController {
       }
   };
 
+  public createUser = async (req: Request, res: Response): Promise<void> => {
+      const username = req.body.username;
+      const email = req.body.email;
+      const user = await this.databaseService.createUser(username, email);
+
+      if(user)
+      {
+        res.status(200).json(user);
+      }
+      else
+      {
+        res.sendStatus(400);
+      }
+  };
+
   // **************** GETTERS ********************** //
+
+  public getUser = async (req: Request, res: Response): Promise<void> => {
+      const email = req.params.email;
+      const user = await this.databaseService.getUser(email);
+
+      if(user)
+      {
+        res.status(200).json(user);
+      }
+      else
+      {
+        res.sendStatus(400);
+      }
+  };
 
   public getNFLTeams = async (req: Request, res: Response): Promise<void> => {
       const teams = await this.databaseService.getNFLTeams();
