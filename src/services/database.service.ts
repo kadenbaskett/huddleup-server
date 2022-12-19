@@ -299,12 +299,22 @@ class DatabaseService {
                                     week: timeframe.current_week,
                                 },
                             },
+                            include: {
+                                roster: {
+                                    include: {
+                                        team: true,
+                                    },
+                                },
+                            },
                         },
                         player_game_stats: {
                             where: {
                                 game: {
                                     season: timeframe.current_season,
                                 },
+                            },
+                            include: {
+                                game: true,
                             },
                         },
                         current_nfl_team: true,
