@@ -287,7 +287,13 @@ class DatabaseService {
             {
                 const players = await this.client.player.findMany({
                     where: {
-
+                        status: {
+                            notIn: [ 'Practice Squad', 'Injured Reserve' ],
+                        },
+                        position: 
+                        {
+                            in: [ 'QB', 'RB', 'WR', 'TE' ],
+                        },
                     },
                     include: {
                         roster_players: {
@@ -318,6 +324,9 @@ class DatabaseService {
                             },
                         },
                         current_nfl_team: true,
+                    },
+                    // TODO order by projected stats
+                    orderBy: {
                     },
                 });
 
