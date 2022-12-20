@@ -205,11 +205,11 @@ class DatabaseController {
 
   public getLeaguePlayers = async (req: Request, res: Response): Promise<void> => {
       const leagueId = Number(req.params.leagueId);
-      const roster = await this.databaseService.getLeaguePlayers(leagueId);
+      const players = await this.databaseService.getLeaguePlayers(leagueId);
 
-      if(roster)
+      if(players)
       {
-        res.status(200).json(roster);
+        res.status(200).json(players);
       }
       else
       {

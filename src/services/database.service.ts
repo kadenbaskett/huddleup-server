@@ -288,7 +288,7 @@ class DatabaseService {
                 const players = await this.client.player.findMany({
                     where: {
                         status: {
-                            notIn: [ 'Practice Squad', 'Injured Reserve' ],
+                            notIn: [ 'Practice Squad' ],
                         },
                         position: 
                         {
