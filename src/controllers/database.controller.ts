@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import DatabaseService from '@services/database.service';
+import { request } from 'http';
 
 
 class DatabaseController {
@@ -19,8 +20,8 @@ class DatabaseController {
   // **************** SETTERS & UPDATERS ********************** //
 
   public createLeague = async (req: Request, res: Response): Promise<void> => {
-      const league = await this.databaseService.createLeague(0, 'name');
-
+      console.log('this is the request',req.body);
+      const league = await this.databaseService.createLeague(req.body.leagueName, req.body.teams, req.body.leagueDescription, req.body.publicOrPrivate, req.body.minPlayerRange, req.body.maxPlayerRange);
       if(league)
       {
         res.sendStatus(200);

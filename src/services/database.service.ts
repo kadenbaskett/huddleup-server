@@ -1,4 +1,4 @@
-import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster, RosterPlayer, Timeframe, User } from '@prisma/client';
+import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster, RosterPlayer, Timeframe, User, LeagueSettings } from '@prisma/client';
 
 class DatabaseService {
 
@@ -12,22 +12,46 @@ class DatabaseService {
 
     // **************** SETTERS & UPDATERS ********************** //
 
-    public async createLeague(commissioner_id: number, name: string): Promise<League>
+    public async createLeague(league_name:string, num_teams: number, summary: string, public_join: string, min_players: number, max_players: number): Promise<League>
     {
         try {
             const league: League = await this.client.league.create({
                 data: {
-                    commissioner_id: commissioner_id,
-                    name: name,
+                    commissioner_id: 1,
+                    name: league_name,
                 },
             });
-
             return league;
         }
         catch(e) {
            return null; 
         }
     }
+
+    /*
+    public async createLeagueSettings(num_teams: number, summary: string, public_join: boolean, public_view: boolean, min_players: number, max_players: number)
+    {
+        try{
+            const leagueSettings: LeagueSettings = await this.client.leagueSettings.create({
+                data: {
+                    num_teams,
+                    summary,
+                    public_join,
+                    public_view, 
+                    min_players,
+                    max_players,
+                },
+            });
+            return leagueSettings;
+        }
+        catch(e)
+        {
+            return null;
+        }
+    }
+    */
+    
+    
 
     public async createUser(username: string, email: string): Promise<User>
     {

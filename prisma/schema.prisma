@@ -16,7 +16,8 @@ model League {
   teams           Team[]
   commissioner    User            @relation(fields: [commissioner_id], references: [id])
   commissioner_id Int
-  settings        LeagueSettings?
+  // The way we have league setting right now makes it optional which should not be the case. League settings need to be required for a league to be created
+  //settings        LeagueSettings? @relation(fields: [settings_id], references: [id])
 }
 
 model LeagueSettings {
@@ -25,14 +26,18 @@ model LeagueSettings {
   summary              String
   public_join          Boolean
   public_view          Boolean
+  min_players          Int
+  max_players          Int
   draft_settings       DraftSettings    @relation(fields: [draft_settings_id], references: [id])
   roster_settings      RosterSettings   @relation(fields: [roster_settings_id], references: [id])
   scoring_settings     ScoringSettings  @relation(fields: [scoring_settings_id], references: [id])
   waiver_settings      WaiverSettings   @relation(fields: [waiver_settings_id], references: [id])
   trade_settings       TradeSettings    @relation(fields: [trade_settings_id], references: [id])
   schedule_settings    ScheduleSettings @relation(fields: [schedule_settings_id], references: [id])
-  league               League           @relation(fields: [league_id], references: [id])
-  league_id            Int              @unique
+  // have to switch this up to make sure that league is required to have a league settings\
+  // https://www.prisma.io/docs/concepts/components/prisma-schema/relations/one-to-one-relations
+  // league               League           @relation(fields: [league_id], references: [id])
+  // league_id            Int              @unique
   draft_settings_id    Int              @unique
   roster_settings_id   Int              @unique
   scoring_settings_id  Int              @unique
