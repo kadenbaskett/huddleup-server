@@ -46,6 +46,21 @@ class DatabaseController {
       }
   };
 
+  public addDropPlayer = async (req: Request, res: Response): Promise<void> => {
+      const addPlayerId = req.body.addPlayerId;
+      const dropPlayerIds = req.body.dropPlayerIds;
+      const rosterId = req.body.rosterId;
+
+      const roster = await this.databaseService.addDropPlayer(addPlayerId, dropPlayerIds[0], rosterId);
+
+      for(const id of dropPlayerIds.slice(1))
+      {
+        await this.databaseService.dropPlayer(id, rosterId); 
+      }
+
+      roster ? res.status(200).json(roster) : res.sendStatus(400);
+  };
+
   // **************** GETTERS ********************** //
 
   public getUser = async (req: Request, res: Response): Promise<void> => {
