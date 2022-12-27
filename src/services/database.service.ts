@@ -47,6 +47,49 @@ class DatabaseService {
     }
 
 
+    public async dropPlayer(dropPlayerId: number, rosterId: number): Promise<RosterPlayer>
+    {
+        try {
+            const rp: RosterPlayer = this.client.rosterPlayer.delete({
+                where: {
+                    player_id_roster_id: {
+                        player_id: dropPlayerId,
+                        roster_id: rosterId,
+                    },
+                },
+            });
+
+            return rp;
+        }
+        catch(e) {
+           return null; 
+        }
+    }
+
+    public async addDropPlayer(addPlayerId: number, dropPlayerId: number, rosterId: number): Promise<RosterPlayer>
+    {
+        try {
+            const rp: RosterPlayer = this.client.rosterPlayer.update({
+                where: {
+                    player_id_roster_id: {
+                        player_id: dropPlayerId,
+                        roster_id: rosterId,
+                    },
+                },
+                data: {
+                    player_id: addPlayerId,
+                },
+            });
+
+            return rp;
+        }
+        catch(e) {
+           return null; 
+        }
+    }
+
+
+
     // **************** GETTERS ********************** //
 
     public async getUser(email: string): Promise<User>
@@ -287,9 +330,6 @@ class DatabaseService {
             {
                 const players = await this.client.player.findMany({
                     where: {
-                        status: {
-                            notIn: [ 'Practice Squad' ],
-                        },
                         position: 
                         {
                             in: [ 'QB', 'RB', 'WR', 'TE' ],
@@ -329,6 +369,7 @@ class DatabaseService {
                     orderBy: {
                     },
                 });
+                console.log(players.find((p) => p.first_name === 'Rodney'));
 
                 return players;
             }
