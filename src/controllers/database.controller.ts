@@ -34,15 +34,22 @@ class DatabaseController {
   public createUser = async (req: Request, res: Response): Promise<void> => {
       const username = req.body.username;
       const email = req.body.email;
-      const user = await this.databaseService.createUser(username, email);
 
-      if(user)
-      {
-        res.status(200).json(user);
+      const validationMessage = await this.databaseService.validateNewUser(email, username);
+      
+      if(validationMessage == null){
+        const user = await this.databaseService.createUser(username, email);
+        if(user)
+        {
+          res.status(200).json(user);
+        }
+        else
+        {
+          res.sendStatus(500);
+        }
       }
-      else
-      {
-        res.sendStatus(400);
+      else{
+        res.status(400).send(validationMessage);
       }
   };
 
