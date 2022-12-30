@@ -88,7 +88,32 @@ class DatabaseService {
         }
     }
 
+    // **************** VALIDATE********************** //
+    public async validateNewUser(email: string, username: string): Promise<string>
+    {
+        try {
+            const userByEmail: User = await this.client.user.findFirst({
+                where: { email },
+            });
 
+            if(userByEmail){
+                return 'Account with email exists';
+            }
+
+            const userByUsername: User = await this.client.user.findFirst({
+                where: { username },
+            });
+
+            if(userByUsername){
+                return 'Account with username exists';
+            }
+
+            return null;
+        }
+        catch(err) {
+           return err; 
+        }
+    }
 
     // **************** GETTERS ********************** //
 
