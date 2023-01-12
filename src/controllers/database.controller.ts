@@ -130,23 +130,23 @@ class DatabaseController {
       const leagueId = Number(req.params.leagueId);
       const league = await this.databaseService.getLeagueInfo(leagueId);
 
-      const stats = {
-        ...league,
-        league: league.teams.map((t) => {
-          return t.rosters.map((r) => {
-            return r.players.map((p) => {
-              return p.player.player_game_stats.map((game) => {
-                return {
-                  ...game,
-                  points: calculateFantasyPoints(game),
-                };
-              });
-            });
-          });
-        }),
-      };
+      // const stats = {
+      //   ...league,
+      //   league: league.teams.map((t) => {
+      //     return t.rosters.map((r) => {
+      //       return r.players.map((p) => {
+      //         return p.player.player_game_stats.map((game) => {
+      //           return {
+      //             ...game,
+      //             points: calculateFantasyPoints(game),
+      //           };
+      //         });
+      //       });
+      //     });
+      //   }),
+      // };
 
-      stats ? res.status(200).json(stats) : res.sendStatus(400);
+      league ? res.status(200).json(league) : res.sendStatus(400);
   };
 
 
