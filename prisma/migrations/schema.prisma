@@ -17,6 +17,7 @@ model League {
   commissioner    User            @relation(fields: [commissioner_id], references: [id])
   commissioner_id Int
   settings        LeagueSettings?
+  Matchup         Matchup[]
 }
 
 model LeagueSettings {
@@ -137,6 +138,19 @@ model Team {
   draft_order      DraftOrder[]
   rosters          Roster[]
   managers         UserToTeam[]
+  home_matchups    Matchup[]    @relation(name: "home_team")
+  away_matchups    Matchup[]    @relation(name: "away_team")
+}
+
+model Matchup {
+  id           Int    @id @default(autoincrement())
+  week          Int
+  league       League @relation(fields: [league_id], references: [id])
+  league_id    Int
+  home_team    Team   @relation("home_team", fields: [home_team_id], references: [id])
+  home_team_id Int
+  away_team    Team   @relation("away_team", fields: [away_team_id], references: [id])
+  away_team_id Int
 }
 
 model TeamSettings {
@@ -158,12 +172,12 @@ model Roster {
 model RosterPlayer {
   id          Int     @id @default(autoincrement())
   external_id Int // NFL stats API player ID
-  player      Player?  @relation(fields: [player_id], references: [id])
+  player      Player? @relation(fields: [player_id], references: [id])
   player_id   Int?
   position    String // Necessary because (for example) an RB could be in the RB slot, flex slot, bench, or IR
   roster      Roster? @relation(fields: [roster_id], references: [id])
   roster_id   Int?
-  
+
   @@unique([player_id, roster_id])
 }
 
