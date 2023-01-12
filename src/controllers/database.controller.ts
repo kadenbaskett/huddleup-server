@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import DatabaseService from '@services/database.service';
+import { calculateFantasyPoints } from '@/services/general.service';
 
 
 class DatabaseController {
@@ -126,10 +127,16 @@ class DatabaseController {
 
   public getAllPlayersStats = async (req: Request, res: Response): Promise<void> => {
       const players = await this.databaseService.getAllPlayersStats();
+      const stats = players.map((p) => {
+        return {
+          ...p,
+          points: calculateFantasyPoints(p),
+        };
+      });
 
-      if(players)
+      if(stats)
       {
-        res.status(200).json(players);
+        res.status(200).json(stats);
       }
       else
       {
@@ -154,11 +161,17 @@ class DatabaseController {
 
   public getIndividualPlayerStats = async (req: Request, res: Response): Promise<void> => {
       const playerID = Number(req.params.playerId);
-      const player = await this.databaseService.getPlayerGameLogs(playerID);
+      const gameLogs = await this.databaseService.getPlayerGameLogs(playerID);
+      const stats = gameLogs.map((game) => {
+        return {
+          ...game,
+          points: calculateFantasyPoints(game),
+        };
+      });
 
-      if(player)
+      if(stats)
       {
-        res.status(200).json(player);
+        res.status(200).json(stats);
       }
       else
       {

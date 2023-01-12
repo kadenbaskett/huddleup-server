@@ -50,7 +50,7 @@ class DatabaseService {
     public async dropPlayer(dropPlayerId: number, rosterId: number): Promise<RosterPlayer>
     {
         try {
-            const rp: RosterPlayer = this.client.rosterPlayer.delete({
+            const rp: RosterPlayer = await this.client.rosterPlayer.delete({
                 where: {
                     player_id_roster_id: {
                         player_id: dropPlayerId,
@@ -69,7 +69,7 @@ class DatabaseService {
     public async addDropPlayer(addPlayerId: number, dropPlayerId: number, rosterId: number): Promise<RosterPlayer>
     {
         try {
-            const rp: RosterPlayer = this.client.rosterPlayer.update({
+            const rp: RosterPlayer = await this.client.rosterPlayer.update({
                 where: {
                     player_id_roster_id: {
                         player_id: dropPlayerId,
@@ -262,6 +262,7 @@ class DatabaseService {
                     id: leagueId,
                 },
                 include: {
+                    matchups: true,
                     teams: {
                         include: {
                             rosters: {
@@ -283,6 +284,8 @@ class DatabaseService {
                                     user: true,
                                 },
                             },
+                            home_matchups: true,
+                            away_matchups: true,
                         },
                     },
                 },
@@ -394,7 +397,6 @@ class DatabaseService {
                     orderBy: {
                     },
                 });
-                console.log(players.find((p) => p.first_name === 'Rodney'));
 
                 return players;
             }
