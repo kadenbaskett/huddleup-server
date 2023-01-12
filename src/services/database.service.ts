@@ -163,10 +163,42 @@ class DatabaseService {
         }
     }
 
-    public async getTimeframe(): Promise<Timeframe>
+        public async getTimeframe(): Promise<Timeframe>
     {
         try {
-            return await this.client.timeframe.findFirstOrThrow();
+            const current = await this.client.timeframe.findFirst({
+                where: {
+                    type: 1,
+                    has_ended: false,
+                    has_started: true,
+                },
+            });
+
+            if(!current)
+            {
+                const prev = await this.client.timeframe.findFirst({
+                    where: {
+                        type: 1,
+                        has_ended: true,
+                        has_started: true,
+                    },
+                    orderBy: [
+                        {
+                            week: 'desc',
+                        },
+                        {
+                            season: 'desc',
+                        },
+                    ],
+                    take: 1,
+                });
+
+                return prev;
+            }
+            else
+            {
+                return current;
+            }
         }
         catch(e)
         {
@@ -174,7 +206,6 @@ class DatabaseService {
             return null;
         }
     }
-
 
     public async getUserTeams(userID: number): Promise<Team[]>
     {
