@@ -148,6 +148,17 @@ CREATE TABLE `TeamSettings` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
+CREATE TABLE `Matchup` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `week` INTEGER NOT NULL,
+    `league_id` INTEGER NOT NULL,
+    `home_team_id` INTEGER NOT NULL,
+    `away_team_id` INTEGER NOT NULL,
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `Roster` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `week` INTEGER NOT NULL,
@@ -165,12 +176,30 @@ CREATE TABLE `RosterPlayer` (
     `position` VARCHAR(191) NOT NULL,
     `roster_id` INTEGER NULL,
 
+    UNIQUE INDEX `RosterPlayer_player_id_roster_id_key`(`player_id`, `roster_id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `TransactionPlayer` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `transaction_id` INTEGER NOT NULL,
+    `player_id` INTEGER NOT NULL,
+    `sending_team_id` INTEGER NOT NULL,
+    `receiving_team_id` INTEGER NOT NULL,
+
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
 CREATE TABLE `Transaction` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `type` VARCHAR(191) NOT NULL,
+    `status` VARCHAR(191) NOT NULL,
+    `creation_date` DATETIME(3) NOT NULL,
+    `expiration_date` DATETIME(3) NOT NULL,
+    `execution_date` DATETIME(3) NOT NULL,
+    `week` INTEGER NOT NULL,
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -178,10 +207,13 @@ CREATE TABLE `Transaction` (
 -- CreateTable
 CREATE TABLE `Timeframe` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `current_week` INTEGER NOT NULL,
-    `current_season` INTEGER NOT NULL,
+    `week` INTEGER NOT NULL,
+    `season` INTEGER NOT NULL,
+    `type` INTEGER NOT NULL,
+    `has_started` BOOLEAN NOT NULL,
+    `has_ended` BOOLEAN NOT NULL,
 
-    UNIQUE INDEX `Timeframe_current_season_current_week_key`(`current_season`, `current_week`),
+    UNIQUE INDEX `Timeframe_season_week_type_key`(`season`, `week`, `type`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -241,9 +273,11 @@ CREATE TABLE `PlayerGameStats` (
     `completions` INTEGER NOT NULL,
     `pass_td` INTEGER NOT NULL,
     `interceptions_thrown` INTEGER NOT NULL,
+    `fumbles` INTEGER NOT NULL,
     `receptions` INTEGER NOT NULL,
     `targets` INTEGER NOT NULL,
     `rec_yards` INTEGER NOT NULL,
+    `rec_td` INTEGER NOT NULL,
     `rush_yards` INTEGER NOT NULL,
     `rush_attempts` INTEGER NOT NULL,
     `rush_td` INTEGER NOT NULL,
@@ -301,6 +335,15 @@ ALTER TABLE `Team` ADD CONSTRAINT `Team_league_id_fkey` FOREIGN KEY (`league_id`
 ALTER TABLE `Team` ADD CONSTRAINT `Team_team_settings_id_fkey` FOREIGN KEY (`team_settings_id`) REFERENCES `TeamSettings`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE `Matchup` ADD CONSTRAINT `Matchup_league_id_fkey` FOREIGN KEY (`league_id`) REFERENCES `League`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Matchup` ADD CONSTRAINT `Matchup_home_team_id_fkey` FOREIGN KEY (`home_team_id`) REFERENCES `Team`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Matchup` ADD CONSTRAINT `Matchup_away_team_id_fkey` FOREIGN KEY (`away_team_id`) REFERENCES `Team`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE `Roster` ADD CONSTRAINT `Roster_team_id_fkey` FOREIGN KEY (`team_id`) REFERENCES `Team`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -308,6 +351,18 @@ ALTER TABLE `RosterPlayer` ADD CONSTRAINT `RosterPlayer_player_id_fkey` FOREIGN 
 
 -- AddForeignKey
 ALTER TABLE `RosterPlayer` ADD CONSTRAINT `RosterPlayer_roster_id_fkey` FOREIGN KEY (`roster_id`) REFERENCES `Roster`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `TransactionPlayer` ADD CONSTRAINT `TransactionPlayer_transaction_id_fkey` FOREIGN KEY (`transaction_id`) REFERENCES `Transaction`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `TransactionPlayer` ADD CONSTRAINT `TransactionPlayer_player_id_fkey` FOREIGN KEY (`player_id`) REFERENCES `Player`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `TransactionPlayer` ADD CONSTRAINT `TransactionPlayer_sending_team_id_fkey` FOREIGN KEY (`sending_team_id`) REFERENCES `Team`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `TransactionPlayer` ADD CONSTRAINT `TransactionPlayer_receiving_team_id_fkey` FOREIGN KEY (`receiving_team_id`) REFERENCES `Team`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Player` ADD CONSTRAINT `Player_current_nfl_team_external_id_fkey` FOREIGN KEY (`current_nfl_team_external_id`) REFERENCES `NFLTeam`(`external_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
