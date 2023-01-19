@@ -285,7 +285,11 @@ class DatabaseService {
                                         include: {
                                             player: {
                                                 include: {
-                                                    player_game_stats: true,
+                                                    player_game_stats: {
+                                                        include: {
+                                                            game: true,
+                                                        },
+                                                    },
                                                     current_nfl_team: true,
                                                 },
                                             },
