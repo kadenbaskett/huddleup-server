@@ -298,6 +298,16 @@ class DatabaseService {
                                     user: true,
                                 },
                             },
+                            proposed_transactions: {
+                                include: {
+                                    players: true,
+                                },
+                            },
+                            related_transactions: {
+                                include: {
+                                    players: true,
+                                },
+                            },
                             home_matchups: true,
                             away_matchups: true,
                         },
