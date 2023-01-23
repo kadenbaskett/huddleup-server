@@ -185,8 +185,7 @@ CREATE TABLE `TransactionPlayer` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `transaction_id` INTEGER NOT NULL,
     `player_id` INTEGER NOT NULL,
-    `sending_team_id` INTEGER NOT NULL,
-    `receiving_team_id` INTEGER NOT NULL,
+    `joins_proposing_team` BOOLEAN NOT NULL DEFAULT false,
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -200,6 +199,8 @@ CREATE TABLE `Transaction` (
     `expiration_date` DATETIME(3) NOT NULL,
     `execution_date` DATETIME(3) NOT NULL,
     `week` INTEGER NOT NULL,
+    `proposing_team_id` INTEGER NOT NULL DEFAULT 0,
+    `related_team_id` INTEGER NOT NULL DEFAULT 0,
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -359,10 +360,10 @@ ALTER TABLE `TransactionPlayer` ADD CONSTRAINT `TransactionPlayer_transaction_id
 ALTER TABLE `TransactionPlayer` ADD CONSTRAINT `TransactionPlayer_player_id_fkey` FOREIGN KEY (`player_id`) REFERENCES `Player`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `TransactionPlayer` ADD CONSTRAINT `TransactionPlayer_sending_team_id_fkey` FOREIGN KEY (`sending_team_id`) REFERENCES `Team`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `Transaction` ADD CONSTRAINT `Transaction_proposing_team_id_fkey` FOREIGN KEY (`proposing_team_id`) REFERENCES `Team`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `TransactionPlayer` ADD CONSTRAINT `TransactionPlayer_receiving_team_id_fkey` FOREIGN KEY (`receiving_team_id`) REFERENCES `Team`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `Transaction` ADD CONSTRAINT `Transaction_related_team_id_fkey` FOREIGN KEY (`related_team_id`) REFERENCES `Team`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Player` ADD CONSTRAINT `Player_current_nfl_team_external_id_fkey` FOREIGN KEY (`current_nfl_team_external_id`) REFERENCES `NFLTeam`(`external_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
