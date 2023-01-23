@@ -25,7 +25,7 @@ class DatabaseService {
             return league;
         }
         catch(e) {
-           return null; 
+           return null;
         }
     }
 
@@ -42,7 +42,7 @@ class DatabaseService {
             return user;
         }
         catch(e) {
-           return null; 
+           return null;
         }
     }
 
@@ -62,7 +62,7 @@ class DatabaseService {
             return rp;
         }
         catch(e) {
-           return null; 
+           return null;
         }
     }
 
@@ -84,7 +84,7 @@ class DatabaseService {
             return rp;
         }
         catch(e) {
-           return null; 
+           return null;
         }
     }
 
@@ -111,7 +111,7 @@ class DatabaseService {
             return null;
         }
         catch(err) {
-           return err; 
+           return err;
         }
     }
 
@@ -127,7 +127,7 @@ class DatabaseService {
             return user;
         }
         catch(e) {
-           return null; 
+           return null;
         }
     }
 
@@ -304,13 +304,21 @@ class DatabaseService {
                             },
                             proposed_transactions: {
                                 include: {
-                                    players: true,
+                                    players: {
+                                      include: {
+                                        player: true,
+                                      },
+                                    },
                                 },
                             },
                             related_transactions: {
-                                include: {
-                                    players: true,
+                              include: {
+                                players: {
+                                  include: {
+                                    player: true,
+                                  },
                                 },
+                            },
                             },
                             home_matchups: true,
                             away_matchups: true,
@@ -388,7 +396,7 @@ class DatabaseService {
                         where: {
                             roster: {
                                 team: {
-                                    league_id: leagueId, 
+                                    league_id: leagueId,
                                 },
                                 week: timeframe.week,
                             },
@@ -452,7 +460,7 @@ class DatabaseService {
             const timeframe = await this.getTimeframe();
 
             return await this.client.playerGameStats.findMany({
-                where: { 
+                where: {
                     external_player_id: player_id,
                     team: {
                         season: timeframe.season,
@@ -484,7 +492,7 @@ class DatabaseService {
         try {
             return this.client.nFLGame.findMany({
                 where: {
-                    OR: 
+                    OR:
                     [
                         { home_team_id: external_team_id },
                         { away_team_id: external_team_id },
