@@ -129,19 +129,19 @@ model UserToTeam {
 }
 
 model Team {
-  id               Int                 @id @default(autoincrement())
-  name             String
-  league           League              @relation(fields: [league_id], references: [id])
-  league_id        Int
-  settings         TeamSettings        @relation(fields: [team_settings_id], references: [id])
-  team_settings_id Int                 @unique
-  draft_order      DraftOrder[]
-  rosters          Roster[]
-  managers         UserToTeam[]
-  home_matchups    Matchup[]           @relation(name: "home_team")
-  away_matchups    Matchup[]           @relation(name: "away_team")
-  players_sent     TransactionPlayer[] @relation(name: "sending_team")
-  players_received TransactionPlayer[] @relation(name: "receiving_team")
+  id                    Int           @id @default(autoincrement())
+  name                  String
+  league                League        @relation(fields: [league_id], references: [id])
+  league_id             Int
+  settings              TeamSettings  @relation(fields: [team_settings_id], references: [id])
+  team_settings_id      Int           @unique
+  draft_order           DraftOrder[]
+  rosters               Roster[]
+  managers              UserToTeam[]
+  home_matchups         Matchup[]     @relation(name: "home_team")
+  away_matchups         Matchup[]     @relation(name: "away_team")
+  proposed_transactions Transaction[] @relation(name: "proposing_team")
+  related_transactions  Transaction[] @relation(name: "related_team")
 }
 
 model TeamSettings {
@@ -184,26 +184,27 @@ model RosterPlayer {
 }
 
 model TransactionPlayer {
-  id                Int         @id @default(autoincrement())
-  transaction       Transaction @relation(fields: [transaction_id], references: [id])
-  transaction_id    Int
-  player            Player      @relation(fields: [player_id], references: [id])
-  player_id         Int
-  sending_team      Team        @relation(name: "sending_team", fields: [sending_team_id], references: [id])
-  sending_team_id   Int
-  receiving_team    Team        @relation(name: "receiving_team", fields: [receiving_team_id], references: [id])
-  receiving_team_id Int
+  id                 Int         @id @default(autoincrement())
+  transaction        Transaction @relation(fields: [transaction_id], references: [id])
+  transaction_id     Int
+  player             Player      @relation(fields: [player_id], references: [id])
+  player_id          Int
+  joins_proposing_team Boolean  @default(false)
 }
 
 model Transaction {
-  id              Int                 @id @default(autoincrement())
-  type            String
-  status          String
-  creation_date   DateTime
-  expiration_date DateTime
-  execution_date  DateTime
-  week            Int
-  players         TransactionPlayer[]
+  id                Int                 @id @default(autoincrement())
+  type              String
+  status            String
+  creation_date     DateTime
+  expiration_date   DateTime
+  execution_date    DateTime
+  week              Int
+  proposing_team    Team                @relation(name: "proposing_team", fields: [proposing_team_id], references: [id])
+  proposing_team_id Int                 @default(0)
+  related_team      Team                @relation(name: "related_team", fields: [related_team_id], references: [id])
+  related_team_id   Int                 @default(0)
+  players           TransactionPlayer[]
 }
 
 //***************** MODELS USED FOR STORING API DATA ***************************
