@@ -15,7 +15,6 @@ class DatabaseController {
       res.sendStatus(200);
   };
 
-
   // **************** SETTERS & UPDATERS ********************** //
 
   public createLeague = async (req: Request, res: Response): Promise<void> => {
@@ -97,7 +96,6 @@ class DatabaseController {
       }
   };
 
-
   public getAllPlayersDetails = async (req: Request, res: Response): Promise<void> => {
       const players = await this.databaseService.getAllPlayersDetails();
 
@@ -151,7 +149,6 @@ class DatabaseController {
       }
   };
 
-
   public getIndividualPlayerStats = async (req: Request, res: Response): Promise<void> => {
       const playerID = Number(req.params.playerId);
       const player = await this.databaseService.getPlayerGameLogs(playerID);
@@ -165,7 +162,6 @@ class DatabaseController {
         res.sendStatus(400);
       }
   };
-
 
   public getUserLeagues = async (req: Request, res: Response): Promise<void> => {
       const userId = Number(req.params.userId);
@@ -181,7 +177,6 @@ class DatabaseController {
       }
   };
 
-
   public getLeagueInfo = async (req: Request, res: Response): Promise<void> => {
       const leagueId = Number(req.params.leagueId);
       const league = await this.databaseService.getLeagueInfo(leagueId);
@@ -195,7 +190,6 @@ class DatabaseController {
         res.sendStatus(400);
       }
   };
-
 
   public getUserTeams = async (req: Request, res: Response): Promise<void> => {
       const teamId = Number(req.params.teamId);
@@ -254,7 +248,6 @@ class DatabaseController {
       }
   };
 
-
   public getPublicLeagues = async (req: Request, res: Response): Promise<void> => {
       const leagues = await this.databaseService.getPublicLeagues();
 
@@ -267,7 +260,6 @@ class DatabaseController {
         res.sendStatus(400);
       }
   };
-
 
   public getNFLTeamGames = async (req: Request, res: Response): Promise<void> => {
       const teamID = Number(req.params.teamID);
@@ -283,7 +275,34 @@ class DatabaseController {
       }
   };
 
+  public getNews = async (req: Request, res: Response): Promise<void> => {
+    const amountOfNews = Number(req.params.amount);
+    const news = await this.databaseService.getNews(amountOfNews);
 
+    if(news)
+    {
+      //convert news content from buffer back to string
+      const convertedNews = news.map(x => {
+        return {
+          id: x.id,
+          external_id: x.external_id,
+          updated_date: x.updated_date,
+          time_posted: x.time_posted,
+          title: x.title,
+          content: x.content.toString('utf8'),
+          external_player_id: x.external_player_id,
+          external_team_id: x.external_team_id,
+          source: x.source,
+          source_url: x.source_url,
+      };
+    });
+      res.status(200).json(convertedNews);
+    }
+    else
+    {
+      res.sendStatus(400);
+    }
+};
 }
 
 export default DatabaseController;
