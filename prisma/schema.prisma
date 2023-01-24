@@ -10,6 +10,19 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model News {
+  id                 Int    @id @default(autoincrement())
+  external_id        Int    @unique // NFL stats API news ID
+  updated_date       String
+  time_posted        String
+  title              String
+  content            Bytes
+  external_player_id Int
+  external_team_id   Int
+  source             String
+  source_url         String
+}
+
 model League {
   id              Int             @id @default(autoincrement())
   name            String
@@ -181,8 +194,11 @@ model RosterPlayer {
   position    String // Necessary because (for example) an RB could be in the RB slot, flex slot, bench, or IR
   roster      Roster? @relation(fields: [roster_id], references: [id])
   roster_id   Int?
+<<<<<<< HEAD
+=======
 
   @@unique([player_id, roster_id])
+>>>>>>> develop
 }
 
 model TransactionPlayer {

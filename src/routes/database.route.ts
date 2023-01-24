@@ -34,6 +34,8 @@ class DatabaseRoute implements Routes {
 
     this.router.get(`${this.path}/timeframe`, this.controller.getTimeframe);
 
+    this.router.get(`${this.path}/news/:amount(\\d+)`, this.controller.getNews);
+
     this.router.get(`${this.path}/leagues/user/:userId(\\d+)`, this.controller.getUserLeagues);
     this.router.get(`${this.path}/leagues/public`, this.controller.getPublicLeagues);
     this.router.get(`${this.path}/league/:leagueId(\\d+)`, this.controller.getLeagueInfo);

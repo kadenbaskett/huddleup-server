@@ -1,4 +1,4 @@
-import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster, RosterPlayer, Timeframe, User } from '@prisma/client';
+import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster, RosterPlayer, Timeframe, User, News } from '@prisma/client';
 
 class DatabaseService {
 
@@ -507,7 +507,22 @@ class DatabaseService {
         }
     }
 
-
+    public async getNews(amount: number): Promise<News[]>
+    {
+        try {
+            const news = this.client.news.findMany({
+                take: amount,
+            },
+            );
+            
+            return news;
+        }
+        catch(e)
+        {
+            console.log(e);
+            return null;
+        }
+    }
 }
 
 export default DatabaseService;
