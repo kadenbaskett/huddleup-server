@@ -26,10 +26,12 @@ model News {
 model League {
   id              Int             @id @default(autoincrement())
   name            String
+  description     String
   teams           Team[]
   commissioner    User            @relation(fields: [commissioner_id], references: [id])
   commissioner_id Int
   settings        LeagueSettings?
+  matchups        Matchup[]
 }
 
 model LeagueSettings {
@@ -121,7 +123,7 @@ model WaiverSettings {
   league_settings       LeagueSettings?
 }
 
-// END OF LEAGUE SETTINGS 
+// END OF LEAGUE SETTINGS
 
 model User {
   id                      Int          @id @default(autoincrement())
@@ -129,6 +131,7 @@ model User {
   email                   String
   user_to_team            UserToTeam[]
   leagues_user_is_commish League[]
+  proposed_transactions   Transaction[] @relation(name: "user")
 }
 
 model UserToTeam {
@@ -141,20 +144,35 @@ model UserToTeam {
 }
 
 model Team {
-  id               Int          @id @default(autoincrement())
-  name             String
-  league           League       @relation(fields: [league_id], references: [id])
-  league_id        Int
-  settings         TeamSettings @relation(fields: [team_settings_id], references: [id])
-  team_settings_id Int          @unique
-  draft_order      DraftOrder[]
-  rosters          Roster[]
-  managers         UserToTeam[]
+  id                    Int           @id @default(autoincrement())
+  name                  String
+  league                League        @relation(fields: [league_id], references: [id])
+  league_id             Int
+  settings              TeamSettings  @relation(fields: [team_settings_id], references: [id])
+  team_settings_id      Int           @unique
+  draft_order           DraftOrder[]
+  rosters               Roster[]
+  managers              UserToTeam[]
+  home_matchups         Matchup[]     @relation(name: "home_team")
+  away_matchups         Matchup[]     @relation(name: "away_team")
+  proposed_transactions Transaction[] @relation(name: "proposing_team")
+  related_transactions  Transaction[] @relation(name: "related_team")
 }
 
 model TeamSettings {
   id   Int   @id @default(autoincrement())
   team Team?
+}
+
+model Matchup {
+  id           Int    @id @default(autoincrement())
+  week         Int
+  league       League @relation(fields: [league_id], references: [id])
+  league_id    Int
+  home_team    Team   @relation("home_team", fields: [home_team_id], references: [id])
+  home_team_id Int
+  away_team    Team   @relation("away_team", fields: [away_team_id], references: [id])
+  away_team_id Int
 }
 
 // We will keep history of the roster that played each week, and with the current week, we will track the current roster as players are added/dropped
@@ -176,21 +194,50 @@ model RosterPlayer {
   position    String // Necessary because (for example) an RB could be in the RB slot, flex slot, bench, or IR
   roster      Roster? @relation(fields: [roster_id], references: [id])
   roster_id   Int?
+<<<<<<< HEAD
+=======
+
+  @@unique([player_id, roster_id])
+>>>>>>> develop
 }
 
-// TODO how to track transactions, waivers, trades, and league matchups
+model TransactionPlayer {
+  id                 Int         @id @default(autoincrement())
+  transaction        Transaction @relation(fields: [transaction_id], references: [id])
+  transaction_id     Int
+  player             Player      @relation(fields: [player_id], references: [id])
+  player_id          Int
+  joins_proposing_team Boolean  @default(false)
+}
+
 model Transaction {
-  id Int @id @default(autoincrement())
+  id                Int                 @id @default(autoincrement())
+  type              String
+  status            String
+  creation_date     DateTime
+  expiration_date   DateTime
+  execution_date    DateTime
+  week              Int
+  user              User                @relation(name:"user", fields: [user_id], references: [id])
+  user_id           Int                 @default(0)
+  proposing_team    Team                @relation(name: "proposing_team", fields: [proposing_team_id], references: [id])
+  proposing_team_id Int                 @default(0)
+  related_team      Team                @relation(name: "related_team", fields: [related_team_id], references: [id])
+  related_team_id   Int                 @default(0)
+  players           TransactionPlayer[]
 }
 
 //***************** MODELS USED FOR STORING API DATA ***************************
 
 model Timeframe {
-  id             Int @id @default(autoincrement())
-  current_week   Int
-  current_season Int
+  id          Int     @id @default(autoincrement())
+  week        Int
+  season      Int
+  type        Int // 1 is the regular season
+  has_started Boolean
+  has_ended   Boolean
 
-  @@unique([current_season, current_week])
+  @@unique([season, week, type])
 }
 
 model NFLTeam {
@@ -207,17 +254,18 @@ model NFLTeam {
 }
 
 model Player {
-  id                           Int               @id @default(autoincrement())
-  external_id                  Int               @unique
+  id                           Int                 @id @default(autoincrement())
+  external_id                  Int                 @unique
   first_name                   String
   last_name                    String
   position                     String
   status                       String
   photo_url                    String
-  current_nfl_team             NFLTeam           @relation(fields: [current_nfl_team_external_id], references: [external_id])
+  current_nfl_team             NFLTeam             @relation(fields: [current_nfl_team_external_id], references: [external_id])
   current_nfl_team_external_id Int
   player_game_stats            PlayerGameStats[]
   roster_players               RosterPlayer[]
+  transaction_players          TransactionPlayer[]
 }
 
 model NFLGame {
@@ -237,7 +285,6 @@ model NFLGame {
   player_game_stats PlayerGameStats[]
 }
 
-// rec_td, fumbles
 // double check the two point conversion stuff
 model PlayerGameStats {
   id                              Int     @id @default(autoincrement())
@@ -248,9 +295,11 @@ model PlayerGameStats {
   completions                     Int
   pass_td                         Int
   interceptions_thrown            Int
+  fumbles                         Int
   receptions                      Int
   targets                         Int
   rec_yards                       Int
+  rec_td                          Int
   rush_yards                      Int
   rush_attempts                   Int
   rush_td                         Int

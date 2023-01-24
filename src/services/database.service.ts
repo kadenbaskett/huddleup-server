@@ -25,7 +25,7 @@ class DatabaseService {
             return league;
         }
         catch(e) {
-           return null; 
+           return null;
         }
     }
 
@@ -42,7 +42,7 @@ class DatabaseService {
             return user;
         }
         catch(e) {
-           return null; 
+           return null;
         }
     }
 
@@ -50,7 +50,7 @@ class DatabaseService {
     public async dropPlayer(dropPlayerId: number, rosterId: number): Promise<RosterPlayer>
     {
         try {
-            const rp: RosterPlayer = this.client.rosterPlayer.delete({
+            const rp: RosterPlayer = await this.client.rosterPlayer.delete({
                 where: {
                     player_id_roster_id: {
                         player_id: dropPlayerId,
@@ -62,14 +62,14 @@ class DatabaseService {
             return rp;
         }
         catch(e) {
-           return null; 
+           return null;
         }
     }
 
     public async addDropPlayer(addPlayerId: number, dropPlayerId: number, rosterId: number): Promise<RosterPlayer>
     {
         try {
-            const rp: RosterPlayer = this.client.rosterPlayer.update({
+            const rp: RosterPlayer = await this.client.rosterPlayer.update({
                 where: {
                     player_id_roster_id: {
                         player_id: dropPlayerId,
@@ -84,7 +84,7 @@ class DatabaseService {
             return rp;
         }
         catch(e) {
-           return null; 
+           return null;
         }
     }
 
@@ -111,7 +111,7 @@ class DatabaseService {
             return null;
         }
         catch(err) {
-           return err; 
+           return err;
         }
     }
 
@@ -127,18 +127,16 @@ class DatabaseService {
             return user;
         }
         catch(e) {
-           return null; 
+           return null;
         }
     }
 
     public async getPlayerDetails(external_player_id: number): Promise<Player>
     {
         try {
-            const player = await this.client.player.findFirstOrThrow({
+            return await this.client.player.findFirstOrThrow({
                 where: { external_id: external_player_id },
             });
-
-            return player;
         }
         catch(e)
         {
@@ -163,10 +161,41 @@ class DatabaseService {
         }
     }
 
+    // Gets the current timeframe, or if the season has ended, gets the last regular season timeframe
     public async getTimeframe(): Promise<Timeframe>
     {
         try {
-            return await this.client.timeframe.findFirstOrThrow();
+            const current = await this.client.timeframe.findFirst({
+                where: {
+                    type: 1,
+                    has_ended: false,
+                    has_started: true,
+                },
+            });
+
+            if(!current)
+            {
+                return await this.client.timeframe.findFirstOrThrow({
+                    where: {
+                        type: 1,
+                        has_ended: true,
+                        has_started: true,
+                    },
+                    orderBy: [
+                        {
+                            week: 'desc',
+                        },
+                        {
+                            season: 'desc',
+                        },
+                    ],
+                    take: 1,
+                });
+            }
+            else
+            {
+                return current;
+            }
         }
         catch(e)
         {
@@ -174,7 +203,6 @@ class DatabaseService {
             return null;
         }
     }
-
 
     public async getUserTeams(userID: number): Promise<Team[]>
     {
@@ -200,23 +228,15 @@ class DatabaseService {
     public async getTeamRoster(teamID: number, week: number): Promise<Roster>
     {
         try {
-            const timeframe = await this.client.timeframe.findFirstOrThrow();
-            
-            if(timeframe)
-            {
-                return await this.client.roster.findFirstOrThrow({
-                    where: {
-                        team_id: teamID,
-                        week: week,
-                    },
-                    include: {
-                        players: true,
-                    },
-                });
-            }
-            else {
-                return null;
-            }
+            return await this.client.roster.findFirstOrThrow({
+                where: {
+                    team_id: teamID,
+                    week: week,
+                },
+                include: {
+                    players: true,
+                },
+            });
         }
         catch(e)
         {
@@ -229,23 +249,17 @@ class DatabaseService {
     public async getCurrentTeamRoster(teamID: number): Promise<Roster[]>
     {
         try {
-            const timeframe = await this.client.timeframe.findFirstOrThrow();
-            
-            if(timeframe)
-            {
-                return await this.client.roster.findMany({
-                    where: {
-                        team_id: teamID,
-                        week: timeframe.current_week,
-                    },
-                    include: {
-                        players: true,
-                    },
-                });
-            }
-            else {
-                return null;
-            }
+            const timeframe = await this.getTimeframe();
+
+            return await this.client.roster.findMany({
+                where: {
+                    team_id: teamID,
+                    week: timeframe.week,
+                },
+                include: {
+                    players: true,
+                },
+            });
         }
         catch(e)
         {
@@ -262,6 +276,7 @@ class DatabaseService {
                     id: leagueId,
                 },
                 include: {
+                    matchups: true,
                     teams: {
                         include: {
                             rosters: {
@@ -270,7 +285,11 @@ class DatabaseService {
                                         include: {
                                             player: {
                                                 include: {
-                                                    player_game_stats: true,
+                                                    player_game_stats: {
+                                                        include: {
+                                                            game: true,
+                                                        },
+                                                    },
                                                     current_nfl_team: true,
                                                 },
                                             },
@@ -283,6 +302,26 @@ class DatabaseService {
                                     user: true,
                                 },
                             },
+                            proposed_transactions: {
+                                include: {
+                                    players: {
+                                      include: {
+                                        player: true,
+                                      },
+                                    },
+                                },
+                            },
+                            related_transactions: {
+                              include: {
+                                players: {
+                                  include: {
+                                    player: true,
+                                  },
+                                },
+                            },
+                            },
+                            home_matchups: true,
+                            away_matchups: true,
                         },
                     },
                 },
@@ -349,59 +388,44 @@ class DatabaseService {
     public async getLeaguePlayers(leagueId: number): Promise<Player[]>
     {
         try {
-            const timeframe = await this.client.timeframe.findFirstOrThrow();
+            const timeframe = await this.getTimeframe();
 
-            if(timeframe)
-            {
-                const players = await this.client.player.findMany({
-                    where: {
-                        position: 
-                        {
-                            in: [ 'QB', 'RB', 'WR', 'TE' ],
-                        },
-                    },
-                    include: {
-                        roster_players: {
-                            where: {
-                                roster: {
-                                    team: {
-                                        league_id: leagueId, 
-                                    },
-                                    week: timeframe.current_week,
+            return await this.client.player.findMany({
+                include: {
+                    roster_players: {
+                        where: {
+                            roster: {
+                                team: {
+                                    league_id: leagueId,
                                 },
+                                week: timeframe.week,
                             },
-                            include: {
-                                roster: {
-                                    include: {
-                                        team: true,
-                                    },
+                        },
+                        include: {
+                            roster: {
+                                include: {
+                                    team: true,
                                 },
                             },
                         },
-                        player_game_stats: {
-                            where: {
-                                game: {
-                                    season: timeframe.current_season,
-                                },
-                            },
-                            include: {
-                                game: true,
+                    },
+                    player_game_stats: {
+                        where: {
+                            game: {
+                                season: timeframe.season,
                             },
                         },
-                        current_nfl_team: true,
+                        include: {
+                            game: true,
+                        },
                     },
-                    // TODO order by projected stats
-                    orderBy: {
-                    },
-                });
-                console.log(players.find((p) => p.first_name === 'Rodney'));
+                    current_nfl_team: true,
+                },
+                // TODO order by projected stats
+                orderBy: {
+                },
+            });
 
-                return players;
-            }
-            else
-            {
-                return null;
-            }
         }
         catch(e)
         {
@@ -413,24 +437,15 @@ class DatabaseService {
     public async getAllPlayersStats(): Promise<PlayerGameStats[]>
     {
         try {
-            const timeframe = await this.client.timeframe.findFirstOrThrow();
+            const timeframe = await this.getTimeframe();
 
-            if(timeframe)
-            {
-                const allGames = await this.client.playerGameStats.findMany({
-                    where: {
-                        team: {
-                            season: timeframe.current_season,
-                        },
+            return await this.client.playerGameStats.findMany({
+                where: {
+                    team: {
+                        season: timeframe.season,
                     },
-                });
-
-                return allGames;
-            }
-            else
-            {
-                return null;
-            }
+                },
+            });
         }
         catch(e)
         {
@@ -442,16 +457,16 @@ class DatabaseService {
     public async getPlayerGameLogs(player_id: number): Promise<PlayerGameStats[]>
     {
         try {
-            const allGames = await this.client.playerGameStats.findMany({
-                where: { 
+            const timeframe = await this.getTimeframe();
+
+            return await this.client.playerGameStats.findMany({
+                where: {
                     external_player_id: player_id,
                     team: {
-                        season: 2022,
+                        season: timeframe.season,
                     },
                 },
             });
-
-            return allGames;
         }
         catch(e)
         {
@@ -475,17 +490,15 @@ class DatabaseService {
     public async getNFLTeamGames(external_team_id: number): Promise<NFLGame[]>
     {
         try {
-            const games = this.client.nFLGame.findMany({
+            return this.client.nFLGame.findMany({
                 where: {
-                    OR: 
+                    OR:
                     [
                         { home_team_id: external_team_id },
                         { away_team_id: external_team_id },
                     ],
                 },
             });
-
-            return games;
         }
         catch(e)
         {
