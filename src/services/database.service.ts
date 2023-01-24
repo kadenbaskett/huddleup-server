@@ -381,6 +381,7 @@ class DatabaseService {
                                         player: true,
                                       },
                                     },
+                                    user: true,
                                 },
                             },
                             related_transactions: {
