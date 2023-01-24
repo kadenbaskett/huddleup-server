@@ -1,4 +1,4 @@
-import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster, RosterPlayer, Timeframe, User, News } from '@prisma/client';
+import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster, RosterPlayer, Timeframe, User, LeagueSettings, WaiverSettings, ScheduleSettings, ScoringSettings, RosterSettings, DraftSettings, TradeSettings, News } from '@prisma/client';
 
 class DatabaseService {
 
@@ -12,13 +12,15 @@ class DatabaseService {
 
     // **************** SETTERS & UPDATERS ********************** //
 
-    public async createLeague(commissioner_id: number, name: string): Promise<League>
+    public async createLeague(commissioner_id: number, name: string, description: string, settings: LeagueSettings): Promise<League>
     {
         try {
             const league: League = await this.client.league.create({
                 data: {
-                    commissioner_id: commissioner_id,
-                    name: name,
+                    commissioner_id,
+                    name,
+                    description,
+                    settings_id: settings.id,
                 },
             });
 
@@ -28,6 +30,76 @@ class DatabaseService {
            return null;
         }
     }
+
+    public async createLeagueSettings(numTeams: number, publicJoin: boolean, minPlayers: number, maxPlayers: number, scoring: string): Promise<LeagueSettings>
+    {
+      try {
+        const waiverSettings: WaiverSettings = await this.client.waiverSettings.create({
+          data: {
+            waiver_period_hours: 24,
+            waiver_order_type: 0,
+          },
+        });
+        const scheduleSettings: ScheduleSettings = await this.client.scheduleSettings.create({
+          data: {
+            start_week: 1,
+            end_week: 14,
+            playoff_start_week: 15,
+            playoff_end_week: 18,
+            num_playoff_teams: 4,
+            weeks_per_playoff_matchup: 1,
+          },
+        });
+        const scoringSettings: ScoringSettings = await this.client.scoringSettings.create({
+          data: {
+            points_per_reception: scoring === 'PPR' ? 1 : 0,
+          },
+        });
+        const tradeSettings: TradeSettings = await this.client.tradeSettings.create({
+          data: {
+            review_period_hours: 24,
+            votes_to_veto_trade: 1,
+          },
+        });
+        const rosterSettings: RosterSettings = await this.client.rosterSettings.create({
+          data: {
+            num_qb: 1,
+            num_rb: 2,
+            num_wr: 2,
+            num_te: 1,
+            num_flex: 1,
+            roster_size_limit: 15,
+          },
+        });
+        const draftDate = new Date();
+        draftDate.setDate(draftDate.getDate() + 10);
+        const draftSettings: DraftSettings = await this.client.draftSettings.create({
+          data: {
+            date: draftDate,
+            seconds_per_pick: 30,
+            order_generation_type: 0,
+          },
+        });
+        const leagueSettings: LeagueSettings = await this.client.leagueSettings.create({
+          data: {
+            num_teams: numTeams,
+            public_join: publicJoin,
+            min_players: minPlayers,
+            max_players: maxPlayers,
+            draft_settings_id: draftSettings.id,
+            roster_settings_id: rosterSettings.id,
+            scoring_settings_id: scoringSettings.id,
+            waiver_settings_id: waiverSettings.id,
+            trade_settings_id: tradeSettings.id,
+            schedule_settings_id: scheduleSettings.id,
+          },
+        });
+        return leagueSettings;
+      } catch(e) {
+        return null;
+      }
+    }
+
 
     public async createUser(username: string, email: string): Promise<User>
     {
@@ -514,7 +586,7 @@ class DatabaseService {
                 take: amount,
             },
             );
-            
+
             return news;
         }
         catch(e)

@@ -30,24 +30,24 @@ model League {
   teams           Team[]
   commissioner    User            @relation(fields: [commissioner_id], references: [id])
   commissioner_id Int
-  settings        LeagueSettings?
+  settings        LeagueSettings  @relation(name: "settings", fields: [settings_id], references: [id])
+  settings_id     Int             @unique
   matchups        Matchup[]
 }
 
 model LeagueSettings {
   id                   Int              @id @default(autoincrement())
   num_teams            Int
-  summary              String
   public_join          Boolean
-  public_view          Boolean
+  min_players          Int
+  max_players          Int
   draft_settings       DraftSettings    @relation(fields: [draft_settings_id], references: [id])
   roster_settings      RosterSettings   @relation(fields: [roster_settings_id], references: [id])
   scoring_settings     ScoringSettings  @relation(fields: [scoring_settings_id], references: [id])
   waiver_settings      WaiverSettings   @relation(fields: [waiver_settings_id], references: [id])
   trade_settings       TradeSettings    @relation(fields: [trade_settings_id], references: [id])
   schedule_settings    ScheduleSettings @relation(fields: [schedule_settings_id], references: [id])
-  league               League           @relation(fields: [league_id], references: [id])
-  league_id            Int              @unique
+  league               League?          @relation(name: "settings")
   draft_settings_id    Int              @unique
   roster_settings_id   Int              @unique
   scoring_settings_id  Int              @unique
@@ -82,15 +82,13 @@ model RosterSettings {
   num_wr            Int
   num_te            Int
   num_flex          Int
-  num_ir            Int
-  num_def           Int
   roster_size_limit Int
   league_settings   LeagueSettings?
 }
 
 model TradeSettings {
   id                  Int             @id @default(autoincrement())
-  trade_deadline      DateTime
+  trade_deadline      DateTime?
   review_period_hours Int
   votes_to_veto_trade Float // maybe have this be a percentage of the league?
   league_settings     LeagueSettings?
@@ -110,14 +108,11 @@ model ScheduleSettings {
   playoff_end_week          Int
   num_playoff_teams         Int
   weeks_per_playoff_matchup Int
-  playoff_seed_tiebreaker   Int // maybe default to the team that scored the most points during the season
   league_settings           LeagueSettings?
 }
 
 model WaiverSettings {
   id                    Int             @id @default(autoincrement())
-  lineup_lock_time_type Int // 0 -> lock at individual game time (for now we should just keep this as the only option)
-  aquisition_limit      Int
   waiver_period_hours   Int
   waiver_order_type     Int // 0-> reverse standings each week (this should be default and only option for now)
   league_settings       LeagueSettings?
