@@ -13,6 +13,7 @@ datasource db {
 model League {
   id              Int             @id @default(autoincrement())
   name            String
+  description     String
   teams           Team[]
   commissioner    User            @relation(fields: [commissioner_id], references: [id])
   commissioner_id Int
@@ -109,7 +110,7 @@ model WaiverSettings {
   league_settings       LeagueSettings?
 }
 
-// END OF LEAGUE SETTINGS 
+// END OF LEAGUE SETTINGS
 
 model User {
   id                      Int          @id @default(autoincrement())
@@ -117,6 +118,7 @@ model User {
   email                   String
   user_to_team            UserToTeam[]
   leagues_user_is_commish League[]
+  proposed_transactions   Transaction[] @relation(name: "user")
 }
 
 model UserToTeam {
@@ -200,6 +202,8 @@ model Transaction {
   expiration_date   DateTime
   execution_date    DateTime
   week              Int
+  user              User                @relation(name:"user", fields: [user_id], references: [id])
+  user_id           Int                 @default(0)
   proposing_team    Team                @relation(name: "proposing_team", fields: [proposing_team_id], references: [id])
   proposing_team_id Int                 @default(0)
   related_team      Team                @relation(name: "related_team", fields: [related_team_id], references: [id])
