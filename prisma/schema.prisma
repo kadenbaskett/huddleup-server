@@ -194,6 +194,7 @@ model RosterPlayer {
   position    String // Necessary because (for example) an RB could be in the RB slot, flex slot, bench, or IR
   roster      Roster? @relation(fields: [roster_id], references: [id])
   roster_id   Int?
+  
   @@unique([player_id, roster_id])
 }
 
