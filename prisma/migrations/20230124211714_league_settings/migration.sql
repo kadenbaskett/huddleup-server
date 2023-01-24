@@ -2,8 +2,11 @@
 CREATE TABLE `League` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(191) NOT NULL,
+    `description` VARCHAR(191) NOT NULL,
     `commissioner_id` INTEGER NOT NULL,
+    `settings_id` INTEGER NOT NULL,
 
+    UNIQUE INDEX `League_settings_id_key`(`settings_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -11,10 +14,9 @@ CREATE TABLE `League` (
 CREATE TABLE `LeagueSettings` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `num_teams` INTEGER NOT NULL,
-    `summary` VARCHAR(191) NOT NULL,
     `public_join` BOOLEAN NOT NULL,
-    `public_view` BOOLEAN NOT NULL,
-    `league_id` INTEGER NOT NULL,
+    `min_players` INTEGER NOT NULL,
+    `max_players` INTEGER NOT NULL,
     `draft_settings_id` INTEGER NOT NULL,
     `roster_settings_id` INTEGER NOT NULL,
     `scoring_settings_id` INTEGER NOT NULL,
@@ -22,7 +24,6 @@ CREATE TABLE `LeagueSettings` (
     `trade_settings_id` INTEGER NOT NULL,
     `schedule_settings_id` INTEGER NOT NULL,
 
-    UNIQUE INDEX `LeagueSettings_league_id_key`(`league_id`),
     UNIQUE INDEX `LeagueSettings_draft_settings_id_key`(`draft_settings_id`),
     UNIQUE INDEX `LeagueSettings_roster_settings_id_key`(`roster_settings_id`),
     UNIQUE INDEX `LeagueSettings_scoring_settings_id_key`(`scoring_settings_id`),
@@ -60,8 +61,6 @@ CREATE TABLE `RosterSettings` (
     `num_wr` INTEGER NOT NULL,
     `num_te` INTEGER NOT NULL,
     `num_flex` INTEGER NOT NULL,
-    `num_ir` INTEGER NOT NULL,
-    `num_def` INTEGER NOT NULL,
     `roster_size_limit` INTEGER NOT NULL,
 
     PRIMARY KEY (`id`)
@@ -70,7 +69,7 @@ CREATE TABLE `RosterSettings` (
 -- CreateTable
 CREATE TABLE `TradeSettings` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `trade_deadline` DATETIME(3) NOT NULL,
+    `trade_deadline` DATETIME(3) NULL,
     `review_period_hours` INTEGER NOT NULL,
     `votes_to_veto_trade` DOUBLE NOT NULL,
 
@@ -94,7 +93,6 @@ CREATE TABLE `ScheduleSettings` (
     `playoff_end_week` INTEGER NOT NULL,
     `num_playoff_teams` INTEGER NOT NULL,
     `weeks_per_playoff_matchup` INTEGER NOT NULL,
-    `playoff_seed_tiebreaker` INTEGER NOT NULL,
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -102,8 +100,6 @@ CREATE TABLE `ScheduleSettings` (
 -- CreateTable
 CREATE TABLE `WaiverSettings` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `lineup_lock_time_type` INTEGER NOT NULL,
-    `aquisition_limit` INTEGER NOT NULL,
     `waiver_period_hours` INTEGER NOT NULL,
     `waiver_order_type` INTEGER NOT NULL,
 
@@ -199,6 +195,7 @@ CREATE TABLE `Transaction` (
     `expiration_date` DATETIME(3) NOT NULL,
     `execution_date` DATETIME(3) NOT NULL,
     `week` INTEGER NOT NULL,
+    `user_id` INTEGER NOT NULL DEFAULT 0,
     `proposing_team_id` INTEGER NOT NULL DEFAULT 0,
     `related_team_id` INTEGER NOT NULL DEFAULT 0,
 
@@ -297,6 +294,9 @@ CREATE TABLE `PlayerGameStats` (
 ALTER TABLE `League` ADD CONSTRAINT `League_commissioner_id_fkey` FOREIGN KEY (`commissioner_id`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE `League` ADD CONSTRAINT `League_settings_id_fkey` FOREIGN KEY (`settings_id`) REFERENCES `LeagueSettings`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE `LeagueSettings` ADD CONSTRAINT `LeagueSettings_draft_settings_id_fkey` FOREIGN KEY (`draft_settings_id`) REFERENCES `DraftSettings`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -313,9 +313,6 @@ ALTER TABLE `LeagueSettings` ADD CONSTRAINT `LeagueSettings_trade_settings_id_fk
 
 -- AddForeignKey
 ALTER TABLE `LeagueSettings` ADD CONSTRAINT `LeagueSettings_schedule_settings_id_fkey` FOREIGN KEY (`schedule_settings_id`) REFERENCES `ScheduleSettings`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `LeagueSettings` ADD CONSTRAINT `LeagueSettings_league_id_fkey` FOREIGN KEY (`league_id`) REFERENCES `League`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `DraftOrder` ADD CONSTRAINT `DraftOrder_draft_settings_id_fkey` FOREIGN KEY (`draft_settings_id`) REFERENCES `DraftSettings`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -358,6 +355,9 @@ ALTER TABLE `TransactionPlayer` ADD CONSTRAINT `TransactionPlayer_transaction_id
 
 -- AddForeignKey
 ALTER TABLE `TransactionPlayer` ADD CONSTRAINT `TransactionPlayer_player_id_fkey` FOREIGN KEY (`player_id`) REFERENCES `Player`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Transaction` ADD CONSTRAINT `Transaction_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Transaction` ADD CONSTRAINT `Transaction_proposing_team_id_fkey` FOREIGN KEY (`proposing_team_id`) REFERENCES `Team`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
