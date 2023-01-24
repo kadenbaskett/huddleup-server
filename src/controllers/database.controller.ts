@@ -19,7 +19,13 @@ class DatabaseController {
   // **************** SETTERS & UPDATERS ********************** //
 
   public createLeague = async (req: Request, res: Response): Promise<void> => {
-      const league = await this.databaseService.createLeague(0, 'name');
+
+    const{ leagueName, numTeams, minPlayers, maxPlayers, leagueDescription, publicJoin, scoring, commissionerId } = req.body;
+
+    // create league settings
+    const settings = await this.databaseService.createLeagueSettings(numTeams, publicJoin, minPlayers, maxPlayers, scoring );
+
+    const league = await this.databaseService.createLeague(commissionerId, leagueName, leagueDescription, settings );
 
       league ? res.sendStatus(200) : res.sendStatus(400);
   };
@@ -29,7 +35,7 @@ class DatabaseController {
       const email = req.body.email;
 
       const validationMessage = await this.databaseService.validateNewUser(email, username);
-      
+
       if(validationMessage == null){
         const user = await this.databaseService.createUser(username, email);
 
@@ -49,7 +55,7 @@ class DatabaseController {
 
       for(const id of dropPlayerIds.slice(1))
       {
-        await this.databaseService.dropPlayer(id, rosterId); 
+        await this.databaseService.dropPlayer(id, rosterId);
       }
 
       roster ? res.status(200).json(roster) : res.sendStatus(400);
