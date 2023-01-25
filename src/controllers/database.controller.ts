@@ -1,6 +1,7 @@
 import DatabaseService from '@services/database.service';
 import { calculateFantasyPoints } from '@/services/general.service';
 import { Request, Response } from 'express';
+import { Roster, RosterPlayer } from '@prisma/client';
 
 
 class DatabaseController {
@@ -40,20 +41,34 @@ class DatabaseController {
       }
   };
 
+
+  public addPlayer = async (req: Request, res: Response): Promise<void> => {
+      const addPlayerId = req.body.addPlayerId;
+      const addPlayerExternalId = req.body.addPlayerExternalId;
+      const rosterId = req.body.rosterId;
+      const teamId = req.body.teamId;
+      const userId = req.body.userId;
+      const week = req.body.week;
+
+      const rp: RosterPlayer = await this.databaseService.addPlayer(addPlayerId, addPlayerExternalId, rosterId, teamId, userId, week);
+
+      rp ? res.status(200).json(rp) : res.sendStatus(400);
+  };
+
   public addDropPlayer = async (req: Request, res: Response): Promise<void> => {
       const addPlayerId = req.body.addPlayerId;
+      const addPlayerExternalId = req.body.addPlayerExternalId;
       const dropPlayerIds = req.body.dropPlayerIds;
       const rosterId = req.body.rosterId;
+      const teamId = req.body.teamId;
+      const userId = req.body.userId;
+      const week = req.body.week;
 
-      const roster = await this.databaseService.addDropPlayer(addPlayerId, dropPlayerIds[0], rosterId);
-
-      for(const id of dropPlayerIds.slice(1))
-      {
-        await this.databaseService.dropPlayer(id, rosterId); 
-      }
+      const roster: Roster = await this.databaseService.addDropPlayer(addPlayerId, addPlayerExternalId, dropPlayerIds, rosterId, teamId, userId, week);
 
       roster ? res.status(200).json(roster) : res.sendStatus(400);
   };
+  
 
   // **************** GETTERS ********************** //
 
