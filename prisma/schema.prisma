@@ -1,4 +1,4 @@
-// This is your Prisma schema file,
+/// This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
@@ -10,28 +10,15 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model News {
-  id                 Int    @id @default(autoincrement())
-  external_id        Int    @unique // NFL stats API news ID
-  updated_date       String
-  time_posted        String
-  title              String
-  content            Bytes
-  external_player_id Int
-  external_team_id   Int
-  source             String
-  source_url         String
-}
-
 model League {
-  id              Int             @id @default(autoincrement())
+  id              Int            @id @default(autoincrement())
   name            String
   description     String
   teams           Team[]
-  commissioner    User            @relation(fields: [commissioner_id], references: [id])
+  commissioner    User           @relation(fields: [commissioner_id], references: [id])
   commissioner_id Int
-  settings        LeagueSettings  @relation(name: "settings", fields: [settings_id], references: [id])
-  settings_id     Int             @unique
+  settings        LeagueSettings @relation(name: "settings", fields: [settings_id], references: [id])
+  settings_id     Int            @unique
   matchups        Matchup[]
 }
 
@@ -112,16 +99,16 @@ model ScheduleSettings {
 }
 
 model WaiverSettings {
-  id                    Int             @id @default(autoincrement())
-  waiver_period_hours   Int
-  waiver_order_type     Int // 0-> reverse standings each week (this should be default and only option for now)
-  league_settings       LeagueSettings?
+  id                  Int             @id @default(autoincrement())
+  waiver_period_hours Int
+  waiver_order_type   Int // 0-> reverse standings each week (this should be default and only option for now)
+  league_settings     LeagueSettings?
 }
 
 // END OF LEAGUE SETTINGS
 
 model User {
-  id                      Int          @id @default(autoincrement())
+  id                      Int           @id @default(autoincrement())
   username                String
   email                   String
   user_to_team            UserToTeam[]
@@ -189,17 +176,17 @@ model RosterPlayer {
   position    String // Necessary because (for example) an RB could be in the RB slot, flex slot, bench, or IR
   roster      Roster? @relation(fields: [roster_id], references: [id])
   roster_id   Int?
-  
+
   @@unique([player_id, roster_id])
 }
 
 model TransactionPlayer {
-  id                 Int         @id @default(autoincrement())
-  transaction        Transaction @relation(fields: [transaction_id], references: [id])
-  transaction_id     Int
-  player             Player      @relation(fields: [player_id], references: [id])
-  player_id          Int
-  joins_proposing_team Boolean  @default(false)
+  id                   Int         @id @default(autoincrement())
+  transaction          Transaction @relation(fields: [transaction_id], references: [id])
+  transaction_id       Int
+  player               Player      @relation(fields: [player_id], references: [id])
+  player_id            Int
+  joins_proposing_team Boolean     @default(false)
 }
 
 model Transaction {
@@ -210,7 +197,7 @@ model Transaction {
   expiration_date   DateTime
   execution_date    DateTime
   week              Int
-  user              User                @relation(name:"user", fields: [user_id], references: [id])
+  user              User                @relation(name: "user", fields: [user_id], references: [id])
   user_id           Int                 @default(0)
   proposing_team    Team                @relation(name: "proposing_team", fields: [proposing_team_id], references: [id])
   proposing_team_id Int                 @default(0)
@@ -220,6 +207,21 @@ model Transaction {
 }
 
 //***************** MODELS USED FOR STORING API DATA ***************************
+
+model News {
+  id                  Int    @id @default(autoincrement())
+  external_id         Int    @unique // NFL stats API news ID
+  updated_date        String
+  time_posted         String
+  title               String
+  content             Bytes
+  external_player_id  Int?
+  external_player_id2 Int?
+  external_team_id    Int?
+  external_team_id2   Int?
+  source              String
+  source_url          String
+}
 
 model Timeframe {
   id          Int     @id @default(autoincrement())

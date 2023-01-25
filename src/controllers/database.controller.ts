@@ -208,7 +208,9 @@ class DatabaseController {
           title: x.title,
           content: x.content.toString('utf8'),
           external_player_id: x.external_player_id,
+          external_player_id2: x.external_player_id2,
           external_team_id: x.external_team_id,
+          external_team_id2: x.external_team_id2,
           source: x.source,
           source_url: x.source_url,
       };
