@@ -502,6 +502,11 @@ class DatabaseService {
                                         player: true,
                                       },
                                     },
+                                    transaction_actions: {
+                                      include: {
+                                        user: true,
+                                      },
+                                    },
                                     user: true,
                                 },
                             },

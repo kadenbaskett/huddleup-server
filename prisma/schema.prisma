@@ -114,6 +114,7 @@ model User {
   user_to_team            UserToTeam[]
   leagues_user_is_commish League[]
   proposed_transactions   Transaction[] @relation(name: "user")
+  transaction_actions     TransactionAction[]
 }
 
 model UserToTeam {
@@ -190,20 +191,31 @@ model TransactionPlayer {
 }
 
 model Transaction {
+  id                  Int                 @id @default(autoincrement())
+  type                String
+  status              String
+  creation_date       DateTime
+  expiration_date     DateTime
+  execution_date      DateTime
+  week                Int
+  user                User                @relation(name: "user", fields: [user_id], references: [id])
+  user_id             Int                 @default(0)
+  proposing_team      Team                @relation(name: "proposing_team", fields: [proposing_team_id], references: [id])
+  proposing_team_id   Int                 @default(0)
+  related_team        Team                @relation(name: "related_team", fields: [related_team_id], references: [id])
+  related_team_id     Int                 @default(0)
+  players             TransactionPlayer[]
+  transaction_actions TransactionAction[]
+}
+
+model TransactionAction {
   id                Int                 @id @default(autoincrement())
-  type              String
-  status            String
-  creation_date     DateTime
-  expiration_date   DateTime
-  execution_date    DateTime
-  week              Int
-  user              User                @relation(name: "user", fields: [user_id], references: [id])
+  transaction_id    Int                 @default(0)
+  transaction       Transaction         @relation(fields: [transaction_id], references: [id])
   user_id           Int                 @default(0)
-  proposing_team    Team                @relation(name: "proposing_team", fields: [proposing_team_id], references: [id])
-  proposing_team_id Int                 @default(0)
-  related_team      Team                @relation(name: "related_team", fields: [related_team_id], references: [id])
-  related_team_id   Int                 @default(0)
-  players           TransactionPlayer[]
+  user              User                @relation(fields: [user_id], references: [id])
+  action_date       DateTime
+  action_type       String
 }
 
 //***************** MODELS USED FOR STORING API DATA ***************************

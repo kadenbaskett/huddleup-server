@@ -1,21 +1,4 @@
 -- CreateTable
-CREATE TABLE `News` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `external_id` INTEGER NOT NULL,
-    `updated_date` VARCHAR(191) NOT NULL,
-    `time_posted` VARCHAR(191) NOT NULL,
-    `title` VARCHAR(191) NOT NULL,
-    `content` LONGBLOB NOT NULL,
-    `external_player_id` INTEGER NOT NULL,
-    `external_team_id` INTEGER NOT NULL,
-    `source` VARCHAR(191) NOT NULL,
-    `source_url` VARCHAR(191) NOT NULL,
-
-    UNIQUE INDEX `News_external_id_key`(`external_id`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
 CREATE TABLE `League` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(191) NOT NULL,
@@ -220,6 +203,36 @@ CREATE TABLE `Transaction` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
+CREATE TABLE `TransactionAction` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `transaction_id` INTEGER NOT NULL DEFAULT 0,
+    `user_id` INTEGER NOT NULL DEFAULT 0,
+    `action_date` DATETIME(3) NOT NULL,
+    `action_type` VARCHAR(191) NOT NULL,
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `News` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `external_id` INTEGER NOT NULL,
+    `updated_date` VARCHAR(191) NOT NULL,
+    `time_posted` VARCHAR(191) NOT NULL,
+    `title` VARCHAR(191) NOT NULL,
+    `content` LONGBLOB NOT NULL,
+    `external_player_id` INTEGER NULL,
+    `external_player_id2` INTEGER NULL,
+    `external_team_id` INTEGER NULL,
+    `external_team_id2` INTEGER NULL,
+    `source` VARCHAR(191) NOT NULL,
+    `source_url` VARCHAR(191) NOT NULL,
+
+    UNIQUE INDEX `News_external_id_key`(`external_id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `Timeframe` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `week` INTEGER NOT NULL,
@@ -307,6 +320,35 @@ CREATE TABLE `PlayerGameStats` (
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+-- CreateTable
+CREATE TABLE `PlayerProjections` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `external_player_id` INTEGER NOT NULL,
+    `external_game_id` INTEGER NOT NULL,
+    `pass_yards` INTEGER NOT NULL,
+    `pass_attempts` INTEGER NOT NULL,
+    `completions` INTEGER NOT NULL,
+    `pass_td` INTEGER NOT NULL,
+    `interceptions_thrown` INTEGER NOT NULL,
+    `fumbles` INTEGER NOT NULL,
+    `receptions` INTEGER NOT NULL,
+    `targets` INTEGER NOT NULL,
+    `rec_yards` INTEGER NOT NULL,
+    `rec_td` INTEGER NOT NULL,
+    `rush_yards` INTEGER NOT NULL,
+    `rush_attempts` INTEGER NOT NULL,
+    `rush_td` INTEGER NOT NULL,
+    `two_point_conversion_passes` INTEGER NOT NULL,
+    `two_point_conversion_receptions` INTEGER NOT NULL,
+    `two_point_conversion_runs` INTEGER NOT NULL,
+    `team_id` INTEGER NOT NULL,
+    `player_id` INTEGER NOT NULL,
+    `game_id` INTEGER NOT NULL,
+
+    UNIQUE INDEX `PlayerProjections_external_game_id_external_player_id_key`(`external_game_id`, `external_player_id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 -- AddForeignKey
 ALTER TABLE `League` ADD CONSTRAINT `League_commissioner_id_fkey` FOREIGN KEY (`commissioner_id`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
@@ -383,6 +425,12 @@ ALTER TABLE `Transaction` ADD CONSTRAINT `Transaction_proposing_team_id_fkey` FO
 ALTER TABLE `Transaction` ADD CONSTRAINT `Transaction_related_team_id_fkey` FOREIGN KEY (`related_team_id`) REFERENCES `Team`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE `TransactionAction` ADD CONSTRAINT `TransactionAction_transaction_id_fkey` FOREIGN KEY (`transaction_id`) REFERENCES `Transaction`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `TransactionAction` ADD CONSTRAINT `TransactionAction_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE `Player` ADD CONSTRAINT `Player_current_nfl_team_external_id_fkey` FOREIGN KEY (`current_nfl_team_external_id`) REFERENCES `NFLTeam`(`external_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -399,3 +447,12 @@ ALTER TABLE `PlayerGameStats` ADD CONSTRAINT `PlayerGameStats_player_id_fkey` FO
 
 -- AddForeignKey
 ALTER TABLE `PlayerGameStats` ADD CONSTRAINT `PlayerGameStats_game_id_fkey` FOREIGN KEY (`game_id`) REFERENCES `NFLGame`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `PlayerProjections` ADD CONSTRAINT `PlayerProjections_team_id_fkey` FOREIGN KEY (`team_id`) REFERENCES `NFLTeam`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `PlayerProjections` ADD CONSTRAINT `PlayerProjections_player_id_fkey` FOREIGN KEY (`player_id`) REFERENCES `Player`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `PlayerProjections` ADD CONSTRAINT `PlayerProjections_game_id_fkey` FOREIGN KEY (`game_id`) REFERENCES `NFLGame`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
