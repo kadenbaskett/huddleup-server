@@ -1,7 +1,6 @@
 import DatabaseService from '@services/database.service';
 import { calculateFantasyPoints } from '@/services/general.service';
 import { Request, Response } from 'express';
-import { Roster, RosterPlayer } from '@prisma/client';
 
 
 class DatabaseController {
@@ -47,34 +46,20 @@ class DatabaseController {
       }
   };
 
-
-  public addPlayer = async (req: Request, res: Response): Promise<void> => {
-      const addPlayerId = req.body.addPlayerId;
-      const addPlayerExternalId = req.body.addPlayerExternalId;
-      const rosterId = req.body.rosterId;
-      const teamId = req.body.teamId;
-      const userId = req.body.userId;
-      const week = req.body.week;
-
-      const rp: RosterPlayer = await this.databaseService.addPlayer(addPlayerId, addPlayerExternalId, rosterId, teamId, userId, week);
-
-      rp ? res.status(200).json(rp) : res.sendStatus(400);
-  };
-
   public addDropPlayer = async (req: Request, res: Response): Promise<void> => {
       const addPlayerId = req.body.addPlayerId;
-      const addPlayerExternalId = req.body.addPlayerExternalId;
       const dropPlayerIds = req.body.dropPlayerIds;
       const rosterId = req.body.rosterId;
-      const teamId = req.body.teamId;
-      const userId = req.body.userId;
-      const week = req.body.week;
 
-      const roster: Roster = await this.databaseService.addDropPlayer(addPlayerId, addPlayerExternalId, dropPlayerIds, rosterId, teamId, userId, week);
+      const roster = await this.databaseService.addDropPlayer(addPlayerId, dropPlayerIds[0], rosterId);
+
+      for(const id of dropPlayerIds.slice(1))
+      {
+        await this.databaseService.dropPlayer(id, rosterId);
+      }
 
       roster ? res.status(200).json(roster) : res.sendStatus(400);
   };
-  
 
   // **************** GETTERS ********************** //
 
@@ -114,18 +99,6 @@ class DatabaseController {
 
       stats ? res.status(200).json(stats) : res.sendStatus(400);
   };
-
-  public getAllPlayersProjections = async (req: Request, res: Response): Promise<void> => {
-    const players = await this.databaseService.getAllPlayersProjections();
-    const projections = players.map((p) => {
-      return {
-        ...p,
-        points: calculateFantasyPoints(p),
-      };
-    });
-
-    projections ? res.status(200).json(projections) : res.sendStatus(400);
-};
 
   public getIndividualPlayerDetails = async (req: Request, res: Response): Promise<void> => {
       const playerID = Number(req.params.playerId);
@@ -178,8 +151,8 @@ class DatabaseController {
   };
 
   public getUserTeams = async (req: Request, res: Response): Promise<void> => {
-      const teamId = Number(req.params.teamId);
-      const teams = await this.databaseService.getUserTeams(teamId);
+      const userId = Number(req.params.userId);
+      const teams = await this.databaseService.getUserTeams(userId);
 
       teams ? res.status(200).json(teams) : res.sendStatus(400);
   };
@@ -235,9 +208,7 @@ class DatabaseController {
           title: x.title,
           content: x.content.toString('utf8'),
           external_player_id: x.external_player_id,
-          external_player_id2: x.external_player_id2,
           external_team_id: x.external_team_id,
-          external_team_id2: x.external_team_id2,
           source: x.source,
           source_url: x.source_url,
       };

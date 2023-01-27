@@ -408,6 +408,9 @@ class DatabaseService {
                         },
                     },
                 },
+                include: {
+                    league: true,
+                },
             });
         }
         catch(e)
@@ -554,14 +557,15 @@ class DatabaseService {
     }
 
 
+
     public async getPublicLeagues(): Promise<League[]>
     {
         try {
             return await this.client.league.findMany({
                 where: {
-                    // settings: {
-                    //     public_view: true,
-                    // },
+                    settings: {
+                        public_join: true,
+                    },
                 },
                 include: {
                     teams: {
@@ -569,6 +573,13 @@ class DatabaseService {
                             rosters: true,
                         },
                     },
+                    settings:
+                    {
+                        include: {
+                            scoring_settings: true,
+                        },
+                    },
+                    
                 },
             });
         }
