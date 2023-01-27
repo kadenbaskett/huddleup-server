@@ -1,4 +1,4 @@
-/// This is your Prisma schema file,
+// This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
@@ -235,16 +235,17 @@ model Timeframe {
 }
 
 model NFLTeam {
-  id                Int               @id @default(autoincrement())
-  external_id       Int               @unique
-  key               String
-  city              String
-  name              String
-  season            Int
-  current_players   Player[]
-  home_games        NFLGame[]         @relation("home_team")
-  away_games        NFLGame[]         @relation("away_team")
-  player_game_stats PlayerGameStats[]
+  id                 Int                 @id @default(autoincrement())
+  external_id        Int                 @unique
+  key                String
+  city               String
+  name               String
+  season             Int
+  current_players    Player[]
+  home_games         NFLGame[]           @relation("home_team")
+  away_games         NFLGame[]           @relation("away_team")
+  player_game_stats  PlayerGameStats[]
+  player_projections PlayerProjections[]
 }
 
 model Player {
@@ -258,13 +259,14 @@ model Player {
   current_nfl_team             NFLTeam             @relation(fields: [current_nfl_team_external_id], references: [external_id])
   current_nfl_team_external_id Int
   player_game_stats            PlayerGameStats[]
+  player_projections           PlayerProjections[]
   roster_players               RosterPlayer[]
   transaction_players          TransactionPlayer[]
 }
 
 model NFLGame {
-  id                Int               @id @default(autoincrement())
-  external_id       Int               @unique
+  id                Int                 @id @default(autoincrement())
+  external_id       Int                 @unique
   season            Int
   week              Int
   external_score_id Int
@@ -272,15 +274,47 @@ model NFLGame {
   away_score        Int
   date              DateTime
   status            String
-  away_team         NFLTeam           @relation("away_team", fields: [away_team_id], references: [external_id])
+  away_team         NFLTeam             @relation("away_team", fields: [away_team_id], references: [external_id])
   away_team_id      Int
-  home_team         NFLTeam           @relation("home_team", fields: [home_team_id], references: [external_id])
+  home_team         NFLTeam             @relation("home_team", fields: [home_team_id], references: [external_id])
   home_team_id      Int
   player_game_stats PlayerGameStats[]
+  PlayerProjections PlayerProjections[]
 }
 
 // double check the two point conversion stuff
 model PlayerGameStats {
+  id                              Int     @id @default(autoincrement())
+  external_player_id              Int
+  external_game_id                Int
+  pass_yards                      Int
+  pass_attempts                   Int
+  completions                     Int
+  pass_td                         Int
+  interceptions_thrown            Int
+  fumbles                         Int
+  receptions                      Int
+  targets                         Int
+  rec_yards                       Int
+  rec_td                          Int
+  rush_yards                      Int
+  rush_attempts                   Int
+  rush_td                         Int
+  two_point_conversion_passes     Int
+  two_point_conversion_receptions Int
+  two_point_conversion_runs       Int
+  team                            NFLTeam @relation(fields: [team_id], references: [id])
+  team_id                         Int
+  player                          Player  @relation(fields: [player_id], references: [id])
+  player_id                       Int
+  game                            NFLGame @relation(fields: [game_id], references: [id])
+  game_id                         Int
+
+  // TODO should we use the external or internal ids for the uniqueness constraint?
+  @@unique([external_game_id, external_player_id])
+}
+
+model PlayerProjections {
   id                              Int     @id @default(autoincrement())
   external_player_id              Int
   external_game_id                Int
