@@ -20,7 +20,13 @@ class DatabaseController {
   // **************** SETTERS & UPDATERS ********************** //
 
   public createLeague = async (req: Request, res: Response): Promise<void> => {
-      const league = await this.databaseService.createLeague(0, 'name');
+
+    const{ leagueName, numTeams, minPlayers, maxPlayers, leagueDescription, publicJoin, scoring, commissionerId } = req.body;
+
+    // create league settings
+    const settings = await this.databaseService.createLeagueSettings(numTeams, publicJoin, minPlayers, maxPlayers, scoring );
+
+    const league = await this.databaseService.createLeague(commissionerId, leagueName, leagueDescription, settings );
 
       league ? res.sendStatus(200) : res.sendStatus(400);
   };
@@ -30,7 +36,7 @@ class DatabaseController {
       const email = req.body.email;
 
       const validationMessage = await this.databaseService.validateNewUser(email, username);
-      
+
       if(validationMessage == null){
         const user = await this.databaseService.createUser(username, email);
 
@@ -108,6 +114,18 @@ class DatabaseController {
 
       stats ? res.status(200).json(stats) : res.sendStatus(400);
   };
+
+  public getAllPlayersProjections = async (req: Request, res: Response): Promise<void> => {
+    const players = await this.databaseService.getAllPlayersProjections();
+    const projections = players.map((p) => {
+      return {
+        ...p,
+        points: calculateFantasyPoints(p),
+      };
+    });
+
+    projections ? res.status(200).json(projections) : res.sendStatus(400);
+};
 
   public getIndividualPlayerDetails = async (req: Request, res: Response): Promise<void> => {
       const playerID = Number(req.params.playerId);
@@ -217,7 +235,9 @@ class DatabaseController {
           title: x.title,
           content: x.content.toString('utf8'),
           external_player_id: x.external_player_id,
+          external_player_id2: x.external_player_id2,
           external_team_id: x.external_team_id,
+          external_team_id2: x.external_team_id2,
           source: x.source,
           source_url: x.source_url,
       };

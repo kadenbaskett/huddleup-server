@@ -28,6 +28,7 @@ class DatabaseRoute implements Routes {
     this.router.get(`${this.path}/players`, this.controller.getAllPlayersDetails);
     this.router.get(`${this.path}/players/:playerId(\\d+)`, this.controller.getIndividualPlayerDetails);
     this.router.get(`${this.path}/players/stats`, this.controller.getAllPlayersStats);
+    this.router.get(`${this.path}/players/projections`, this.controller.getAllPlayersProjections);
     this.router.get(`${this.path}/players/league/:leagueId(\\d+)`, this.controller.getLeaguePlayers);
     this.router.get(`${this.path}/players/stats/:playerId(\\d+)`, this.controller.getIndividualPlayerStats);
     // this.router.get(`${this.path}/players/stats/current/:playerId(\\d+)`, this.controller.getCurrentPlayerStats);
