@@ -287,6 +287,9 @@ class DatabaseService {
                         },
                     },
                 },
+                include: {
+                    league: true,
+                },
             });
         }
         catch(e)
@@ -422,17 +425,6 @@ class DatabaseService {
                         },
                     },
                 },
-                include:{
-                    teams: {
-                        where: {
-                            managers: {
-                                some:{
-                                    user_id:userID,
-                                },
-                            },
-                        },
-                    },
-                },
             });
         }
         catch(e)
@@ -441,6 +433,7 @@ class DatabaseService {
             return null;
         }
     }
+
 
 
     public async getPublicLeagues(): Promise<League[]>
