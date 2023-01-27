@@ -422,6 +422,17 @@ class DatabaseService {
                         },
                     },
                 },
+                include:{
+                    teams: {
+                        where: {
+                            managers: {
+                                some:{
+                                    user_id:userID,
+                                },
+                            },
+                        },
+                    },
+                },
             });
         }
         catch(e)
@@ -437,9 +448,9 @@ class DatabaseService {
         try {
             return await this.client.league.findMany({
                 where: {
-                    // settings: {
-                    //     public_view: true,
-                    // },
+                    settings: {
+                        public_join: true,
+                    },
                 },
                 include: {
                     teams: {
@@ -447,6 +458,13 @@ class DatabaseService {
                             rosters: true,
                         },
                     },
+                    settings:
+                    {
+                        include: {
+                            scoring_settings: true,
+                        },
+                    },
+                    
                 },
             });
         }
