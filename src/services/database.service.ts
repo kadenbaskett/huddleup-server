@@ -119,9 +119,33 @@ class DatabaseService {
     }
 
 
-    public async dropPlayer(dropPlayerId: number, rosterId: number): Promise<RosterPlayer>
+    public async dropPlayer(dropPlayerId: number, rosterId: number, teamId: number, userId: number, week: number): Promise<RosterPlayer>
     {
         try {
+            const created = await this.client.transaction.create({
+                data: {
+                    type: 'Drop',
+                    status: '',
+                    creation_date: new Date(),
+                    expiration_date: new Date(),
+                    execution_date: new Date(),
+                    week: week,
+                    related_team_id: teamId,
+                    proposing_team_id: teamId,
+                    user_id: userId,
+                },
+            });
+
+            // Create drop transaction players
+            await this.client.transactionPlayer.create({
+                data: {
+                    transaction_id: created.id,
+                    player_id: dropPlayerId,
+                    joins_proposing_team: false,
+                },
+            });
+
+            // Update the roster player
             const rp: RosterPlayer = await this.client.rosterPlayer.delete({
                 where: {
                     player_id_roster_id: {
@@ -138,22 +162,119 @@ class DatabaseService {
         }
     }
 
-    public async addDropPlayer(addPlayerId: number, dropPlayerId: number, rosterId: number): Promise<RosterPlayer>
+    public async addPlayer(addPlayerId: number, externalPlayerId: number, rosterId: number, teamId: number, userId: number, week: number): Promise<RosterPlayer>
     {
+        // TODO put this all in one database 'transaction' (not referring to our transaction, I'm referring to database transactions that make sure a group of creations/deletions all fail or all pass) so that a player doesn't get added without the player being dropped
         try {
-            const rp: RosterPlayer = await this.client.rosterPlayer.update({
-                where: {
-                    player_id_roster_id: {
-                        player_id: dropPlayerId,
-                        roster_id: rosterId,
-                    },
-                },
+            // Create the transaction
+            const created = await this.client.transaction.create({
                 data: {
+                    type: 'AddDrop',
+                    status: '',
+                    creation_date: new Date(),
+                    expiration_date: new Date(),
+                    execution_date: new Date(),
+                    week: week,
+                    related_team_id: teamId,
+                    proposing_team_id: teamId,
+                    user_id: userId,
+                },
+            });
+
+            // Create add transaction players
+            await this.client.transactionPlayer.create({
+                data: {
+                    transaction_id: created.id,
+                    player_id: addPlayerId,
+                    joins_proposing_team: true,
+                },
+            });
+
+            // Update the roster player
+            const rp: RosterPlayer = await this.client.rosterPlayer.create({
+                data: {
+                    external_id: externalPlayerId,
+                    position: 'BE',
+                    roster_id: rosterId,
                     player_id: addPlayerId,
                 },
             });
 
             return rp;
+        }
+        catch(e) {
+           return null;
+        }
+    }
+
+    public async addDropPlayer(addPlayerId: number, addPlayerExternalId: number, dropPlayerIds: number[], rosterId: number, teamId: number, userId: number, week: number): Promise<Roster>
+    {
+        // TODO put this all in one database 'transaction' (not referring to our transaction, I'm referring to database transactions that make sure a group of creations/deletions all fail or all pass) so that a player doesn't get added without the player being dropped
+        try {
+            // Create the transaction
+            const created = await this.client.transaction.create({
+                data: {
+                    type: 'AddDrop',
+                    status: '',
+                    creation_date: new Date(),
+                    expiration_date: new Date(),
+                    execution_date: new Date(),
+                    week: week,
+                    related_team_id: teamId,
+                    proposing_team_id: teamId,
+                    user_id: userId,
+                },
+            });
+
+            // Create add transaction player
+            await this.client.transactionPlayer.create({
+                data: {
+                    transaction_id: created.id,
+                    player_id: addPlayerId,
+                    joins_proposing_team: true,
+                },
+            });
+
+            // Create new roster player
+            await this.client.rosterPlayer.create({
+                data: {
+                    external_id: addPlayerExternalId,
+                    position: 'BE',
+                    roster_id: rosterId,
+                    player_id: addPlayerId,
+                },
+            });
+
+            // For each player selected to drop, create the transaction player and update the roster player
+            for(const id of dropPlayerIds)
+            {
+                // Create drop transaction players
+                await this.client.transactionPlayer.create({
+                    data: {
+                        transaction_id: created.id,
+                        player_id: id,
+                        joins_proposing_team: false,
+                    },
+                });
+
+                // Update the roster player
+                await this.client.rosterPlayer.delete({
+                    where: {
+                        player_id_roster_id: {
+                            player_id: id,
+                            roster_id: rosterId,
+                        },
+                    },
+                });
+            }
+
+            const updatedRoster = await this.client.roster.findFirst({
+                where: {
+                    id: rosterId,
+                },
+            });
+
+            return updatedRoster;
         }
         catch(e) {
            return null;
