@@ -10,28 +10,15 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model News {
-  id                 Int    @id @default(autoincrement())
-  external_id        Int    @unique // NFL stats API news ID
-  updated_date       String
-  time_posted        String
-  title              String
-  content            Bytes
-  external_player_id Int
-  external_team_id   Int
-  source             String
-  source_url         String
-}
-
 model League {
-  id              Int             @id @default(autoincrement())
+  id              Int            @id @default(autoincrement())
   name            String
   description     String
   teams           Team[]
-  commissioner    User            @relation(fields: [commissioner_id], references: [id])
+  commissioner    User           @relation(fields: [commissioner_id], references: [id])
   commissioner_id Int
-  settings        LeagueSettings  @relation(name: "settings", fields: [settings_id], references: [id])
-  settings_id     Int             @unique
+  settings        LeagueSettings @relation(name: "settings", fields: [settings_id], references: [id])
+  settings_id     Int            @unique
   matchups        Matchup[]
 }
 
@@ -112,16 +99,16 @@ model ScheduleSettings {
 }
 
 model WaiverSettings {
-  id                    Int             @id @default(autoincrement())
-  waiver_period_hours   Int
-  waiver_order_type     Int // 0-> reverse standings each week (this should be default and only option for now)
-  league_settings       LeagueSettings?
+  id                  Int             @id @default(autoincrement())
+  waiver_period_hours Int
+  waiver_order_type   Int // 0-> reverse standings each week (this should be default and only option for now)
+  league_settings     LeagueSettings?
 }
 
 // END OF LEAGUE SETTINGS
 
 model User {
-  id                      Int          @id @default(autoincrement())
+  id                      Int           @id @default(autoincrement())
   username                String
   email                   String
   user_to_team            UserToTeam[]
@@ -189,17 +176,17 @@ model RosterPlayer {
   position    String // Necessary because (for example) an RB could be in the RB slot, flex slot, bench, or IR
   roster      Roster? @relation(fields: [roster_id], references: [id])
   roster_id   Int?
-  
+
   @@unique([player_id, roster_id])
 }
 
 model TransactionPlayer {
-  id                 Int         @id @default(autoincrement())
-  transaction        Transaction @relation(fields: [transaction_id], references: [id])
-  transaction_id     Int
-  player             Player      @relation(fields: [player_id], references: [id])
-  player_id          Int
-  joins_proposing_team Boolean  @default(false)
+  id                   Int         @id @default(autoincrement())
+  transaction          Transaction @relation(fields: [transaction_id], references: [id])
+  transaction_id       Int
+  player               Player      @relation(fields: [player_id], references: [id])
+  player_id            Int
+  joins_proposing_team Boolean     @default(false)
 }
 
 model Transaction {
@@ -210,7 +197,7 @@ model Transaction {
   expiration_date   DateTime
   execution_date    DateTime
   week              Int
-  user              User                @relation(name:"user", fields: [user_id], references: [id])
+  user              User                @relation(name: "user", fields: [user_id], references: [id])
   user_id           Int                 @default(0)
   proposing_team    Team                @relation(name: "proposing_team", fields: [proposing_team_id], references: [id])
   proposing_team_id Int                 @default(0)
@@ -220,6 +207,21 @@ model Transaction {
 }
 
 //***************** MODELS USED FOR STORING API DATA ***************************
+
+model News {
+  id                  Int    @id @default(autoincrement())
+  external_id         Int    @unique // NFL stats API news ID
+  updated_date        String
+  time_posted         String
+  title               String
+  content             Bytes
+  external_player_id  Int?
+  external_player_id2 Int?
+  external_team_id    Int?
+  external_team_id2   Int?
+  source              String
+  source_url          String
+}
 
 model Timeframe {
   id          Int     @id @default(autoincrement())
@@ -233,16 +235,17 @@ model Timeframe {
 }
 
 model NFLTeam {
-  id                Int               @id @default(autoincrement())
-  external_id       Int               @unique
-  key               String
-  city              String
-  name              String
-  season            Int
-  current_players   Player[]
-  home_games        NFLGame[]         @relation("home_team")
-  away_games        NFLGame[]         @relation("away_team")
-  player_game_stats PlayerGameStats[]
+  id                 Int                 @id @default(autoincrement())
+  external_id        Int                 @unique
+  key                String
+  city               String
+  name               String
+  season             Int
+  current_players    Player[]
+  home_games         NFLGame[]           @relation("home_team")
+  away_games         NFLGame[]           @relation("away_team")
+  player_game_stats  PlayerGameStats[]
+  player_projections PlayerProjections[]
 }
 
 model Player {
@@ -256,13 +259,14 @@ model Player {
   current_nfl_team             NFLTeam             @relation(fields: [current_nfl_team_external_id], references: [external_id])
   current_nfl_team_external_id Int
   player_game_stats            PlayerGameStats[]
+  player_projections           PlayerProjections[]
   roster_players               RosterPlayer[]
   transaction_players          TransactionPlayer[]
 }
 
 model NFLGame {
-  id                Int               @id @default(autoincrement())
-  external_id       Int               @unique
+  id                Int                 @id @default(autoincrement())
+  external_id       Int                 @unique
   season            Int
   week              Int
   external_score_id Int
@@ -270,15 +274,47 @@ model NFLGame {
   away_score        Int
   date              DateTime
   status            String
-  away_team         NFLTeam           @relation("away_team", fields: [away_team_id], references: [external_id])
+  away_team         NFLTeam             @relation("away_team", fields: [away_team_id], references: [external_id])
   away_team_id      Int
-  home_team         NFLTeam           @relation("home_team", fields: [home_team_id], references: [external_id])
+  home_team         NFLTeam             @relation("home_team", fields: [home_team_id], references: [external_id])
   home_team_id      Int
   player_game_stats PlayerGameStats[]
+  PlayerProjections PlayerProjections[]
 }
 
 // double check the two point conversion stuff
 model PlayerGameStats {
+  id                              Int     @id @default(autoincrement())
+  external_player_id              Int
+  external_game_id                Int
+  pass_yards                      Int
+  pass_attempts                   Int
+  completions                     Int
+  pass_td                         Int
+  interceptions_thrown            Int
+  fumbles                         Int
+  receptions                      Int
+  targets                         Int
+  rec_yards                       Int
+  rec_td                          Int
+  rush_yards                      Int
+  rush_attempts                   Int
+  rush_td                         Int
+  two_point_conversion_passes     Int
+  two_point_conversion_receptions Int
+  two_point_conversion_runs       Int
+  team                            NFLTeam @relation(fields: [team_id], references: [id])
+  team_id                         Int
+  player                          Player  @relation(fields: [player_id], references: [id])
+  player_id                       Int
+  game                            NFLGame @relation(fields: [game_id], references: [id])
+  game_id                         Int
+
+  // TODO should we use the external or internal ids for the uniqueness constraint?
+  @@unique([external_game_id, external_player_id])
+}
+
+model PlayerProjections {
   id                              Int     @id @default(autoincrement())
   external_player_id              Int
   external_game_id                Int

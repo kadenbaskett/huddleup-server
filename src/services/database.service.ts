@@ -1,4 +1,4 @@
-import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster, RosterPlayer, Timeframe, User, LeagueSettings, WaiverSettings, ScheduleSettings, ScoringSettings, RosterSettings, DraftSettings, TradeSettings, News } from '@prisma/client';
+import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster, RosterPlayer, Timeframe, User, LeagueSettings, WaiverSettings, ScheduleSettings, ScoringSettings, RosterSettings, DraftSettings, TradeSettings, News, PlayerProjections } from '@prisma/client';
 
 class DatabaseService {
 
@@ -508,6 +508,26 @@ class DatabaseService {
     }
 
     public async getAllPlayersStats(): Promise<PlayerGameStats[]>
+    {
+        try {
+            const timeframe = await this.getTimeframe();
+
+            return await this.client.playerGameStats.findMany({
+                where: {
+                    team: {
+                        season: timeframe.season,
+                    },
+                },
+            });
+        }
+        catch(e)
+        {
+            console.log(e);
+            return null;
+        }
+    }
+
+    public async getAllPlayersProjections(): Promise<PlayerProjections[]>
     {
         try {
             const timeframe = await this.getTimeframe();

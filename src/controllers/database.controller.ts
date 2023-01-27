@@ -100,6 +100,18 @@ class DatabaseController {
       stats ? res.status(200).json(stats) : res.sendStatus(400);
   };
 
+  public getAllPlayersProjections = async (req: Request, res: Response): Promise<void> => {
+    const players = await this.databaseService.getAllPlayersProjections();
+    const projections = players.map((p) => {
+      return {
+        ...p,
+        points: calculateFantasyPoints(p),
+      };
+    });
+
+    projections ? res.status(200).json(projections) : res.sendStatus(400);
+};
+
   public getIndividualPlayerDetails = async (req: Request, res: Response): Promise<void> => {
       const playerID = Number(req.params.playerId);
       const player = await this.databaseService.getPlayerDetails(playerID);
@@ -208,7 +220,9 @@ class DatabaseController {
           title: x.title,
           content: x.content.toString('utf8'),
           external_player_id: x.external_player_id,
+          external_player_id2: x.external_player_id2,
           external_team_id: x.external_team_id,
+          external_team_id2: x.external_team_id2,
           source: x.source,
           source_url: x.source_url,
       };
