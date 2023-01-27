@@ -178,8 +178,9 @@ class DatabaseController {
   };
 
   public getUserTeams = async (req: Request, res: Response): Promise<void> => {
-      const teamId = Number(req.params.teamId);
-      const teams = await this.databaseService.getUserTeams(teamId);
+      console.log('req.body', req.body);
+      const userId = Number(req.params.userId);
+      const teams = await this.databaseService.getUserTeams(userId);
 
       teams ? res.status(200).json(teams) : res.sendStatus(400);
   };
