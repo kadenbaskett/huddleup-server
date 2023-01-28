@@ -486,6 +486,11 @@ class DatabaseService {
                                                             game: true,
                                                         },
                                                     },
+                                                    player_projections: {
+                                                        include: {
+                                                            game: true,
+                                                        },
+                                                    },
                                                     current_nfl_team: true,
                                                 },
                                             },
