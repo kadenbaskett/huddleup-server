@@ -630,6 +630,16 @@ class DatabaseService {
                         },
                     },
                     current_nfl_team: true,
+                    player_projections: {
+                        where: {
+                            game: {
+                                season: timeframe.season,
+                            },
+                        },
+                        include: {
+                            game: true,
+                        },
+                    },
                 },
                 // TODO order by projected stats
                 orderBy: {
