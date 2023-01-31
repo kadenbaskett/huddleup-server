@@ -486,6 +486,11 @@ class DatabaseService {
                                                             game: true,
                                                         },
                                                     },
+                                                    player_projections: {
+                                                        include: {
+                                                            game: true,
+                                                        },
+                                                    },
                                                     current_nfl_team: true,
                                                 },
                                             },
@@ -625,6 +630,16 @@ class DatabaseService {
                         },
                     },
                     current_nfl_team: true,
+                    player_projections: {
+                        where: {
+                            game: {
+                                season: timeframe.season,
+                            },
+                        },
+                        include: {
+                            game: true,
+                        },
+                    },
                 },
                 // TODO order by projected stats
                 orderBy: {
