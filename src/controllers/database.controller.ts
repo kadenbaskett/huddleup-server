@@ -46,6 +46,10 @@ class DatabaseController {
         res.status(400).send(validationMessage);
       }
   };
+  public transactionAction = async (req: Request, res: Response): Promise<void> => {
+    // console.log('req.body :>> ', req.body);
+    res.sendStatus(200);
+  };
 
   public addPlayer = async (req: Request, res: Response): Promise<void> => {
       const addPlayerId = req.body.addPlayerId;
@@ -74,6 +78,7 @@ class DatabaseController {
 
       roster ? res.status(200).json(roster) : res.sendStatus(400);
   };
+
 
   // **************** GETTERS ********************** //
 
