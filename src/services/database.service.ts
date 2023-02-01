@@ -1,4 +1,4 @@
-import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster, RosterPlayer, Timeframe, User, LeagueSettings, WaiverSettings, ScheduleSettings, ScoringSettings, RosterSettings, DraftSettings, TradeSettings, News, PlayerProjections, Transaction, TransactionPlayer, TransactionAction } from '@prisma/client';
+import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster, RosterPlayer, Timeframe, User, LeagueSettings, WaiverSettings, ScheduleSettings, ScoringSettings, RosterSettings, DraftSettings, TradeSettings, News, PlayerProjections, Transaction, TransactionPlayer } from '@prisma/client';
 
 class DatabaseService {
 
@@ -679,7 +679,7 @@ class DatabaseService {
                                                             roster: {
                                                                 include: {
                                                                     team: true,
-                                                                    
+
                                                                 },
                                                             },
                                                         },
@@ -701,7 +701,7 @@ class DatabaseService {
                                     user: true,
                                 },
                             },
-                            
+
                             proposed_transactions: {
                                 include: {
                                     players: {
@@ -728,7 +728,7 @@ class DatabaseService {
                             },
                             home_matchups: true,
                             away_matchups: true,
-                            
+
                         },
                     },
                 },
@@ -789,6 +789,7 @@ class DatabaseService {
                             scoring_settings: true,
                         },
                     },
+
 
                 },
             });
