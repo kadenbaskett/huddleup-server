@@ -1,4 +1,4 @@
-import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster, RosterPlayer, Timeframe, User, LeagueSettings, WaiverSettings, ScheduleSettings, ScoringSettings, RosterSettings, DraftSettings, TradeSettings, News, PlayerProjections } from '@prisma/client';
+import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster, RosterPlayer, Timeframe, User, LeagueSettings, WaiverSettings, ScheduleSettings, ScoringSettings, RosterSettings, DraftSettings, TradeSettings, News, PlayerProjections, Transaction } from '@prisma/client';
 
 class DatabaseService {
 
@@ -279,6 +279,17 @@ class DatabaseService {
         catch(e) {
            return null;
         }
+    }
+
+    public async executeTransactionAction(action, transactionId, userId): Promise<boolean> {
+      const transaction: Transaction = await this.client.transaction.update({
+        where: { id: transactionId },
+        data: {
+          status: action === 'Reject' ? 'Rejected' : 'Complete',
+        },
+      });
+      if(!transaction) return false;
+      return true;
     }
 
     // **************** VALIDATE********************** //
@@ -589,7 +600,7 @@ class DatabaseService {
                             scoring_settings: true,
                         },
                     },
-                    
+
                 },
             });
         }
