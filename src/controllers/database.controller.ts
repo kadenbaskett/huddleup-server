@@ -47,8 +47,12 @@ class DatabaseController {
       }
   };
   public transactionAction = async (req: Request, res: Response): Promise<void> => {
-    // console.log('req.body :>> ', req.body);
-    res.sendStatus(200);
+    const { action, transactionId, userId } = req.body;
+
+    if(await this.databaseService.executeTransactionAction(action, transactionId, userId))
+      res.sendStatus(200);
+    else
+      res.sendStatus(400);
   };
 
   public addPlayer = async (req: Request, res: Response): Promise<void> => {
