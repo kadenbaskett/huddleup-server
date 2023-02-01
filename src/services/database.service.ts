@@ -330,7 +330,7 @@ class DatabaseService {
                     },
                 });
             }
-        
+
             // TODO remove
             await this.completeTrade(transaction.id);
 
@@ -415,6 +415,17 @@ class DatabaseService {
         catch(e) {
            return null;
         }
+    }
+
+    public async executeTransactionAction(action, transactionId, userId): Promise<boolean> {
+      const transaction: Transaction = await this.client.transaction.update({
+        where: { id: transactionId },
+        data: {
+          status: action === 'Reject' ? 'Rejected' : 'Complete',
+        },
+      });
+      if(!transaction) return false;
+      return true;
     }
 
     // **************** VALIDATE********************** //
@@ -725,7 +736,7 @@ class DatabaseService {
                             scoring_settings: true,
                         },
                     },
-                    
+
                 },
             });
         }
