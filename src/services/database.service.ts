@@ -486,6 +486,15 @@ class DatabaseService {
                                                             game: true,
                                                         },
                                                     },
+                                                    roster_players: {
+                                                        include: {
+                                                            roster: {
+                                                                include: {
+                                                                    team: true,
+                                                                },
+                                                            },
+                                                        },
+                                                    },
                                                     player_projections: {
                                                         include: {
                                                             game: true,
@@ -503,6 +512,7 @@ class DatabaseService {
                                     user: true,
                                 },
                             },
+                            
                             proposed_transactions: {
                                 include: {
                                     players: {
@@ -524,6 +534,7 @@ class DatabaseService {
                             },
                             home_matchups: true,
                             away_matchups: true,
+                            
                         },
                     },
                 },
