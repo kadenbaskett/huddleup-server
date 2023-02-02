@@ -79,6 +79,18 @@ class DatabaseController {
       roster ? res.status(200).json(roster) : res.sendStatus(400);
   };
 
+  public dropPlayer = async (req: Request, res: Response): Promise<void> => {
+      const dropPlayerId = req.body.playerId;
+      const rosterId = req.body.rosterId;
+      const teamId = req.body.teamId;
+      const userId = req.body.userId;
+      const week = req.body.week;
+
+      const rp: RosterPlayer = await this.databaseService.dropPlayer(dropPlayerId, rosterId, teamId, userId, week);
+
+      rp ? res.status(200).json(rp) : res.sendStatus(400);
+  };
+
 
   // **************** GETTERS ********************** //
 
