@@ -1,7 +1,7 @@
 import DatabaseService from '@services/database.service';
 import { calculateFantasyPoints } from '@/services/general.service';
 import { Request, Response } from 'express';
-import { Roster, RosterPlayer } from '@prisma/client';
+import { Roster, RosterPlayer, Transaction } from '@prisma/client';
 
 
 class DatabaseController {
@@ -65,6 +65,22 @@ class DatabaseController {
   };
 
 
+  public proposeTrade = async (req: Request, res: Response): Promise<void> => {
+      const sendPlayerIds = req.body.sendPlayerIds;
+      const recPlayerIds = req.body.recPlayerIds;
+      const proposeRosterId = req.body.proposeRosterId;
+      const relatedRosterId = req.body.relatedRosterId;
+      const proposeTeamId = req.body.proposeTeamId;
+      const relatedTeamId = req.body.relatedTeamId;
+      const userId = req.body.userId;
+      const week = req.body.week;
+
+      const transaction: Transaction = await this.databaseService.proposeTrade(sendPlayerIds, recPlayerIds, proposeRosterId, relatedRosterId, proposeTeamId, relatedTeamId, userId, week);
+
+      transaction ? res.status(200).json(transaction) : res.sendStatus(400);
+  };
+
+
   public addDropPlayer = async (req: Request, res: Response): Promise<void> => {
       const addPlayerId = req.body.addPlayerId;
       const addPlayerExternalId = req.body.addPlayerExternalId;
@@ -77,6 +93,18 @@ class DatabaseController {
       const roster: Roster = await this.databaseService.addDropPlayer(addPlayerId, addPlayerExternalId, dropPlayerIds, rosterId, teamId, userId, week);
 
       roster ? res.status(200).json(roster) : res.sendStatus(400);
+  };
+
+  public dropPlayer = async (req: Request, res: Response): Promise<void> => {
+      const dropPlayerId = req.body.playerId;
+      const rosterId = req.body.rosterId;
+      const teamId = req.body.teamId;
+      const userId = req.body.userId;
+      const week = req.body.week;
+
+      const rp: RosterPlayer = await this.databaseService.dropPlayer(dropPlayerId, rosterId, teamId, userId, week);
+
+      rp ? res.status(200).json(rp) : res.sendStatus(400);
   };
 
 

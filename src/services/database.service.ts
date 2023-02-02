@@ -1,4 +1,4 @@
-import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster, RosterPlayer, Timeframe, User, LeagueSettings, WaiverSettings, ScheduleSettings, ScoringSettings, RosterSettings, DraftSettings, TradeSettings, News, PlayerProjections } from '@prisma/client';
+import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster, RosterPlayer, Timeframe, User, LeagueSettings, WaiverSettings, ScheduleSettings, ScoringSettings, RosterSettings, DraftSettings, TradeSettings, News, PlayerProjections, Transaction, TransactionPlayer } from '@prisma/client';
 
 class DatabaseService {
 
@@ -204,6 +204,142 @@ class DatabaseService {
         }
         catch(e) {
            return null;
+        }
+    }
+
+    public async completeTrade(transactionId: number)
+    {
+        try {
+
+            const transaction: Transaction = await this.client.transaction.findFirst({
+                where: {
+                    id: transactionId,
+                },
+            });
+
+            const tPlayers: TransactionPlayer[] = await this.client.transactionPlayer.findMany({
+                where: {
+                    transaction_id: transactionId,
+                },
+            });
+
+            const playerIds: number[] = tPlayers.map((tp) => tp.player_id);
+
+            const rosterPlayers: RosterPlayer[] = await this.client.rosterPlayer.findMany({
+                where: {
+                    roster: {
+                        week: transaction.week,
+                    },
+                    player_id: {
+                        in: playerIds,
+                    },
+                },
+            });
+
+            // Complete the trade for the current week - not necessarily when the transaction was proposed
+            const timeframe: Timeframe = await this.getTimeframe();
+
+            for(const rp of rosterPlayers)
+            {
+                const transactionPlayer = tPlayers.find((tp) => tp.player_id === rp.player_id);
+                const newTeamId = transactionPlayer.joins_proposing_team ? transaction.proposing_team_id : transaction.related_team_id;
+
+                const newRoster = await this.client.roster.findFirst({
+                    where: {
+                        team_id: newTeamId,
+                        week: timeframe.week,
+                    },
+                });
+
+                await this.client.rosterPlayer.update({
+                    where: {
+                        player_id_roster_id: {
+                            player_id: rp.player_id,
+                            roster_id: rp.roster_id,
+                        },
+                    },
+                    data: {
+                        roster_id: newRoster.id,
+                        position: 'BE',
+                    },
+                });
+            }
+
+            const updated: Transaction = await this.client.transaction.update({
+                where: {
+                    id: transactionId,
+                },
+                data: {
+                    status: 'Complete',
+                    execution_date: new Date(),
+                },
+            });
+
+            console.log(updated);
+
+            return updated;
+        }
+        catch(e)
+        {
+            return null;
+        }
+    }
+
+
+    public async proposeTrade(sendPlayerIds: number[], recPlayerIds: number[], proposeRosterId: number, relatedRosterId: number, proposeTeamId: number, relatedTeamId: number, userId: number, week: number): Promise<Transaction> {
+        try {
+            const creation = new Date();
+            // TODO make execution nullable in DB
+            const execution = new Date();
+            const expiration = new Date();
+
+            expiration.setDate(expiration.getDate() + 7);
+
+            const transaction: Transaction = await this.client.transaction.create({
+                data: {
+                    type: 'Trade',
+                    status: 'Pending',
+                    creation_date: creation,
+                    expiration_date: expiration,
+                    execution_date: execution,
+                    week: week,
+                    proposing_team_id: proposeTeamId,
+                    related_team_id: relatedTeamId,
+                    user_id: userId,
+                },
+            });
+
+            for(let i = 0; i < sendPlayerIds.length; i++)
+            {
+                await this.client.transactionPlayer.create({
+                    data: {
+                        transaction_id: transaction.id,
+                        player_id: sendPlayerIds[i],
+                        joins_proposing_team: false,
+                    },
+                });
+            }
+
+            for(let i = 0; i < recPlayerIds.length; i++)
+            {
+                await this.client.transactionPlayer.create({
+                    data: {
+                        transaction_id: transaction.id,
+                        player_id: recPlayerIds[i],
+                        joins_proposing_team: true,
+                    },
+                });
+            }
+        
+            // TODO remove
+            await this.completeTrade(transaction.id);
+
+            return transaction;
+        }
+        catch(err)
+        {
+            console.log(err);
+            return null;
         }
     }
 
