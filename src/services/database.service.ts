@@ -491,6 +491,7 @@ class DatabaseService {
                                                             roster: {
                                                                 include: {
                                                                     team: true,
+                                                                    
                                                                 },
                                                             },
                                                         },
