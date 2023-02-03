@@ -118,8 +118,7 @@ class DatabaseService {
         }
     }
 
-
-    public async dropPlayer(dropPlayerId: number, rosterId: number, teamId: number, userId: number, week: number): Promise<RosterPlayer>
+    public async proposeDropPlayer(dropPlayerId: number, rosterId: number, teamId: number, userId: number, week: number): Promise<RosterPlayer>
     {
         try {
             const created = await this.client.transaction.create({
@@ -144,25 +143,13 @@ class DatabaseService {
                     joins_proposing_team: false,
                 },
             });
-
-            // Update the roster player
-            const rp: RosterPlayer = await this.client.rosterPlayer.delete({
-                where: {
-                    player_id_roster_id: {
-                        player_id: dropPlayerId,
-                        roster_id: rosterId,
-                    },
-                },
-            });
-
-            return rp;
         }
         catch(e) {
-           return null;
+           return;
         }
     }
 
-    public async addPlayer(addPlayerId: number, externalPlayerId: number, rosterId: number, teamId: number, userId: number, week: number): Promise<RosterPlayer>
+    public async proposeAddPlayer(addPlayerId: number, externalPlayerId: number, rosterId: number, teamId: number, userId: number, week: number): Promise<RosterPlayer>
     {
         // TODO put this all in one database 'transaction' (not referring to our transaction, I'm referring to database transactions that make sure a group of creations/deletions all fail or all pass) so that a player doesn't get added without the player being dropped
         try {
@@ -189,101 +176,13 @@ class DatabaseService {
                     joins_proposing_team: true,
                 },
             });
-
-            // Update the roster player
-            const rp: RosterPlayer = await this.client.rosterPlayer.create({
-                data: {
-                    external_id: externalPlayerId,
-                    position: 'BE',
-                    roster_id: rosterId,
-                    player_id: addPlayerId,
-                },
-            });
-
-            return rp;
         }
         catch(e) {
-           return null;
+           return;
         }
     }
 
-    public async completeTrade(transactionId: number)
-    {
-        try {
 
-            const transaction: Transaction = await this.client.transaction.findFirst({
-                where: {
-                    id: transactionId,
-                },
-            });
-
-            const tPlayers: TransactionPlayer[] = await this.client.transactionPlayer.findMany({
-                where: {
-                    transaction_id: transactionId,
-                },
-            });
-
-            const playerIds: number[] = tPlayers.map((tp) => tp.player_id);
-
-            const rosterPlayers: RosterPlayer[] = await this.client.rosterPlayer.findMany({
-                where: {
-                    roster: {
-                        week: transaction.week,
-                    },
-                    player_id: {
-                        in: playerIds,
-                    },
-                },
-            });
-
-            // Complete the trade for the current week - not necessarily when the transaction was proposed
-            const timeframe: Timeframe = await this.getTimeframe();
-
-            for(const rp of rosterPlayers)
-            {
-                const transactionPlayer = tPlayers.find((tp) => tp.player_id === rp.player_id);
-                const newTeamId = transactionPlayer.joins_proposing_team ? transaction.proposing_team_id : transaction.related_team_id;
-
-                const newRoster = await this.client.roster.findFirst({
-                    where: {
-                        team_id: newTeamId,
-                        week: timeframe.week,
-                    },
-                });
-
-                await this.client.rosterPlayer.update({
-                    where: {
-                        player_id_roster_id: {
-                            player_id: rp.player_id,
-                            roster_id: rp.roster_id,
-                        },
-                    },
-                    data: {
-                        roster_id: newRoster.id,
-                        position: 'BE',
-                    },
-                });
-            }
-
-            const updated: Transaction = await this.client.transaction.update({
-                where: {
-                    id: transactionId,
-                },
-                data: {
-                    status: 'Complete',
-                    execution_date: new Date(),
-                },
-            });
-
-            console.log(updated);
-
-            return updated;
-        }
-        catch(e)
-        {
-            return null;
-        }
-    }
 
 
     public async proposeTrade(sendPlayerIds: number[], recPlayerIds: number[], proposeRosterId: number, relatedRosterId: number, proposeTeamId: number, relatedTeamId: number, userId: number, week: number): Promise<Transaction> {
@@ -331,9 +230,6 @@ class DatabaseService {
                 });
             }
 
-            // TODO remove
-            await this.completeTrade(transaction.id);
-
             return transaction;
         }
         catch(err)
@@ -343,7 +239,7 @@ class DatabaseService {
         }
     }
 
-    public async addDropPlayer(addPlayerId: number, addPlayerExternalId: number, dropPlayerIds: number[], rosterId: number, teamId: number, userId: number, week: number): Promise<Roster>
+    public async proposeAddDropPlayer(addPlayerId: number, addPlayerExternalId: number, dropPlayerIds: number[], rosterId: number, teamId: number, userId: number, week: number): Promise<Roster>
     {
         // TODO put this all in one database 'transaction' (not referring to our transaction, I'm referring to database transactions that make sure a group of creations/deletions all fail or all pass) so that a player doesn't get added without the player being dropped
         try {
@@ -415,58 +311,6 @@ class DatabaseService {
         catch(e) {
            return null;
         }
-    }
-
-    public async executeTransactionAction(action, transactionId, userId): Promise<boolean> {
-
-      await this.client.transactionAction.create({
-        data: {
-          transaction_id: transactionId,
-          user_id: userId,
-          action_date: new Date(),
-          action_type: action,
-        },
-      });
-      const transaction = await this.client.transaction.update({
-        where: { id: transactionId },
-        data: {
-          status: action === 'Reject' ? 'Rejected' : 'Complete',
-        },
-        include: {
-          players: {
-            include: {
-              player: {
-                include: {
-                  roster_players: {
-                    include: {
-                      roster: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      });
-      console.log('transaction', transaction);
-      if(!transaction) return false;
-      if(transaction.type === 'Drop') {
-        transaction.players.forEach(async (transactionPlayer) => {
-          const rosterId = transactionPlayer.player.roster_players.find((roster_player) => roster_player.roster.week === transaction.week).roster_id;
-          await this.dropPlayer(transactionPlayer.player.id, rosterId, transaction.proposing_team_id, userId, transaction.week);
-        });
-        //const roster: Roster = await this.addDropPlayer(addPlayerId, addPlayerExternalId, dropPlayerIds, rosterId, teamId, userId, week);
-      } else if (transaction.type === 'Add') {
-        // transaction.players.forEach(async (transactionPlayer) => {
-        //   const rosterId = transactionPlayer.player.roster_players.find((roster_player) => roster_player.roster.week === transaction.week).roster_id;
-        //   await this.addPlayer(transactionPlayer.player.id, transactionPlayer.player.external_id, rosterId, transaction.proposing_team_id, userId, transaction.week);
-        // });
-      } else if (transaction.type === 'AddDrop') {
-        // await this.addDropPlayer();
-      } else if (transaction.type === 'Trade') {
-
-      }
-      return true;
     }
 
     // **************** VALIDATE********************** //
