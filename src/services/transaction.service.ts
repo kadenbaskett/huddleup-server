@@ -1,0 +1,215 @@
+import { PrismaClient, RosterPlayer, Timeframe, Transaction, TransactionPlayer } from '@prisma/client';
+import DatabaseService from './database.service';
+
+class TransactionService {
+  client: PrismaClient;
+  public databaseService: DatabaseService;
+
+  constructor()
+  {
+    this.client = new PrismaClient();
+    this.databaseService = new DatabaseService();
+  }
+
+  public async executeTransactionAction(action, transactionId, userId): Promise<boolean> {
+
+    await this.client.transactionAction.create({
+      data: {
+        transaction_id: transactionId,
+        user_id: userId,
+        action_date: new Date(),
+        action_type: action,
+      },
+    });
+    const transaction = await this.client.transaction.update({
+      where: { id: transactionId },
+      data: {
+        status: action === 'Reject' ? 'Rejected' : 'Complete',
+      },
+      include: {
+        players: {
+          include: {
+            player: {
+              include: {
+                roster_players: {
+                  include: {
+                    roster: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    if(!transaction) return false;
+    if(transaction.type === 'Drop' && action === 'Approve') {
+      transaction.players.forEach(async (transactionPlayer) => {
+        const rosterId = transactionPlayer.player.roster_players.find((roster_player) => roster_player.roster.week === transaction.week).roster_id;
+        await this.executePlayerDrop(transactionPlayer.player.id, rosterId);
+        return true;
+      });
+    } else if (transaction.type === 'Add' && action === 'Approve') {
+      transaction.players.forEach(async (transactionPlayer) => {
+        const rosterId = transactionPlayer.player.roster_players.find((roster_player) => roster_player.roster.week === transaction.week).roster_id;
+        await this.executePlayerAdd(transactionPlayer.player.id, rosterId, transactionPlayer.player.external_id);
+        return true;
+      });
+    } else if (transaction.type === 'AddDrop' && action === 'Approve') {
+      const addingPlayer = transaction.players.find((transactionPlayer) => {
+        transactionPlayer.joins_proposing_team === true;
+      }).player;
+      const droppingPlayerIds: number[] = transaction.players.filter((transactionPlayer) => {
+        transactionPlayer.joins_proposing_team === false;
+      }).map((player) => {return player.player.id;});
+      const rosterId = addingPlayer.roster_players.find((roster_player) => roster_player.roster.week === transaction.week).roster_id;
+      await this.executePlayerAddDrop(addingPlayer.id, addingPlayer.external_id, droppingPlayerIds, rosterId);
+      return true;
+    } else if (transaction.type === 'Trade' && action === 'Approve') {
+      await this.completeTrade(transactionId);
+      return true;
+    }
+    return false;
+  }
+
+  public async executePlayerDrop(dropPlayerId, rosterId) {
+    // Update the roster player
+    const rp: RosterPlayer = await this.client.rosterPlayer.delete({
+      where: {
+          player_id_roster_id: {
+              player_id: dropPlayerId,
+              roster_id: rosterId,
+          },
+      },
+    });
+    return rp;
+  }
+
+  public async executePlayerAdd(addPlayerId, rosterId, externalPlayerId) {
+    // Update the roster player
+    const rp: RosterPlayer = await this.client.rosterPlayer.create({
+      data: {
+          external_id: externalPlayerId,
+          position: 'BE',
+          roster_id: rosterId,
+          player_id: addPlayerId,
+      },
+  });
+
+  return rp;
+  }
+
+  public async executePlayerAddDrop(addPlayerId, addPlayerExternalId, dropPlayerIds, rosterId ) {
+    // Create new roster player
+    await this.client.rosterPlayer.create({
+        data: {
+            external_id: addPlayerExternalId,
+            position: 'BE',
+            roster_id: rosterId,
+            player_id: addPlayerId,
+        },
+    });
+
+    // For each player selected to drop, create the transaction player and update the roster player
+    for(const id of dropPlayerIds)
+    {
+        // Update the roster player
+        await this.client.rosterPlayer.delete({
+            where: {
+                player_id_roster_id: {
+                    player_id: id,
+                    roster_id: rosterId,
+                },
+            },
+        });
+    }
+
+    const updatedRoster = await this.client.roster.findFirst({
+        where: {
+            id: rosterId,
+        },
+    });
+
+    return updatedRoster;
+  }
+
+  public async completeTrade(transactionId: number)
+    {
+        try {
+
+            const transaction: Transaction = await this.client.transaction.findFirst({
+                where: {
+                    id: transactionId,
+                },
+            });
+
+            const tPlayers: TransactionPlayer[] = await this.client.transactionPlayer.findMany({
+                where: {
+                    transaction_id: transactionId,
+                },
+            });
+
+            const playerIds: number[] = tPlayers.map((tp) => tp.player_id);
+
+            const rosterPlayers: RosterPlayer[] = await this.client.rosterPlayer.findMany({
+                where: {
+                    roster: {
+                        week: transaction.week,
+                    },
+                    player_id: {
+                        in: playerIds,
+                    },
+                },
+            });
+
+            // Complete the trade for the current week - not necessarily when the transaction was proposed
+            const timeframe: Timeframe = await this.databaseService.getTimeframe();
+
+            for(const rp of rosterPlayers)
+            {
+                const transactionPlayer = tPlayers.find((tp) => tp.player_id === rp.player_id);
+
+                // add to new roster
+                const newTeamId = transactionPlayer.joins_proposing_team ? transaction.proposing_team_id : transaction.related_team_id;
+                const newRoster = await this.client.roster.findFirst({
+                  where: {
+                    team_id: newTeamId,
+                    week: timeframe.week,
+                  },
+                });
+
+                await this.client.rosterPlayer.update({
+                    where: {
+                        player_id_roster_id: {
+                            player_id: rp.player_id,
+                            roster_id: rp.roster_id,
+                        },
+                    },
+                    data: {
+                        roster_id: newRoster.id,
+                        position: 'BE',
+                    },
+                });
+
+            }
+
+            const updated: Transaction = await this.client.transaction.update({
+                where: {
+                    id: transactionId,
+                },
+                data: {
+                    status: 'Complete',
+                    execution_date: new Date(),
+                },
+            });
+
+            return updated;
+        }
+        catch(e)
+        {
+            return null;
+        }
+    }
+}
+
+export default TransactionService;
