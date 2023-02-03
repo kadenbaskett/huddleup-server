@@ -124,7 +124,7 @@ class DatabaseService {
             const created = await this.client.transaction.create({
                 data: {
                     type: 'Drop',
-                    status: '',
+                    status: 'Pending',
                     creation_date: new Date(),
                     expiration_date: new Date(),
                     execution_date: new Date(),
@@ -156,8 +156,8 @@ class DatabaseService {
             // Create the transaction
             const created = await this.client.transaction.create({
                 data: {
-                    type: 'AddDrop',
-                    status: '',
+                    type: 'Add',
+                    status: 'Pending',
                     creation_date: new Date(),
                     expiration_date: new Date(),
                     execution_date: new Date(),
@@ -247,7 +247,7 @@ class DatabaseService {
             const created = await this.client.transaction.create({
                 data: {
                     type: 'AddDrop',
-                    status: '',
+                    status: 'Pending',
                     creation_date: new Date(),
                     expiration_date: new Date(),
                     execution_date: new Date(),
