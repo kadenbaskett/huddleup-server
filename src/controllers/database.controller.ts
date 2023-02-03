@@ -1,4 +1,5 @@
 import DatabaseService from '@services/database.service';
+import TransactionService from '@services/transaction.service';
 import { calculateFantasyPoints } from '@/services/general.service';
 import { Request, Response } from 'express';
 import { Roster, RosterPlayer, Transaction } from '@prisma/client';
@@ -7,10 +8,12 @@ import { Roster, RosterPlayer, Transaction } from '@prisma/client';
 class DatabaseController {
 
   public databaseService: DatabaseService;
+  public transactionService: TransactionService;
 
   constructor()
   {
       this.databaseService = new DatabaseService();
+      this.transactionService = new TransactionService();
   }
 
   public empty = async (req: Request, res: Response): Promise<void> => {
@@ -49,7 +52,8 @@ class DatabaseController {
   public transactionAction = async (req: Request, res: Response): Promise<void> => {
     const { action, transactionId, userId } = req.body;
 
-    if(await this.databaseService.executeTransactionAction(action, transactionId, userId))
+    const success = await this.transactionService.executeTransactionAction(action, transactionId, userId);
+    if(success)
       res.sendStatus(200);
     else
       res.sendStatus(400);
@@ -63,7 +67,7 @@ class DatabaseController {
       const userId = req.body.userId;
       const week = req.body.week;
 
-      const rp: RosterPlayer = await this.databaseService.addPlayer(addPlayerId, addPlayerExternalId, rosterId, teamId, userId, week);
+      const rp: RosterPlayer = await this.databaseService.proposeAddPlayer(addPlayerId, addPlayerExternalId, rosterId, teamId, userId, week);
 
       rp ? res.status(200).json(rp) : res.sendStatus(400);
   };
@@ -94,7 +98,7 @@ class DatabaseController {
       const userId = req.body.userId;
       const week = req.body.week;
 
-      const roster: Roster = await this.databaseService.addDropPlayer(addPlayerId, addPlayerExternalId, dropPlayerIds, rosterId, teamId, userId, week);
+      const roster: Roster = await this.databaseService.proposeAddDropPlayer(addPlayerId, addPlayerExternalId, dropPlayerIds, rosterId, teamId, userId, week);
 
       roster ? res.status(200).json(roster) : res.sendStatus(400);
   };
@@ -106,7 +110,7 @@ class DatabaseController {
       const userId = req.body.userId;
       const week = req.body.week;
 
-      const rp: RosterPlayer = await this.databaseService.dropPlayer(dropPlayerId, rosterId, teamId, userId, week);
+      const rp: RosterPlayer = await this.databaseService.proposeDropPlayer(dropPlayerId, rosterId, teamId, userId, week);
 
       rp ? res.status(200).json(rp) : res.sendStatus(400);
   };
