@@ -49,6 +49,22 @@ class DatabaseController {
         res.status(400).send(validationMessage);
       }
   };
+
+  public createTeam = async (req: Request, res: Response): Promise<void> => {
+    
+    const{ leagueId, teamName, teamOwnerId } = req.body;
+
+    // We haven't talked through this yet but this will need to happen at some point
+    // I think we should do the same as league settings by giving the team default values at first and having them change it if they want
+    const settings = await this.databaseService.createTeamSettings();
+
+    const team = await this.databaseService.createTeam(leagueId, teamName, teamOwnerId, settings.id);
+    // passing 1 here because when a user creates a team this user is the owner/captain
+    const userToTeam = await this.databaseService.userToTeam(team.id, teamOwnerId, 1);
+
+    team && userToTeam ? res.sendStatus(200) : res.sendStatus(400);
+};
+
   public transactionAction = async (req: Request, res: Response): Promise<void> => {
     const { action, transactionId, userId } = req.body;
 

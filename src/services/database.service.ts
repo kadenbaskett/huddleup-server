@@ -1,4 +1,4 @@
-import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster, RosterPlayer, Timeframe, User, LeagueSettings, WaiverSettings, ScheduleSettings, ScoringSettings, RosterSettings, DraftSettings, TradeSettings, News, PlayerProjections, TransactionPlayer, Transaction, TransactionAction } from '@prisma/client';
+import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster, RosterPlayer, Timeframe, User, LeagueSettings, WaiverSettings, ScheduleSettings, ScoringSettings, RosterSettings, DraftSettings, TradeSettings, News, PlayerProjections, TransactionPlayer, Transaction, TransactionAction, TeamSettings, UserToTeam } from '@prisma/client';
 
 class DatabaseService {
 
@@ -118,6 +118,56 @@ class DatabaseService {
         }
     }
 
+    public async createTeam(leagueId: number, teamName : string, teamOwnerId: number, settingsId:number): Promise<Team>
+    {
+        try {
+            const team: Team = await this.client.team.create({
+                data: {
+                    league_id: leagueId,
+                    name: teamName,
+                    team_settings_id: settingsId,
+                },
+            });
+
+            return team;
+        }
+        catch(e) {
+           return null;
+        }
+    }
+
+    public async userToTeam(team_id: number, user_id:number, is_captain: number): Promise<UserToTeam>
+    {
+        try {
+            const userToTeam: UserToTeam = await this.client.userToTeam.create({
+                data: {
+                    team_id,
+                    user_id,
+                    is_captain: is_captain == 1,
+                },
+            });
+
+            return userToTeam;
+        }
+        catch(e) {
+           return null;
+        }
+    }
+
+    public async createTeamSettings(): Promise<TeamSettings>
+    {
+        try{
+           const teamSettings: TeamSettings = await this.client.teamSettings.create({
+            data: {
+            },
+           });
+
+           return teamSettings;
+        }
+        catch(e)
+        {return null;}
+    }
+
     public async proposeDropPlayer(dropPlayerId: number, rosterId: number, teamId: number, userId: number, week: number): Promise<RosterPlayer>
     {
         try {
@@ -181,8 +231,6 @@ class DatabaseService {
            return;
         }
     }
-
-
 
 
     public async proposeTrade(sendPlayerIds: number[], recPlayerIds: number[], proposeRosterId: number, relatedRosterId: number, proposeTeamId: number, relatedTeamId: number, userId: number, week: number): Promise<Transaction> {
@@ -625,7 +673,9 @@ class DatabaseService {
                     teams: {
                         include: {
                             rosters: true,
+                            managers:true,
                         },
+                    
                     },
                     settings:
                     {
