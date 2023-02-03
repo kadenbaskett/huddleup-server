@@ -1,4 +1,4 @@
-import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster, RosterPlayer, Timeframe, User, LeagueSettings, WaiverSettings, ScheduleSettings, ScoringSettings, RosterSettings, DraftSettings, TradeSettings, News, PlayerProjections, Transaction, TransactionPlayer } from '@prisma/client';
+import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster, RosterPlayer, Timeframe, User, LeagueSettings, WaiverSettings, ScheduleSettings, ScoringSettings, RosterSettings, DraftSettings, TradeSettings, News, PlayerProjections, Transaction, TransactionPlayer, TransactionAction } from '@prisma/client';
 
 class DatabaseService {
 
@@ -418,13 +418,54 @@ class DatabaseService {
     }
 
     public async executeTransactionAction(action, transactionId, userId): Promise<boolean> {
-      const transaction: Transaction = await this.client.transaction.update({
+
+      await this.client.transactionAction.create({
+        data: {
+          transaction_id: transactionId,
+          user_id: userId,
+          action_date: new Date(),
+          action_type: action,
+        },
+      });
+      const transaction = await this.client.transaction.update({
         where: { id: transactionId },
         data: {
           status: action === 'Reject' ? 'Rejected' : 'Complete',
         },
+        include: {
+          players: {
+            include: {
+              player: {
+                include: {
+                  roster_players: {
+                    include: {
+                      roster: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
       });
+      console.log('transaction', transaction);
       if(!transaction) return false;
+      if(transaction.type === 'Drop') {
+        transaction.players.forEach(async (transactionPlayer) => {
+          const rosterId = transactionPlayer.player.roster_players.find((roster_player) => roster_player.roster.week === transaction.week).roster_id;
+          await this.dropPlayer(transactionPlayer.player.id, rosterId, transaction.proposing_team_id, userId, transaction.week);
+        });
+        //const roster: Roster = await this.addDropPlayer(addPlayerId, addPlayerExternalId, dropPlayerIds, rosterId, teamId, userId, week);
+      } else if (transaction.type === 'Add') {
+        // transaction.players.forEach(async (transactionPlayer) => {
+        //   const rosterId = transactionPlayer.player.roster_players.find((roster_player) => roster_player.roster.week === transaction.week).roster_id;
+        //   await this.addPlayer(transactionPlayer.player.id, transactionPlayer.player.external_id, rosterId, transaction.proposing_team_id, userId, transaction.week);
+        // });
+      } else if (transaction.type === 'AddDrop') {
+        // await this.addDropPlayer();
+      } else if (transaction.type === 'Trade') {
+
+      }
       return true;
     }
 
