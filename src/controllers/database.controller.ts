@@ -2,7 +2,7 @@ import DatabaseService from '@services/database.service';
 import TransactionService from '@services/transaction.service';
 import { calculateFantasyPoints } from '@/services/general.service';
 import { Request, Response } from 'express';
-import { Roster, RosterPlayer, Transaction } from '@prisma/client';
+import { Roster, RosterPlayer, Team, Transaction } from '@prisma/client';
 
 
 class DatabaseController {
@@ -28,10 +28,9 @@ class DatabaseController {
 
     // create league settings
     const settings = await this.databaseService.createLeagueSettings(numTeams, publicJoin, minPlayers, maxPlayers, scoring );
-
     const league = await this.databaseService.createLeague(commissionerId, leagueName, leagueDescription, settings );
 
-      league ? res.sendStatus(200) : res.sendStatus(400);
+    league ? res.sendStatus(200) : res.sendStatus(400);
   };
 
   public createUser = async (req: Request, res: Response): Promise<void> => {
@@ -58,11 +57,10 @@ class DatabaseController {
     // I think we should do the same as league settings by giving the team default values at first and having them change it if they want
     const settings = await this.databaseService.createTeamSettings();
 
-    const team = await this.databaseService.createTeam(leagueId, teamName, teamOwnerId, settings.id);
+    const team: Team = await this.databaseService.createTeam(leagueId, teamName, teamOwnerId, settings.id);
     // passing 1 here because when a user creates a team this user is the owner/captain
     const userToTeam = await this.databaseService.userToTeam(team.id, teamOwnerId, 1);
-
-    team && userToTeam ? res.sendStatus(200) : res.sendStatus(400);
+    team && userToTeam ? res.sendStatus(200).json(team) : res.sendStatus(400);
 };
 
   public transactionAction = async (req: Request, res: Response): Promise<void> => {
