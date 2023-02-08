@@ -3,6 +3,7 @@ import TransactionService from '@services/transaction.service';
 import { calculateFantasyPoints } from '@/services/general.service';
 import { Request, Response } from 'express';
 import { Roster, RosterPlayer, Team, Transaction } from '@prisma/client';
+import { json } from 'envalid';
 
 
 class DatabaseController {
@@ -60,7 +61,10 @@ class DatabaseController {
     const team: Team = await this.databaseService.createTeam(leagueId, teamName, teamOwnerId, settings.id);
     // passing 1 here because when a user creates a team this user is the owner/captain
     const userToTeam = await this.databaseService.userToTeam(team.id, teamOwnerId, 1);
-    team && userToTeam ? res.sendStatus(200).json(team) : res.sendStatus(400);
+    console.log('team', team);
+    console.log('userToTeam', userToTeam);
+
+    team ? res.status(200).json(team) : res.sendStatus(400);
 };
 
   public transactionAction = async (req: Request, res: Response): Promise<void> => {
