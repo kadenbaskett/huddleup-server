@@ -150,6 +150,26 @@ class DatabaseService {
         }
     }
 
+    public async editLineup(rosterPlayerId: number, newPosition: string): Promise<RosterPlayer>
+    {
+        try {
+            const rp = await this.client.rosterPlayer.update({
+                where: {
+                    id: rosterPlayerId,
+                },
+                data: {
+                    position: newPosition,
+                },
+            });
+
+            return rp;
+        }
+        catch(err)
+        {
+            return null;
+        }
+    }
+
     public async proposeAddPlayer(addPlayerId: number, externalPlayerId: number, rosterId: number, teamId: number, userId: number, week: number): Promise<Transaction>
     {
         // TODO put this all in one database 'transaction' (not referring to our transaction, I'm referring to database transactions that make sure a group of creations/deletions all fail or all pass) so that a player doesn't get added without the player being dropped

@@ -2,7 +2,7 @@ import DatabaseService from '@services/database.service';
 import TransactionService from '@services/transaction.service';
 import { calculateFantasyPoints } from '@/services/general.service';
 import { Request, Response } from 'express';
-import { Transaction } from '@prisma/client';
+import { RosterPlayer, Transaction } from '@prisma/client';
 
 
 class DatabaseController {
@@ -71,6 +71,16 @@ class DatabaseController {
       const t: Transaction = await this.databaseService.proposeAddPlayer(addPlayerId, addPlayerExternalId, rosterId, teamId, userId, week);
 
       t ? res.status(200).json(t) : res.sendStatus(400);
+  };
+
+
+  public editLineup = async (req: Request, res: Response): Promise<void> => {
+      const rosterPlayerId = req.body.rosterPlayerId;
+      const newPosition = req.body.newPosition;
+
+      const rp: RosterPlayer = await this.databaseService.editLineup(rosterPlayerId, newPosition);
+
+      rp ? res.status(200).json(rp) : res.sendStatus(400);
   };
 
 
