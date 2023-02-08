@@ -17,6 +17,7 @@
     "prepare": "husky install"
   },
   "dependencies": {
+    "@prisma/client": "^4.7.1",
     "bcrypt": "^5.0.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.13.2",
@@ -65,6 +66,7 @@
     "nodemon": "^2.0.19",
     "pm2": "^5.2.0",
     "prettier": "^2.7.1",
+    "prisma": "^4.7.1",
     "supertest": "^6.2.4",
     "ts-jest": "^28.0.7",
     "ts-node": "^10.9.1",
