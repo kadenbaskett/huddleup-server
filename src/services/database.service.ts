@@ -1,5 +1,4 @@
 import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster, RosterPlayer, Timeframe, User, LeagueSettings, WaiverSettings, ScheduleSettings, ScoringSettings, RosterSettings, DraftSettings, TradeSettings, News, PlayerProjections, TransactionPlayer, Transaction, TransactionAction, TeamSettings, UserToTeam } from '@prisma/client';
-
 class DatabaseService {
 
     client: PrismaClient;
@@ -12,7 +11,7 @@ class DatabaseService {
 
     // **************** SETTERS & UPDATERS ********************** //
 
-    public async createLeague(commissioner_id: number, name: string, description: string, settings: LeagueSettings): Promise<League>
+    public async createLeague(commissioner_id: number, name: string, description: string, settings: LeagueSettings, token: string): Promise<League>
     {
         try {
             const league: League = await this.client.league.create({
@@ -21,6 +20,7 @@ class DatabaseService {
                     name,
                     description,
                     settings_id: settings.id,
+                    token,
                 },
             });
 
@@ -118,7 +118,7 @@ class DatabaseService {
         }
     }
 
-    public async createTeam(leagueId: number, teamName : string, teamOwnerId: number, settingsId:number): Promise<Team>
+    public async createTeam(leagueId: number, teamName : string, teamOwnerId: number, settingsId:number, token: string): Promise<Team>
     {
         try {
             const team: Team = await this.client.team.create({
@@ -126,6 +126,7 @@ class DatabaseService {
                     league_id: leagueId,
                     name: teamName,
                     team_settings_id: settingsId,
+                    token,
                 },
             });
 
