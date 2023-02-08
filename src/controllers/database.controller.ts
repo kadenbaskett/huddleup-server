@@ -61,10 +61,8 @@ class DatabaseController {
     const team: Team = await this.databaseService.createTeam(leagueId, teamName, teamOwnerId, settings.id);
     // passing 1 here because when a user creates a team this user is the owner/captain
     const userToTeam = await this.databaseService.userToTeam(team.id, teamOwnerId, 1);
-    console.log('team', team);
-    console.log('userToTeam', userToTeam);
 
-    team ? res.status(200).json(team) : res.sendStatus(400);
+    team && userToTeam ? res.status(200).json(team) : res.sendStatus(400);
 };
 
   public transactionAction = async (req: Request, res: Response): Promise<void> => {
