@@ -3,9 +3,11 @@ CREATE TABLE `League` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(191) NOT NULL,
     `description` VARCHAR(191) NOT NULL,
+    `token` VARCHAR(191) NOT NULL,
     `commissioner_id` INTEGER NOT NULL,
     `settings_id` INTEGER NOT NULL,
 
+    UNIQUE INDEX `League_token_key`(`token`),
     UNIQUE INDEX `League_settings_id_key`(`settings_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -131,8 +133,10 @@ CREATE TABLE `Team` (
     `name` VARCHAR(191) NOT NULL,
     `league_id` INTEGER NOT NULL,
     `team_settings_id` INTEGER NOT NULL,
+    `token` VARCHAR(191) NOT NULL,
 
     UNIQUE INDEX `Team_team_settings_id_key`(`team_settings_id`),
+    UNIQUE INDEX `Team_token_key`(`token`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
