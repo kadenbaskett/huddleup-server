@@ -118,7 +118,7 @@ class DatabaseService {
         }
     }
 
-    public async proposeDropPlayer(dropPlayerId: number, rosterId: number, teamId: number, userId: number, week: number): Promise<RosterPlayer>
+    public async proposeDropPlayer(dropPlayerId: number, rosterId: number, teamId: number, userId: number, week: number): Promise<Transaction>
     {
         try {
             const created = await this.client.transaction.create({
@@ -143,13 +143,14 @@ class DatabaseService {
                     joins_proposing_team: false,
                 },
             });
+            return created;
         }
         catch(e) {
-           return;
+           return null;
         }
     }
 
-    public async proposeAddPlayer(addPlayerId: number, externalPlayerId: number, rosterId: number, teamId: number, userId: number, week: number): Promise<RosterPlayer>
+    public async proposeAddPlayer(addPlayerId: number, externalPlayerId: number, rosterId: number, teamId: number, userId: number, week: number): Promise<Transaction>
     {
         // TODO put this all in one database 'transaction' (not referring to our transaction, I'm referring to database transactions that make sure a group of creations/deletions all fail or all pass) so that a player doesn't get added without the player being dropped
         try {
@@ -176,9 +177,10 @@ class DatabaseService {
                     joins_proposing_team: true,
                 },
             });
+            return created;
         }
         catch(e) {
-           return;
+           return null;
         }
     }
 
@@ -239,7 +241,7 @@ class DatabaseService {
         }
     }
 
-    public async proposeAddDropPlayer(addPlayerId: number, addPlayerExternalId: number, dropPlayerIds: number[], rosterId: number, teamId: number, userId: number, week: number): Promise<Roster>
+    public async proposeAddDropPlayer(addPlayerId: number, addPlayerExternalId: number, dropPlayerIds: number[], rosterId: number, teamId: number, userId: number, week: number): Promise<Transaction>
     {
         // TODO put this all in one database 'transaction' (not referring to our transaction, I'm referring to database transactions that make sure a group of creations/deletions all fail or all pass) so that a player doesn't get added without the player being dropped
         try {
@@ -267,16 +269,6 @@ class DatabaseService {
                 },
             });
 
-            // Create new roster player
-            await this.client.rosterPlayer.create({
-                data: {
-                    external_id: addPlayerExternalId,
-                    position: 'BE',
-                    roster_id: rosterId,
-                    player_id: addPlayerId,
-                },
-            });
-
             // For each player selected to drop, create the transaction player and update the roster player
             for(const id of dropPlayerIds)
             {
@@ -288,25 +280,9 @@ class DatabaseService {
                         joins_proposing_team: false,
                     },
                 });
-
-                // Update the roster player
-                await this.client.rosterPlayer.delete({
-                    where: {
-                        player_id_roster_id: {
-                            player_id: id,
-                            roster_id: rosterId,
-                        },
-                    },
-                });
             }
 
-            const updatedRoster = await this.client.roster.findFirst({
-                where: {
-                    id: rosterId,
-                },
-            });
-
-            return updatedRoster;
+            return created;
         }
         catch(e) {
            return null;
