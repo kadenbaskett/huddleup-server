@@ -2,7 +2,7 @@ import DatabaseService from '@services/database.service';
 import TransactionService from '@services/transaction.service';
 import { calculateFantasyPoints } from '@/services/general.service';
 import { Request, Response } from 'express';
-import { Roster, RosterPlayer, Team, Transaction } from '@prisma/client';
+import { RosterPlayer, Team, Transaction } from '@prisma/client';
 import { json } from 'envalid';
 import randomstring from 'randomstring';
 
@@ -72,6 +72,7 @@ class DatabaseController {
     const { action, transactionId, userId } = req.body;
 
     const success = await this.transactionService.executeTransactionAction(action, transactionId, userId);
+
     if(success)
       res.sendStatus(200);
     else
@@ -86,7 +87,17 @@ class DatabaseController {
       const userId = req.body.userId;
       const week = req.body.week;
 
-      const rp: RosterPlayer = await this.databaseService.proposeAddPlayer(addPlayerId, addPlayerExternalId, rosterId, teamId, userId, week);
+      const t: Transaction = await this.databaseService.proposeAddPlayer(addPlayerId, addPlayerExternalId, rosterId, teamId, userId, week);
+
+      t ? res.status(200).json(t) : res.sendStatus(400);
+  };
+
+
+  public editLineup = async (req: Request, res: Response): Promise<void> => {
+      const rosterPlayerId = req.body.rosterPlayerId;
+      const newPosition = req.body.newPosition;
+
+      const rp: RosterPlayer = await this.databaseService.editLineup(rosterPlayerId, newPosition);
 
       rp ? res.status(200).json(rp) : res.sendStatus(400);
   };
@@ -117,9 +128,9 @@ class DatabaseController {
       const userId = req.body.userId;
       const week = req.body.week;
 
-      const roster: Roster = await this.databaseService.proposeAddDropPlayer(addPlayerId, addPlayerExternalId, dropPlayerIds, rosterId, teamId, userId, week);
+      const transaction: Transaction = await this.databaseService.proposeAddDropPlayer(addPlayerId, addPlayerExternalId, dropPlayerIds, rosterId, teamId, userId, week);
 
-      roster ? res.status(200).json(roster) : res.sendStatus(400);
+      transaction ? res.status(200).json(transaction) : res.sendStatus(400);
   };
 
   public dropPlayer = async (req: Request, res: Response): Promise<void> => {
@@ -129,9 +140,9 @@ class DatabaseController {
       const userId = req.body.userId;
       const week = req.body.week;
 
-      const rp: RosterPlayer = await this.databaseService.proposeDropPlayer(dropPlayerId, rosterId, teamId, userId, week);
+      const transaction: Transaction = await this.databaseService.proposeDropPlayer(dropPlayerId, rosterId, teamId, userId, week);
 
-      rp ? res.status(200).json(rp) : res.sendStatus(400);
+      transaction ? res.status(200).json(transaction) : res.sendStatus(400);
   };
 
 
