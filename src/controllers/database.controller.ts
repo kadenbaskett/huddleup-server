@@ -91,6 +91,15 @@ class DatabaseController {
       rp ? res.status(200).json(rp) : res.sendStatus(400);
   };
 
+  public editLineup = async (req: Request, res: Response): Promise<void> => {
+    const rosterPlayerId = req.body.rosterPlayerId;
+    const newPosition = req.body.newPosition;
+
+    const rp: RosterPlayer = await this.databaseService.editLineup(rosterPlayerId, newPosition);
+
+    rp ? res.status(200).json(rp) : res.sendStatus(400);
+};
+
 
   public proposeTrade = async (req: Request, res: Response): Promise<void> => {
       const sendPlayerIds = req.body.sendPlayerIds;
