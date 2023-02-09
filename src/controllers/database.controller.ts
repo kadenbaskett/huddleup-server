@@ -30,10 +30,10 @@ class DatabaseController {
 
     // create league settings
     const settings = await this.databaseService.createLeagueSettings(numTeams, publicJoin, minPlayers, maxPlayers, scoring);
-    const token = randomstring(7);
+    const token = await randomstring.generate(7);
     const league = await this.databaseService.createLeague(commissionerId, leagueName, leagueDescription, settings, token);
 
-    league ? res.sendStatus(200) : res.sendStatus(400);
+    league ? res.status(200).json(league) : res.sendStatus(400);
   };
 
   public createUser = async (req: Request, res: Response): Promise<void> => {
