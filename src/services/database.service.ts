@@ -1,5 +1,4 @@
-import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster, RosterPlayer, Timeframe, User, LeagueSettings, WaiverSettings, ScheduleSettings, ScoringSettings, RosterSettings, DraftSettings, TradeSettings, News, PlayerProjections, TransactionPlayer, Transaction, TransactionAction } from '@prisma/client';
-
+import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster, RosterPlayer, Timeframe, User, LeagueSettings, WaiverSettings, ScheduleSettings, ScoringSettings, RosterSettings, DraftSettings, TradeSettings, News, PlayerProjections, TransactionPlayer, Transaction, TransactionAction, TeamSettings, UserToTeam } from '@prisma/client';
 class DatabaseService {
 
     client: PrismaClient;
@@ -12,7 +11,7 @@ class DatabaseService {
 
     // **************** SETTERS & UPDATERS ********************** //
 
-    public async createLeague(commissioner_id: number, name: string, description: string, settings: LeagueSettings): Promise<League>
+    public async createLeague(commissioner_id: number, name: string, description: string, settings: LeagueSettings, token: string): Promise<League>
     {
         try {
             const league: League = await this.client.league.create({
@@ -21,6 +20,7 @@ class DatabaseService {
                     name,
                     description,
                     settings_id: settings.id,
+                    token,
                 },
             });
 
@@ -118,7 +118,58 @@ class DatabaseService {
         }
     }
 
-    public async proposeDropPlayer(dropPlayerId: number, rosterId: number, teamId: number, userId: number, week: number): Promise<Transaction>
+    public async createTeam(leagueId: number, teamName : string, teamOwnerId: number, settingsId:number, token: string): Promise<Team>
+    {
+        try {
+            const team: Team = await this.client.team.create({
+                data: {
+                    league_id: leagueId,
+                    name: teamName,
+                    team_settings_id: settingsId,
+                    token,
+                },
+            });
+
+            return team;
+        }
+        catch(e) {
+           return null;
+        }
+    }
+
+    public async userToTeam(team_id: number, user_id:number, is_captain: number): Promise<UserToTeam>
+    {
+        try {
+            const userToTeam: UserToTeam = await this.client.userToTeam.create({
+                data: {
+                    team_id,
+                    user_id,
+                    is_captain: is_captain == 1,
+                },
+            });
+
+            return userToTeam;
+        }
+        catch(e) {
+           return null;
+        }
+    }
+
+    public async createTeamSettings(): Promise<TeamSettings>
+    {
+        try{
+           const teamSettings: TeamSettings = await this.client.teamSettings.create({
+            data: {
+            },
+           });
+
+           return teamSettings;
+        }
+        catch(e)
+        {return null;}
+    }
+
+    public async proposeDropPlayer(dropPlayerId: number, rosterId: number, teamId: number, userId: number, week: number): Promise<RosterPlayer>
     {
         try {
             const created = await this.client.transaction.create({
@@ -143,10 +194,9 @@ class DatabaseService {
                     joins_proposing_team: false,
                 },
             });
-            return created;
         }
         catch(e) {
-           return null;
+           return;
         }
     }
 
@@ -170,7 +220,7 @@ class DatabaseService {
         }
     }
 
-    public async proposeAddPlayer(addPlayerId: number, externalPlayerId: number, rosterId: number, teamId: number, userId: number, week: number): Promise<Transaction>
+    public async proposeAddPlayer(addPlayerId: number, externalPlayerId: number, rosterId: number, teamId: number, userId: number, week: number): Promise<RosterPlayer>
     {
         // TODO put this all in one database 'transaction' (not referring to our transaction, I'm referring to database transactions that make sure a group of creations/deletions all fail or all pass) so that a player doesn't get added without the player being dropped
         try {
@@ -197,14 +247,11 @@ class DatabaseService {
                     joins_proposing_team: true,
                 },
             });
-            return created;
         }
         catch(e) {
-           return null;
+           return;
         }
     }
-
-
 
 
     public async proposeTrade(sendPlayerIds: number[], recPlayerIds: number[], proposeRosterId: number, relatedRosterId: number, proposeTeamId: number, relatedTeamId: number, userId: number, week: number): Promise<Transaction> {
@@ -261,7 +308,7 @@ class DatabaseService {
         }
     }
 
-    public async proposeAddDropPlayer(addPlayerId: number, addPlayerExternalId: number, dropPlayerIds: number[], rosterId: number, teamId: number, userId: number, week: number): Promise<Transaction>
+    public async proposeAddDropPlayer(addPlayerId: number, addPlayerExternalId: number, dropPlayerIds: number[], rosterId: number, teamId: number, userId: number, week: number): Promise<Roster>
     {
         // TODO put this all in one database 'transaction' (not referring to our transaction, I'm referring to database transactions that make sure a group of creations/deletions all fail or all pass) so that a player doesn't get added without the player being dropped
         try {
@@ -289,6 +336,16 @@ class DatabaseService {
                 },
             });
 
+            // Create new roster player
+            await this.client.rosterPlayer.create({
+                data: {
+                    external_id: addPlayerExternalId,
+                    position: 'BE',
+                    roster_id: rosterId,
+                    player_id: addPlayerId,
+                },
+            });
+
             // For each player selected to drop, create the transaction player and update the roster player
             for(const id of dropPlayerIds)
             {
@@ -300,9 +357,25 @@ class DatabaseService {
                         joins_proposing_team: false,
                     },
                 });
+
+                // Update the roster player
+                await this.client.rosterPlayer.delete({
+                    where: {
+                        player_id_roster_id: {
+                            player_id: id,
+                            roster_id: rosterId,
+                        },
+                    },
+                });
             }
 
-            return created;
+            const updatedRoster = await this.client.roster.findFirst({
+                where: {
+                    id: rosterId,
+                },
+            });
+
+            return updatedRoster;
         }
         catch(e) {
            return null;
@@ -621,7 +694,9 @@ class DatabaseService {
                     teams: {
                         include: {
                             rosters: true,
+                            managers:true,
                         },
+                    
                     },
                     settings:
                     {
