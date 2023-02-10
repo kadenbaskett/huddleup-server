@@ -555,6 +555,8 @@ class DatabaseService {
                                       },
                                     },
                                     user: true,
+                                    proposing_team: true,
+                                    related_team: true,
                                 },
                             },
                             related_transactions: {
