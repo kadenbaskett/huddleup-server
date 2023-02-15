@@ -5,6 +5,7 @@ import { Request, Response } from 'express';
 import { Roster, RosterPlayer, Team, Transaction } from '@prisma/client';
 import { json } from 'envalid';
 import randomstring from 'randomstring';
+import { remove } from 'winston';
 
 
 class DatabaseController {
@@ -70,12 +71,17 @@ class DatabaseController {
 
   public userToTeam = async (req: Request, res: Response) : Promise<void> => {
     const{ user, team } = req.body;
-    console.log('user', user);
-    console.log('team', team);
 
     const userToTeam = await this.databaseService.userToTeam(team.id, user.userInfo.id, 0);
 
     userToTeam ? res.status(200).json(userToTeam) : res.sendStatus(400);
+  };
+
+  public removeUserFromTeam = async (req: Request, res: Response) : Promise<void> => {
+    const{ user, userTeam } = req.body;
+    const removed = await this.databaseService.removeUserFromTeam(userTeam.id, user.user_id);
+
+    removed ? res.sendStatus(200) : res.sendStatus(400);
   };
 
 
