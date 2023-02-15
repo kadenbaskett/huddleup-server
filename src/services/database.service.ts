@@ -155,6 +155,22 @@ class DatabaseService {
         }
     }
 
+    public async removeUserFromTeam(team_id: number, user_id:number)
+    {
+        try {
+            await this.client.userToTeam.deleteMany({
+                where:{
+                    team_id,
+                    user_id,
+                },
+            });
+            return true;
+        }
+        catch(e) {
+           return false;
+        }
+    }
+
     public async createTeamSettings(): Promise<TeamSettings>
     {
         try{
@@ -606,7 +622,6 @@ class DatabaseService {
                                                             roster: {
                                                                 include: {
                                                                     team: true,
-
                                                                 },
                                                             },
                                                         },
@@ -628,7 +643,6 @@ class DatabaseService {
                                     user: true,
                                 },
                             },
-
                             proposed_transactions: {
                                 include: {
                                     players: {
