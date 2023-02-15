@@ -582,6 +582,20 @@ class DatabaseService {
                         },
                     },
                     matchups: true,
+                    settings: {
+                        include: {
+                            roster_settings: true,
+                            schedule_settings: true,
+                            scoring_settings: true,
+                            trade_settings: true,
+                            waiver_settings: true,
+                            draft_settings: {
+                                include: {
+                                    order: true,
+                                },
+                            },
+                        },
+                    },
                     teams: {
                         include: {
                             rosters: {
@@ -636,6 +650,8 @@ class DatabaseService {
                                       },
                                     },
                                     user: true,
+                                    proposing_team: true,
+                                    related_team: true,
                                 },
                             },
                             related_transactions: {
