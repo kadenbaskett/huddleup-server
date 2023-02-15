@@ -573,14 +573,6 @@ class DatabaseService {
                     id: leagueId,
                 },
                 include: {
-                    settings:
-                    {
-                        include:
-                        {
-                            scoring_settings: true,
-                            
-                        },
-                    },
                     matchups: true,
                     settings: {
                         include: {
