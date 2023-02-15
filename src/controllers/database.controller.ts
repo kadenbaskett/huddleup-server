@@ -66,7 +66,18 @@ class DatabaseController {
     const userToTeam = await this.databaseService.userToTeam(team.id, teamOwnerId, 1);
 
     team && userToTeam ? res.status(200).json(team) : res.sendStatus(400);
-};
+  };
+
+  public userToTeam = async (req: Request, res: Response) : Promise<void> => {
+    const{ user, team } = req.body;
+    console.log('user', user);
+    console.log('team', team);
+
+    const userToTeam = await this.databaseService.userToTeam(team.id, user.userInfo.id, 0);
+
+    userToTeam ? res.status(200).json(userToTeam) : res.sendStatus(400);
+  };
+
 
   public transactionAction = async (req: Request, res: Response): Promise<void> => {
     const { action, transactionId, userId } = req.body;
