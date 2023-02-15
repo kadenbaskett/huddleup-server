@@ -680,11 +680,14 @@ class DatabaseService {
                         some: {
                             managers: {
                                 some: {
-                                    user_id: userID,
+                                    user_id: userID,  
                                 },
                             },
                         },
                     },
+                },
+                include: {
+                    teams: true,
                 },
             });
         }
