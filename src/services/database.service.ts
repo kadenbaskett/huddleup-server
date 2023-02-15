@@ -573,6 +573,14 @@ class DatabaseService {
                     id: leagueId,
                 },
                 include: {
+                    settings:
+                    {
+                        include:
+                        {
+                            scoring_settings: true,
+                            
+                        },
+                    },
                     matchups: true,
                     teams: {
                         include: {
@@ -664,11 +672,14 @@ class DatabaseService {
                         some: {
                             managers: {
                                 some: {
-                                    user_id: userID,
+                                    user_id: userID,  
                                 },
                             },
                         },
                     },
+                },
+                include: {
+                    teams: true,
                 },
             });
         }
