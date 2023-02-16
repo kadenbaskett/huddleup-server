@@ -285,6 +285,12 @@ class DatabaseController {
       leagues ? res.status(200).json(leagues) : res.sendStatus(400);
   };
 
+  public getPrivateLeagues = async (req: Request, res: Response): Promise<void> => {
+    const leagues = await this.databaseService.getPrivateLeagues();
+
+    leagues ? res.status(200).json(leagues) : res.sendStatus(400);
+};
+
   public getNFLTeamGames = async (req: Request, res: Response): Promise<void> => {
       const teamID = Number(req.params.teamID);
       const games = await this.databaseService.getNFLTeamGames(teamID);

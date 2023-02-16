@@ -748,6 +748,40 @@ class DatabaseService {
         }
     }
 
+    public async getPrivateLeagues(): Promise<League[]>
+    {
+        try {
+            return await this.client.league.findMany({
+                where: {
+                    settings: {
+                        public_join: false,
+                    },
+                },
+                include: {
+                    teams: {
+                        include: {
+                            rosters: true,
+                            managers:true,
+                        },
+                    
+                    },
+                    settings:
+                    {
+                        include: {
+                            scoring_settings: true,
+                        },
+                    },
+
+                },
+            });
+        }
+        catch(e)
+        {
+            console.log(e);
+            return null;
+        }
+    }
+
     public async getLeaguePlayers(leagueId: number): Promise<Player[]>
     {
         try {
