@@ -137,6 +137,24 @@ class DatabaseService {
         }
     }
 
+    public async deleteTeam(teamId: number, leagueId: number)
+    {
+        try {
+           await this.client.team.deleteMany({
+            where:{
+                id: teamId,
+                league_id:leagueId,
+            },
+           });
+
+           return true;
+        }
+        catch(e) {
+            console.log('e', e);
+           return false;
+        }
+    }
+
     public async userToTeam(team_id: number, user_id:number, is_captain: number): Promise<UserToTeam>
     {
         try {
@@ -183,6 +201,23 @@ class DatabaseService {
         }
         catch(e)
         {return null;}
+    }
+
+    public async deleteTeamSettings(team_settings_id: number)
+    {
+        try{
+           await this.client.teamSettings.deleteMany({
+            where:
+            {
+                id: team_settings_id,
+            },
+           });
+
+           return true;
+        }
+        catch(e)
+        {
+            return false;}
     }
 
     public async proposeDropPlayer(dropPlayerId: number, rosterId: number, teamId: number, userId: number, week: number): Promise<RosterPlayer>
