@@ -624,7 +624,28 @@ class DatabaseService {
                     id: leagueId,
                 },
                 include: {
-                    matchups: true,
+                    matchups: {
+                      include: {
+                        away_team: {
+                          include: {
+                            managers: {
+                              include: {
+                                user: true,
+                              },
+                            },
+                          },
+                        },
+                        home_team: {
+                          include: {
+                            managers: {
+                              include: {
+                                user: true,
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
                     settings: {
                         include: {
                             roster_settings: true,
@@ -729,7 +750,7 @@ class DatabaseService {
                         some: {
                             managers: {
                                 some: {
-                                    user_id: userID,  
+                                    user_id: userID,
                                 },
                             },
                         },
@@ -764,7 +785,7 @@ class DatabaseService {
                             rosters: true,
                             managers:true,
                         },
-                    
+
                     },
                     settings:
                     {
@@ -798,7 +819,7 @@ class DatabaseService {
                             rosters: true,
                             managers:true,
                         },
-                    
+
                     },
                     settings:
                     {

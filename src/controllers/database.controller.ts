@@ -54,7 +54,7 @@ class DatabaseController {
   };
 
   public createTeam = async (req: Request, res: Response): Promise<void> => {
-    
+
     const{ leagueId, teamName, teamOwnerId } = req.body;
 
     // We haven't talked through this yet but this will need to happen at some point
