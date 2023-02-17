@@ -69,6 +69,14 @@ class DatabaseController {
     team && userToTeam ? res.status(200).json(team) : res.sendStatus(400);
   };
 
+  public deleteTeam = async (req: Request, res: Response): Promise<void> => {
+    const{ managers, id, league_id } = req.body;
+
+    managers.forEach(async (manager) => await this.databaseService.removeUserFromTeam(manager.team_id, manager.user_id));
+    const removedTeam = await this.databaseService.deleteTeam(id, league_id);
+    removedTeam ? res.sendStatus(200) : res.sendStatus(400);
+  };
+
   public userToTeam = async (req: Request, res: Response) : Promise<void> => {
     const{ user, team } = req.body;
 
