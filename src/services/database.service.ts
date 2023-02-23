@@ -220,9 +220,10 @@ class DatabaseService {
             return false;}
     }
 
-    public async proposeDropPlayer(dropPlayerId: number, rosterId: number, teamId: number, userId: number, week: number): Promise<RosterPlayer>
+    public async proposeDropPlayer(dropPlayerId: number, rosterId: number, teamId: number, userId: number, week: number)
     {
         try {
+
             const created = await this.client.transaction.create({
                 data: {
                     type: 'Drop',
@@ -245,9 +246,10 @@ class DatabaseService {
                     joins_proposing_team: false,
                 },
             });
+            return true;
         }
         catch(e) {
-           return;
+           return false;
         }
     }
 

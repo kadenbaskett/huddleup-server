@@ -3,7 +3,7 @@ import TransactionService from '@services/transaction.service';
 import { calculateFantasyPoints } from '@/services/general.service';
 import { Request, Response } from 'express';
 import { Roster, RosterPlayer, Team, Transaction } from '@prisma/client';
-import { json } from 'envalid';
+import { bool, json } from 'envalid';
 import randomstring from 'randomstring';
 import { remove } from 'winston';
 
@@ -163,9 +163,8 @@ class DatabaseController {
       const userId = req.body.userId;
       const week = req.body.week;
 
-      const rp: RosterPlayer = await this.databaseService.proposeDropPlayer(dropPlayerId, rosterId, teamId, userId, week);
-
-      rp ? res.status(200).json(rp) : res.sendStatus(400);
+      const created = await this.databaseService.proposeDropPlayer(dropPlayerId, rosterId, teamId, userId, week);
+      created ? res.sendStatus(200) : res.sendStatus(400);
   };
 
 
