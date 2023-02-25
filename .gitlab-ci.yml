@@ -5,8 +5,8 @@ before_script:
 stages:
   - deploy
 deployToAWS:
-  only:
-    - main
+  # only:
+  #   - main
   stage: deploy
   script:
     - bash deployAWS/deploy.sh
