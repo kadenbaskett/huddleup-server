@@ -13,6 +13,7 @@ cd huddleup
 cd backend
 #TODO: update when backend is working with pm2
 # pm2 delete webapp 
+git fetch
 git checkout ci-deployment
 git pull
 npm i
