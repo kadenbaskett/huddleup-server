@@ -14,7 +14,7 @@ cd backend
 pm2 list
 
 # stop, update, and restart service 
-pm2 delete backend 
+# pm2 delete backend 
 
 git fetch
 git checkout ci-deployment
