@@ -12,7 +12,7 @@ cd huddleup
 cd backend
 
 # stop, update, and restart service 
-pm2 delete webapp 
+pm2 delete backend 
 
 git fetch
 git checkout ci-deployment
@@ -22,4 +22,4 @@ npx prisma generate
 
 npm i
 echo "Starting..."
-pm2 start npm --name "webapp" -- start
+pm2 start npm --name "backend" -- start
