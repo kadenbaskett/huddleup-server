@@ -27,5 +27,4 @@ git pull
 npx prisma generate
 
 npm i
-echo "Starting..."
 pm2 start npm --name "backend" -- start
