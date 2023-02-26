@@ -11,6 +11,8 @@ export PATH="/home/ubuntu/.nvm/versions/node/v19.0.0/lib/node_modules/pm2/bin:$P
 cd huddleup
 cd backend
 
+pm2 list
+
 # stop, update, and restart service 
 pm2 delete backend 
 
