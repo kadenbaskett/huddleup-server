@@ -21,7 +21,7 @@ pm2 delete backend
 set -e
 
 git fetch
-git checkout ci-deployment
+git checkout main
 git pull
 
 npx prisma generate
