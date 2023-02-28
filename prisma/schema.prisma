@@ -225,7 +225,7 @@ model TransactionAction {
 model News {
   id                  Int    @id @default(autoincrement())
   external_id         Int    @unique // NFL stats API news ID
-  updated_date        String
+  updated_date        String?
   time_posted         String
   title               String
   content             Bytes
@@ -233,8 +233,8 @@ model News {
   external_player_id2 Int?
   external_team_id    Int?
   external_team_id2   Int?
-  source              String
-  source_url          String
+  source              String?
+  source_url          String?
 }
 
 model Timeframe {
