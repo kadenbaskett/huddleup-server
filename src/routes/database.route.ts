@@ -16,10 +16,15 @@ class DatabaseRoute implements Routes {
     //************* POST ROUTES  **************/
     this.router.post(`${this.path}/league`, this.controller.createLeague);
     this.router.post(`${this.path}/user`, this.controller.createUser);
+    this.router.post(`${this.path}/team`, this.controller.createTeam);
+    this.router.post(`${this.path}/deleteTeam`, this.controller.deleteTeam);
+    this.router.post(`${this.path}/userToTeam`, this.controller.userToTeam);
+    this.router.post(`${this.path}/removeUserFromTeam`, this.controller.removeUserFromTeam);
     this.router.post(`${this.path}/roster/addDropPlayer`, this.controller.addDropPlayer);
     this.router.post(`${this.path}/roster/addPlayer`, this.controller.addPlayer);
     this.router.post(`${this.path}/roster/dropPlayer`, this.controller.dropPlayer);
     this.router.post(`${this.path}/roster/proposeTrade`, this.controller.proposeTrade);
+    this.router.post(`${this.path}/roster/editLineup`, this.controller.editLineup);
     this.router.post(`${this.path}/transaction/action`, this.controller.transactionAction);
 
 
@@ -39,6 +44,7 @@ class DatabaseRoute implements Routes {
 
     this.router.get(`${this.path}/leagues/user/:userId(\\d+)`, this.controller.getUserLeagues);
     this.router.get(`${this.path}/leagues/public`, this.controller.getPublicLeagues);
+    this.router.get(`${this.path}/leagues/private`, this.controller.getPrivateLeagues);
     this.router.get(`${this.path}/league/:leagueId(\\d+)`, this.controller.getLeagueInfo);
 
     this.router.get(`${this.path}/teams/user/:userId(\\d+)`, this.controller.getUserTeams);

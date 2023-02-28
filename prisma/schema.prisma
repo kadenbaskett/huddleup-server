@@ -14,6 +14,7 @@ model League {
   id              Int            @id @default(autoincrement())
   name            String
   description     String
+  token           String         @unique
   teams           Team[]
   commissioner    User           @relation(fields: [commissioner_id], references: [id])
   commissioner_id Int
@@ -108,12 +109,12 @@ model WaiverSettings {
 // END OF LEAGUE SETTINGS
 
 model User {
-  id                      Int           @id @default(autoincrement())
+  id                      Int                 @id @default(autoincrement())
   username                String
   email                   String
   user_to_team            UserToTeam[]
   leagues_user_is_commish League[]
-  proposed_transactions   Transaction[] @relation(name: "user")
+  proposed_transactions   Transaction[]       @relation(name: "user")
   transaction_actions     TransactionAction[]
 }
 
@@ -133,6 +134,7 @@ model Team {
   league_id             Int
   settings              TeamSettings  @relation(fields: [team_settings_id], references: [id])
   team_settings_id      Int           @unique
+  token                 String        @unique
   draft_order           DraftOrder[]
   rosters               Roster[]
   managers              UserToTeam[]
@@ -209,13 +211,13 @@ model Transaction {
 }
 
 model TransactionAction {
-  id                Int                 @id @default(autoincrement())
-  transaction_id    Int                 @default(0)
-  transaction       Transaction         @relation(fields: [transaction_id], references: [id])
-  user_id           Int                 @default(0)
-  user              User                @relation(fields: [user_id], references: [id])
-  action_date       DateTime
-  action_type       String
+  id             Int         @id @default(autoincrement())
+  transaction_id Int         @default(0)
+  transaction    Transaction @relation(fields: [transaction_id], references: [id])
+  user_id        Int         @default(0)
+  user           User        @relation(fields: [user_id], references: [id])
+  action_date    DateTime
+  action_type    String
 }
 
 //***************** MODELS USED FOR STORING API DATA ***************************

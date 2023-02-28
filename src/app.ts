@@ -22,6 +22,10 @@ class App {
     this.env = NODE_ENV || 'development';
     this.port = PORT || 3000;
 
+    this.app.get('/health', (req, res) => {
+      res.status(200).send('Success');
+    });
+
     this.initializeMiddlewares();
     this.initializeRoutes(routes);
     this.initializeSwagger();

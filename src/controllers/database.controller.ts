@@ -2,7 +2,10 @@ import DatabaseService from '@services/database.service';
 import TransactionService from '@services/transaction.service';
 import { calculateFantasyPoints } from '@/services/general.service';
 import { Request, Response } from 'express';
-import { Transaction } from '@prisma/client';
+import { Roster, RosterPlayer, Team, Transaction } from '@prisma/client';
+import { bool, json } from 'envalid';
+import randomstring from 'randomstring';
+import { remove } from 'winston';
 
 
 class DatabaseController {
@@ -27,11 +30,11 @@ class DatabaseController {
     const{ leagueName, numTeams, minPlayers, maxPlayers, leagueDescription, publicJoin, scoring, commissionerId } = req.body;
 
     // create league settings
-    const settings = await this.databaseService.createLeagueSettings(numTeams, publicJoin, minPlayers, maxPlayers, scoring );
+    const settings = await this.databaseService.createLeagueSettings(numTeams, publicJoin, minPlayers, maxPlayers, scoring);
+    const token = await randomstring.generate(7);
+    const league = await this.databaseService.createLeague(commissionerId, leagueName, leagueDescription, settings, token);
 
-    const league = await this.databaseService.createLeague(commissionerId, leagueName, leagueDescription, settings );
-
-      league ? res.sendStatus(200) : res.sendStatus(400);
+    league ? res.status(200).json(league) : res.sendStatus(400);
   };
 
   public createUser = async (req: Request, res: Response): Promise<void> => {
@@ -49,11 +52,51 @@ class DatabaseController {
         res.status(400).send(validationMessage);
       }
   };
+
+  public createTeam = async (req: Request, res: Response): Promise<void> => {
+
+    const{ leagueId, teamName, teamOwnerId } = req.body;
+
+    // We haven't talked through this yet but this will need to happen at some point
+    // I think we should do the same as league settings by giving the team default values at first and having them change it if they want
+    const settings = await this.databaseService.createTeamSettings();
+
+    const token = randomstring.generate(7);
+    const team: Team = await this.databaseService.createTeam(leagueId, teamName, teamOwnerId, settings.id, token);
+    // passing 1 here because when a user creates a team this user is the owner/captain
+    const userToTeam = await this.databaseService.userToTeam(team.id, teamOwnerId, 1);
+
+    team && userToTeam ? res.status(200).json(team) : res.sendStatus(400);
+  };
+
+  public deleteTeam = async (req: Request, res: Response): Promise<void> => {
+    const{ managers, id, league_id } = req.body;
+
+    managers.forEach(async (manager) => await this.databaseService.removeUserFromTeam(manager.team_id, manager.user_id));
+    const removedTeam = await this.databaseService.deleteTeam(id, league_id);
+    removedTeam ? res.sendStatus(200) : res.sendStatus(400);
+  };
+
+  public userToTeam = async (req: Request, res: Response) : Promise<void> => {
+    const{ user, team } = req.body;
+
+    const userToTeam = await this.databaseService.userToTeam(team.id, user.userInfo.id, 0);
+
+    userToTeam ? res.status(200).json(userToTeam) : res.sendStatus(400);
+  };
+
+  public removeUserFromTeam = async (req: Request, res: Response) : Promise<void> => {
+    const{ user, userTeam } = req.body;
+    const removed = await this.databaseService.removeUserFromTeam(userTeam.id, user.user_id);
+
+    removed ? res.sendStatus(200) : res.sendStatus(400);
+  };
+
+
   public transactionAction = async (req: Request, res: Response): Promise<void> => {
     const { action, transactionId, userId } = req.body;
 
     const success = await this.transactionService.executeTransactionAction(action, transactionId, userId);
-
     if(success)
       res.sendStatus(200);
     else
@@ -68,10 +111,19 @@ class DatabaseController {
       const userId = req.body.userId;
       const week = req.body.week;
 
-      const t: Transaction = await this.databaseService.proposeAddPlayer(addPlayerId, addPlayerExternalId, rosterId, teamId, userId, week);
+      const rp: RosterPlayer = await this.databaseService.proposeAddPlayer(addPlayerId, addPlayerExternalId, rosterId, teamId, userId, week);
 
-      t ? res.status(200).json(t) : res.sendStatus(400);
+      rp ? res.status(200).json(rp) : res.sendStatus(400);
   };
+
+  public editLineup = async (req: Request, res: Response): Promise<void> => {
+    const rosterPlayerId = req.body.rosterPlayerId;
+    const newPosition = req.body.newPosition;
+
+    const rp: RosterPlayer = await this.databaseService.editLineup(rosterPlayerId, newPosition);
+
+    rp ? res.status(200).json(rp) : res.sendStatus(400);
+};
 
 
   public proposeTrade = async (req: Request, res: Response): Promise<void> => {
@@ -99,9 +151,9 @@ class DatabaseController {
       const userId = req.body.userId;
       const week = req.body.week;
 
-      const transaction: Transaction = await this.databaseService.proposeAddDropPlayer(addPlayerId, addPlayerExternalId, dropPlayerIds, rosterId, teamId, userId, week);
+      const roster: Roster = await this.databaseService.proposeAddDropPlayer(addPlayerId, addPlayerExternalId, dropPlayerIds, rosterId, teamId, userId, week);
 
-      transaction ? res.status(200).json(transaction) : res.sendStatus(400);
+      roster ? res.status(200).json(roster) : res.sendStatus(400);
   };
 
   public dropPlayer = async (req: Request, res: Response): Promise<void> => {
@@ -111,9 +163,8 @@ class DatabaseController {
       const userId = req.body.userId;
       const week = req.body.week;
 
-      const transaction: Transaction = await this.databaseService.proposeDropPlayer(dropPlayerId, rosterId, teamId, userId, week);
-
-      transaction ? res.status(200).json(transaction) : res.sendStatus(400);
+      const created = await this.databaseService.proposeDropPlayer(dropPlayerId, rosterId, teamId, userId, week);
+      created ? res.sendStatus(200) : res.sendStatus(400);
   };
 
 
@@ -240,6 +291,12 @@ class DatabaseController {
 
       leagues ? res.status(200).json(leagues) : res.sendStatus(400);
   };
+
+  public getPrivateLeagues = async (req: Request, res: Response): Promise<void> => {
+    const leagues = await this.databaseService.getPrivateLeagues();
+
+    leagues ? res.status(200).json(leagues) : res.sendStatus(400);
+};
 
   public getNFLTeamGames = async (req: Request, res: Response): Promise<void> => {
       const teamID = Number(req.params.teamID);
