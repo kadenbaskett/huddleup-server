@@ -136,15 +136,24 @@ class DatabaseController {
       const userId = req.body.userId;
       const week = req.body.week;
 
-      const transactions: Transaction[] = await this.databaseService.getTeamPendingTransactions(proposeTeamId);
+      const duplicate = false;
 
+      //check if a addDrop of this type already exists
+      let transactions: Transaction[] = await this.databaseService.getTeamPendingTransactions(proposeTeamId);
+      transactions = transactions.filter((transaction) => transaction.type === 'Trade');
 
       console.log('transactions', transactions);
+      
 
-
-      const transaction: Transaction = await this.databaseService.proposeTrade(sendPlayerIds, recPlayerIds, proposeRosterId, relatedRosterId, proposeTeamId, relatedTeamId, userId, week);
-
-      transaction ? res.status(200).json(transaction) : res.sendStatus(400);
+      if(!duplicate)
+      {
+        const transaction: Transaction = await this.databaseService.proposeTrade(sendPlayerIds, recPlayerIds, proposeRosterId, relatedRosterId, proposeTeamId, relatedTeamId, userId, week);
+        transaction ? res.status(200).json(transaction) : res.sendStatus(400);
+      }
+      else
+      {
+        res.sendStatus(400);
+      }
   };
 
 
@@ -221,8 +230,6 @@ class DatabaseController {
       //check if a addDrop of this type already exists
       let transactions: Transaction[] = await this.databaseService.getTeamPendingTransactions(teamId);
       transactions = transactions.filter((transaction) => transaction.type === 'Drop');
-
-      console.log('transactions', transactions);
 
       transactions.forEach((transaction)=> {
         
