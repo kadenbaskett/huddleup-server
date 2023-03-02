@@ -595,6 +595,33 @@ class DatabaseService {
         }
     }
 
+    public async getTeamPendingTransactions(teamID: number): Promise<Transaction[]>
+    {
+        try
+        {
+            return await this.client.transaction.findMany(
+                {
+                    where:{
+                        proposing_team_id: teamID,
+                        status: 'Pending',
+                        
+                    },
+                    include:{
+                        players:{
+                            include:{
+                                player:true,
+                            },
+                        },
+                    },
+                },
+            );
+        }
+        catch(e)
+        {
+            return null;
+        }
+    }
+
 
     public async getCurrentTeamRoster(teamID: number): Promise<Roster[]>
     {

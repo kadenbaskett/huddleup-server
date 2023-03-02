@@ -136,6 +136,12 @@ class DatabaseController {
       const userId = req.body.userId;
       const week = req.body.week;
 
+      const transactions: Transaction[] = await this.databaseService.getTeamPendingTransactions(proposeTeamId);
+
+
+      console.log('transactions', transactions);
+
+
       const transaction: Transaction = await this.databaseService.proposeTrade(sendPlayerIds, recPlayerIds, proposeRosterId, relatedRosterId, proposeTeamId, relatedTeamId, userId, week);
 
       transaction ? res.status(200).json(transaction) : res.sendStatus(400);
@@ -151,9 +157,56 @@ class DatabaseController {
       const userId = req.body.userId;
       const week = req.body.week;
 
-      const roster: Roster = await this.databaseService.proposeAddDropPlayer(addPlayerId, addPlayerExternalId, dropPlayerIds, rosterId, teamId, userId, week);
+      let duplicate = false;
 
-      roster ? res.status(200).json(roster) : res.sendStatus(400);
+      //check if a addDrop of this type already exists
+      let transactions: Transaction[] = await this.databaseService.getTeamPendingTransactions(teamId);
+      transactions = transactions.filter((transaction) => transaction.type === 'AddDrop');
+
+      transactions.forEach((transaction)=> {
+        const addPlayer = transaction.players.find((player) => 
+          player.joins_proposing_team === true,
+        ).player_id;
+
+
+        const droppingPlayers = transaction.players.filter((player) => 
+          player.joins_proposing_team === false,
+        ).map((transaction) => transaction.player_id);
+
+        if(addPlayer === addPlayerId)
+        {
+
+          dropPlayerIds.forEach((dropId) => {
+
+            if(droppingPlayers.includes(dropId))
+            {
+              const index = droppingPlayers.indexOf(dropId);
+              if(index > -1)
+              {
+                droppingPlayers.splice(index, 1);
+              }
+            }
+          });
+
+          //if this is 0 then a copy of this addDrop exists
+          if(droppingPlayers.length === 0)
+          {
+           duplicate = true;
+          }
+        }
+      });
+      
+      if(!duplicate)
+      {
+        const roster: Roster = await this.databaseService.proposeAddDropPlayer(addPlayerId, addPlayerExternalId, dropPlayerIds, rosterId, teamId, userId, week);
+        roster ? res.status(200).json(roster) : res.sendStatus(400);
+      }
+      else
+      {
+        res.sendStatus(400);
+      }
+
+      
   };
 
   public dropPlayer = async (req: Request, res: Response): Promise<void> => {
@@ -163,8 +216,35 @@ class DatabaseController {
       const userId = req.body.userId;
       const week = req.body.week;
 
-      const created = await this.databaseService.proposeDropPlayer(dropPlayerId, rosterId, teamId, userId, week);
-      created ? res.sendStatus(200) : res.sendStatus(400);
+      let duplicate = false;
+
+      //check if a addDrop of this type already exists
+      let transactions: Transaction[] = await this.databaseService.getTeamPendingTransactions(teamId);
+      transactions = transactions.filter((transaction) => transaction.type === 'Drop');
+
+      console.log('transactions', transactions);
+
+      transactions.forEach((transaction)=> {
+        
+        const dropPlayer = transaction.players.find((player) => 
+          player.joins_proposing_team === false,
+        ).player_id;
+
+        if(dropPlayer === dropPlayerId)
+        {
+          duplicate = true;
+        }
+      });
+
+      if(!duplicate)
+      {
+        const created = await this.databaseService.proposeDropPlayer(dropPlayerId, rosterId, teamId, userId, week);
+        created ? res.sendStatus(200) : res.sendStatus(400);
+      }
+      else
+      {
+        res.sendStatus(400);
+      }
   };
 
 
