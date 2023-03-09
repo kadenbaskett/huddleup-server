@@ -10,9 +10,9 @@ import {
   WaiverSettings,
 } from '@prisma/client';
 // import { createAccount } from '../firebase/firebase';
-import { calculateSeasonLength, createMatchups } from './services/helpers.service';
+import { calculateSeasonLength, createMatchups } from '@services/general.service';
 import randomstring from 'randomstring';
-import DatabaseService from './services/database.service';
+import DatabaseService from '@services/datasink_database.service';
 /*
  *  Seeds the database with mock data. The simulate league function will
  *  create new users, leagues, teams, rosters, and roster players

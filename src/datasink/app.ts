@@ -1,7 +1,7 @@
 import { NFLGame, Player, Timeframe, News } from '@prisma/client';
 import { respObj } from './interfaces/respobj.interface';
-import DatabaseService from './services/database.service';
-import StatsService from './services/stats.service';
+import DatabaseService from '@services/datasink_database.service';
+import StatsService from '@services/stats.service';
 
 const hoursToMilliseconds = (hours) => {
   return hours * 60 * 60 * 1000;
