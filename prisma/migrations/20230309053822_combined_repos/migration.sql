@@ -221,7 +221,7 @@ CREATE TABLE `TransactionAction` (
 CREATE TABLE `News` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `external_id` INTEGER NOT NULL,
-    `updated_date` VARCHAR(191) NOT NULL,
+    `updated_date` VARCHAR(191) NULL,
     `time_posted` VARCHAR(191) NOT NULL,
     `title` VARCHAR(191) NOT NULL,
     `content` LONGBLOB NOT NULL,
@@ -229,8 +229,8 @@ CREATE TABLE `News` (
     `external_player_id2` INTEGER NULL,
     `external_team_id` INTEGER NULL,
     `external_team_id2` INTEGER NULL,
-    `source` VARCHAR(191) NOT NULL,
-    `source_url` VARCHAR(191) NOT NULL,
+    `source` VARCHAR(191) NULL,
+    `source_url` VARCHAR(191) NULL,
 
     UNIQUE INDEX `News_external_id_key`(`external_id`),
     PRIMARY KEY (`id`)
