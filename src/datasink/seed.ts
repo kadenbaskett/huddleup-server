@@ -13,6 +13,7 @@ import {
 import { calculateSeasonLength, createMatchups } from '@services/general.service';
 import randomstring from 'randomstring';
 import DatabaseService from '@services/datasink_database.service';
+import StatsService from '@/services/stats.service';
 /*
  *  Seeds the database with mock data. The simulate league function will
  *  create new users, leagues, teams, rosters, and roster players
@@ -20,10 +21,12 @@ import DatabaseService from '@services/datasink_database.service';
 class Seed {
   client: PrismaClient;
   db: DatabaseService;
+  stats: StatsService;
 
   constructor() {
     this.client = new PrismaClient();
     this.db = new DatabaseService();
+    this.stats = new StatsService();
   }
 
   async createEmptyLeague() {
@@ -711,7 +714,19 @@ class Seed {
 
     const allowedPositions = [ 'RB', 'WR', 'TE', 'QB' ];
     const flexPositions = [ 'RB', 'WR', 'TE' ];
-    const players = await this.client.player.findMany();
+
+    const resp = await this.stats.getTopFantasyPlayersByADP();
+    let players = await this.client.player.findMany();
+
+    if(resp.data)
+    {
+      const fantasyPlayers = Object(resp.data);
+      let ids = fantasyPlayers.map((p) => p.PlayerID);
+      ids = ids.slice(0, 300);
+      players = await this.client.player.findMany({ where : { external_id: { in: ids } } });
+    }
+
+
     this.shuffleArray(players);
 
     for (const p of players) {
