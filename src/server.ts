@@ -22,14 +22,15 @@ const createEmptyLeague = args.includes('createEmptyLeague');
 const simulateDraft = args.includes('simulateDraft');
 const simulateMatchups = args.includes('simulateMatchups');
 const simulateWeek = args.includes('simulateWeek');
+const seedUsers = args.includes('seedUsers');
 
 
 if(runBackend)
 {
-    const routes = [ 
-        new IndexRoute(), 
-        new UsersRoute(), 
-        new AuthRoute(), 
+    const routes = [
+        new IndexRoute(),
+        new UsersRoute(),
+        new AuthRoute(),
         new DatabaseRoute(),
     ];
 
@@ -74,6 +75,9 @@ else
       const leagueId = Number(args[1]);
       const weekToSim = Number(args[2]);
       seed.simulateWeek(leagueId, weekToSim); // leagueID, week number
+    } else if (seedUsers){
+      console.log('seeding users');
+      seed.createFirebaseUsers();
     } else {
       console.log(
         'Must run with command line args to output the desired behavior. See package.json for a list of available args',

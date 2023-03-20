@@ -16,6 +16,7 @@
     "simulateDraft": "cross-env NODE_ENV=development nodemon simulateDraft",
     "simulateMatchups": "cross-env NODE_ENV=development nodemon simulateMatchups",
     "simulateWeek": "cross-env NODE_ENV=development nodemon simulateWeek",
+    "seedUsers": "cross-env NODE_ENV=development nodemon seedUsers",
     "build": "swc src -d dist --source-maps --copy-files",
     "build:tsc": "tsc && tsc-alias",
     "test": "jest --forceExit --detectOpenHandles",
