@@ -389,16 +389,6 @@ class DatabaseService {
                 },
             });
 
-            // Create new roster player
-            await this.client.rosterPlayer.create({
-                data: {
-                    external_id: addPlayerExternalId,
-                    position: 'BE',
-                    roster_id: rosterId,
-                    player_id: addPlayerId,
-                },
-            });
-
             // For each player selected to drop, create the transaction player and update the roster player
             for(const id of dropPlayerIds)
             {
@@ -408,16 +398,6 @@ class DatabaseService {
                         transaction_id: created.id,
                         player_id: id,
                         joins_proposing_team: false,
-                    },
-                });
-
-                // Update the roster player
-                await this.client.rosterPlayer.delete({
-                    where: {
-                        player_id_roster_id: {
-                            player_id: id,
-                            roster_id: rosterId,
-                        },
                     },
                 });
             }

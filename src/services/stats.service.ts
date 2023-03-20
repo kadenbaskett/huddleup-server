@@ -1,5 +1,5 @@
+import { respObj } from '@/datasink/interfaces/respobj.interface';
 import axios from 'axios';
-import { respObj } from '../interfaces/respobj.interface';
 
 class StatsService {
   key: string;
