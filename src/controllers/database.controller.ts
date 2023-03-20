@@ -141,10 +141,7 @@ class DatabaseController {
       //check if a addDrop of this type already exists
       let transactions: Transaction[] = await this.databaseService.getTeamPendingTransactions(proposeTeamId);
       transactions = transactions.filter((transaction) => transaction.type === 'Trade');
-
-      console.log('transactions', transactions);
       
-
       if(!duplicate)
       {
         const transaction: Transaction = await this.databaseService.proposeTrade(sendPlayerIds, recPlayerIds, proposeRosterId, relatedRosterId, proposeTeamId, relatedTeamId, userId, week);
