@@ -25,10 +25,16 @@ git fetch
 git checkout main
 git pull
 
+# turn off command fail causes exit
+set +e
+
 cd prisma
 ls
 rm -r migrations
 cd ..
+
+# any future command that fails will exit the script
+set -e
 
 # npx prisma migrate deploy
 npx prisma migrate dev
