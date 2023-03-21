@@ -732,6 +732,13 @@ class DatabaseService {
                                     player: true,
                                   },
                                 },
+                                transaction_actions: {
+                                  include: {
+                                    user: true,
+                                  },
+                                },
+                                related_team: true,
+                                proposing_team: true,
                             },
                             },
                             home_matchups: true,
