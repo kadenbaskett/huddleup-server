@@ -25,6 +25,10 @@ git fetch
 git checkout main
 git pull
 
+cd prisma
+rm -r migrations
+cd ..
+
 npx prisma migrate deploy
 npx prisma generate
 
