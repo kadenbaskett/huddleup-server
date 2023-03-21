@@ -26,6 +26,7 @@ git checkout main
 git pull
 
 cd prisma
+ls
 rm -r migrations
 cd ..
 
