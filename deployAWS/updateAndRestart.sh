@@ -29,7 +29,8 @@ cd prisma
 rm -r migrations
 cd ..
 
-npx prisma migrate deploy
+# npx prisma migrate deploy
+npx prisma migrate dev
 npx prisma generate
 
 npm i
