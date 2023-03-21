@@ -20,11 +20,8 @@ class TransactionService {
         action_type: action,
       },
     });
-    const transaction = await this.client.transaction.update({
+    const transaction = await this.client.transaction.findFirst({
       where: { id: transactionId },
-      data: {
-        status: action === 'Reject' ? 'Rejected' : 'Complete',
-      },
       include: {
         players: {
           include: {
@@ -41,8 +38,34 @@ class TransactionService {
         },
       },
     });
+    if (transaction.type !== 'Trade') {
+      await this.client.transaction.update({
+        where: { id: transactionId },
+        data: {
+          status: action === 'Reject' ? 'Rejected' : 'Complete',
+        },
+      });
+    } else {
+      // has the trade been approved by the proposing team?
+      if (transaction.status === 'Pending') {
+        await this.client.transaction.update({
+          where: { id: transactionId },
+          data: {
+            status: action === 'Reject' ? 'Rejected' : 'SentToRelatedTeam',
+          },
+        });
+      } else if (transaction.status === 'SentToRelatedTeam') {
+        await this.client.transaction.update({
+          where: { id: transactionId },
+          data: {
+            status: action === 'Reject' ? 'Rejected' : 'Complete',
+          },
+        });
+      }
+    }
     if(!transaction) return false;
     try {
+      console.log('transaction', transaction);
         const timeframe: Timeframe = await this.databaseService.getTimeframe();
         const roster = await this.client.roster.findFirst({
           where: {
@@ -72,10 +95,14 @@ class TransactionService {
         if (!roster) return false;
 
         const droppingPlayerIds: number[] = droppingPlayers.map((transactionPlayer) => {return transactionPlayer.player_id;});
-
         // Execute
         await this.executePlayerAddDrop(addingPlayer.id, addingPlayer.external_id, droppingPlayerIds, roster.id);
-      } else if (transaction.type === 'Trade' && action === 'Approve') {
+      }
+      // else if (transaction.type === 'Trade' && transaction.status === 'Pending' && action === 'Approve') {
+      //   console.log('sending to related team');
+      //   await this.sendTradeToOtherTeam(transactionId);
+      // }
+       else if (transaction.type === 'Trade' && transaction.status === 'SentToRelatedTeam' && action === 'Approve') {
         await this.completeTrade(transactionId);
       }
       // TODO: reject all pending transactions involving dropped players
@@ -140,10 +167,25 @@ class TransactionService {
     return;
   }
 
+  public async sendTradeToOtherTeam(transactionId: number) {
+    try {
+      await this.client.transaction.update({
+        where: {
+          id: transactionId,
+        },
+        data: {
+          status: 'SentToRelatedTeam',
+        },
+      });
+      return;
+    } catch (e) {
+      return null;
+    }
+  }
+
   public async completeTrade(transactionId: number)
     {
         try {
-
             const transaction: Transaction = await this.client.transaction.findFirst({
                 where: {
                     id: transactionId,
@@ -174,7 +216,7 @@ class TransactionService {
 
             for(const rp of rosterPlayers)
             {
-                const transactionPlayer = tPlayers.find((tp) => tp.player_id === rp.player_id);
+                const transactionPlayer = tPlayers.find((tp) => tp.player_id === rp.player_id && tp.transaction_id === transactionId);
 
                 // add to new roster
                 const newTeamId = transactionPlayer.joins_proposing_team ? transaction.proposing_team_id : transaction.related_team_id;
