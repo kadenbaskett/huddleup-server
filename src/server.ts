@@ -8,7 +8,9 @@ import Seed from './datasink/seed';
 import DatabaseRoute from './routes/database.route';
 
 
+console.log('This is firing');
 validateEnv();
+console.log('And this is firing');
 
 const args = process.argv.slice(2);
 
@@ -25,7 +27,7 @@ const simulateWeek = args.includes('simulateWeek');
 const seedUsers = args.includes('seedUsers');
 
 
-if(runBackend)
+if(process.env.SERVICE === 'backend')
 {
     const routes = [
         new IndexRoute(),
@@ -38,7 +40,7 @@ if(runBackend)
 
     backendApp.listen();
 }
-else
+else if(process.env.SERVICE === 'datasink')
 {
   const dataSink = new DataSinkApp();
 

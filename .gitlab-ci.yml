@@ -6,7 +6,7 @@ stages:
   - deploy
 deployToAWS:
   only:
-    - main
+    - fix-deployment-scripts
   stage: deploy
   script:
     - bash deployAWS/deploy.sh
