@@ -25,7 +25,7 @@ git fetch
 git checkout main
 git pull
 
-npx prisma migrate deploy
+# npx prisma migrate deploy
 npx prisma generate
 
 npm i
