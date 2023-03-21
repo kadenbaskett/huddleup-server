@@ -1,3 +1,4 @@
+import { TransactionWithPlayers } from '@/interfaces/prisma.interface';
 import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster, RosterPlayer, Timeframe, User, LeagueSettings, WaiverSettings, ScheduleSettings, ScoringSettings, RosterSettings, DraftSettings, TradeSettings, News, PlayerProjections, TransactionPlayer, Transaction, TransactionAction, TeamSettings, UserToTeam } from '@prisma/client';
 class DatabaseService {
 
@@ -7,7 +8,6 @@ class DatabaseService {
     {
         this.client = new PrismaClient();
     }
-
 
     // **************** SETTERS & UPDATERS ********************** //
 
@@ -575,7 +575,7 @@ class DatabaseService {
         }
     }
 
-    public async getTeamPendingTransactions(teamID: number): Promise<Transaction[]>
+    public async getTeamPendingTransactions(teamID: number): Promise<TransactionWithPlayers[]>
     {
         try
         {
@@ -587,11 +587,12 @@ class DatabaseService {
                         
                     },
                     include:{
-                        players:{
-                            include:{
-                                player:true,
-                            },
-                        },
+                        players: true,
+                        // {
+                        //     include:{
+                        //         player:true,
+                        //     },
+                        // },
                     },
                 },
             );

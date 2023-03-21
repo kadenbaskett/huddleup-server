@@ -7,6 +7,7 @@ import { bool, json } from 'envalid';
 import randomstring from 'randomstring';
 import { add, remove } from 'winston';
 import { Console } from 'console';
+import { TransactionWithPlayers } from '@/interfaces/prisma.interface';
 
 
 class DatabaseController {
@@ -127,7 +128,7 @@ class DatabaseController {
       let duplicate = false;
 
       //check if a Trade of this type already exists
-      let transactions: Transaction[] = await this.databaseService.getTeamPendingTransactions(proposeTeamId);
+      let transactions: TransactionWithPlayers[] = await this.databaseService.getTeamPendingTransactions(proposeTeamId);
       transactions = transactions.filter((transaction) => transaction.type === 'Trade');
 
       transactions.forEach((transaction) => 
@@ -198,7 +199,7 @@ class DatabaseController {
     let duplicate = false;
     
     
-    let transactions: Transaction[] = await this.databaseService.getTeamPendingTransactions(teamId);
+    let transactions: TransactionWithPlayers[] = await this.databaseService.getTeamPendingTransactions(teamId);
     transactions = transactions.filter((transaction) => transaction.type === 'Add');
     
     
@@ -240,7 +241,7 @@ class DatabaseController {
       let duplicate = false;
 
       //check if a addDrop of this type already exists
-      let transactions: Transaction[] = await this.databaseService.getTeamPendingTransactions(teamId);
+      let transactions: TransactionWithPlayers[] = await this.databaseService.getTeamPendingTransactions(teamId);
       transactions = transactions.filter((transaction) => transaction.type === 'AddDrop');
 
       transactions.forEach((transaction)=> {
@@ -300,7 +301,7 @@ class DatabaseController {
       let duplicate = false;
 
       //check if a addDrop of this type already exists
-      let transactions: Transaction[] = await this.databaseService.getTeamPendingTransactions(teamId);
+      let transactions: TransactionWithPlayers[] = await this.databaseService.getTeamPendingTransactions(teamId);
       transactions = transactions.filter((transaction) => transaction.type === 'Drop');
 
       transactions.forEach((transaction)=> {
