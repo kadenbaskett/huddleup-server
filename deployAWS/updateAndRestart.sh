@@ -14,7 +14,8 @@ cd backend
 # turn off command fail causes exit
 set +e
 
-# stop, update, and restart service 
+# stop, update, and restart backend and datasink services
+pm2 delete datasink 
 pm2 delete backend 
 
 # any future command that fails will exit the script
@@ -24,7 +25,9 @@ git fetch
 git checkout main
 git pull
 
+npx prisma migrate deploy
 npx prisma generate
 
 npm i
-pm2 start npm --name "backend" -- start
+pm2 start npm --name "backend" -- startBackend
+pm2 start npm --name "datasink" -- startDatasink
