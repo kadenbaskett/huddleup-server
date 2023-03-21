@@ -26,9 +26,9 @@ git fetch
 git checkout fix-deployment-scripts
 git pull
 
-# npx prisma migrate deploy
+npx prisma migrate deploy
 npx prisma generate
 
 npm i
-pm2 start npm --name "backend" -- start:backend
-pm2 start npm --name "datasink" -- start:datasink
+pm2 start npm --name "backend" -- run start:backend
+pm2 start npm --name "datasink" -- run start:datasink
