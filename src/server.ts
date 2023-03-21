@@ -7,10 +7,7 @@ import DataSinkApp from './datasink/app';
 import Seed from './datasink/seed';
 import DatabaseRoute from './routes/database.route';
 
-
-console.log('This is firing');
 validateEnv();
-console.log('And this is firing');
 
 const args = process.argv.slice(2);
 

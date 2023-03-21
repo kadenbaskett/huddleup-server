@@ -30,5 +30,5 @@ git pull
 npx prisma generate
 
 npm i
-pm2 start npm --name "backend" -- startBackend
-pm2 start npm --name "datasink" -- startDatasink
+pm2 start npm --name "backend" -- start:backend
+pm2 start npm --name "datasink" -- start:datasink
