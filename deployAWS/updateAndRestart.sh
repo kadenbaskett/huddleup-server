@@ -22,8 +22,7 @@ pm2 delete backend
 set -e
 
 git fetch
-# git checkout main
-git checkout fix-deployment-scripts
+git checkout main
 git pull
 
 npx prisma migrate deploy
