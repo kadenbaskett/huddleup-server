@@ -255,9 +255,10 @@ model DraftQueue {
     team_id   Int @unique
     player    Player @relation(fields: [player_id], references: [id])
     player_id Int
-    order     Int
+    order     Int @unique
 
     @@unique([team_id, player_id])
+    @@unique([team_id, order])
 }
 
 //***************** MODELS USED FOR STORING API DATA ***************************
