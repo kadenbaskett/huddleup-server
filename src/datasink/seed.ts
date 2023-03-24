@@ -702,8 +702,16 @@ class Seed {
       season,
     };
 
-    const roster = await this.client.roster.create({
-      data: r,
+    const roster = await this.client.roster.upsert({
+      where: {
+        season_week_team_id: {
+          season: Number(season),
+          week: Number(week),
+          team_id: Number(team_id),
+        },
+      },
+      update: {},
+      create: r,
     });
 
     const constraints = {

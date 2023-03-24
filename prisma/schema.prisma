@@ -168,6 +168,8 @@ model Roster {
   team    Team           @relation(fields: [team_id], references: [id])
   team_id Int
   players RosterPlayer[]
+
+  @@unique([season, week, team_id])
 }
 
 // Map player id to the position in the lineup (bench, flex, WR, etc)

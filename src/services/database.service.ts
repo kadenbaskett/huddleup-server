@@ -2,8 +2,18 @@ import { TransactionWithPlayers } from '@/interfaces/prisma.interface';
 import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster, RosterPlayer, Timeframe, User, LeagueSettings, WaiverSettings, ScheduleSettings, ScoringSettings, RosterSettings, DraftSettings, TradeSettings, News, PlayerProjections, TransactionPlayer, Transaction, TransactionAction, TeamSettings, UserToTeam } from '@prisma/client';
 
 
-export async function createTeamWithRoster(data): Promise<Team> {
+export async function createTeamWithRoster(data, season): Promise<Team> {
     const team: Team = await this.client.team.create(data);
+
+    const rosterOneData = {
+      week: 1,
+      team_id: team.id,
+      season,
+    };
+
+    await this.client.roster.create({
+      data: rosterOneData,
+    });
 
     return team;
 }
