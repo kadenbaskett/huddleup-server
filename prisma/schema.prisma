@@ -243,6 +243,8 @@ model DraftPlayer {
     team        Team @relation(fields: [team_id], references: [id])
     team_id      Int
     pick_number Int
+
+    @@unique([league_id, player_id])
 }
 
 model DraftQueue {
@@ -254,6 +256,8 @@ model DraftQueue {
     player    Player @relation(fields: [player_id], references: [id])
     player_id Int
     order     Int
+
+    @@unique([team_id, player_id])
 }
 
 //***************** MODELS USED FOR STORING API DATA ***************************
