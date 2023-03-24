@@ -245,6 +245,7 @@ model DraftQueue {
     team_id   Int @unique
     player    Player @relation(fields: [player_id], references: [id])
     player_id Int
+    order     Int
 }
 
 //***************** MODELS USED FOR STORING API DATA ***************************
