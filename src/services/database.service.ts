@@ -1,3 +1,4 @@
+import { TransactionWithPlayers } from '@/interfaces/prisma.interface';
 import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster, RosterPlayer, Timeframe, User, LeagueSettings, WaiverSettings, ScheduleSettings, ScoringSettings, RosterSettings, DraftSettings, TradeSettings, News, PlayerProjections, TransactionPlayer, Transaction, TransactionAction, TeamSettings, UserToTeam } from '@prisma/client';
 class DatabaseService {
 
@@ -7,7 +8,6 @@ class DatabaseService {
     {
         this.client = new PrismaClient();
     }
-
 
     // **************** SETTERS & UPDATERS ********************** //
 
@@ -389,16 +389,6 @@ class DatabaseService {
                 },
             });
 
-            // Create new roster player
-            await this.client.rosterPlayer.create({
-                data: {
-                    external_id: addPlayerExternalId,
-                    position: 'BE',
-                    roster_id: rosterId,
-                    player_id: addPlayerId,
-                },
-            });
-
             // For each player selected to drop, create the transaction player and update the roster player
             for(const id of dropPlayerIds)
             {
@@ -408,16 +398,6 @@ class DatabaseService {
                         transaction_id: created.id,
                         player_id: id,
                         joins_proposing_team: false,
-                    },
-                });
-
-                // Update the roster player
-                await this.client.rosterPlayer.delete({
-                    where: {
-                        player_id_roster_id: {
-                            player_id: id,
-                            roster_id: rosterId,
-                        },
                     },
                 });
             }
@@ -595,6 +575,34 @@ class DatabaseService {
         }
     }
 
+    public async getTeamPendingTransactions(teamID: number): Promise<TransactionWithPlayers[]>
+    {
+        try
+        {
+            return await this.client.transaction.findMany(
+                {
+                    where:{
+                        proposing_team_id: teamID,
+                        status: 'Pending',
+                        
+                    },
+                    include:{
+                        players: true,
+                        // {
+                        //     include:{
+                        //         player:true,
+                        //     },
+                        // },
+                    },
+                },
+            );
+        }
+        catch(e)
+        {
+            return null;
+        }
+    }
+
 
     public async getCurrentTeamRoster(teamID: number): Promise<Roster[]>
     {
@@ -725,6 +733,13 @@ class DatabaseService {
                                     player: true,
                                   },
                                 },
+                                transaction_actions: {
+                                  include: {
+                                    user: true,
+                                  },
+                                },
+                                related_team: true,
+                                proposing_team: true,
                             },
                             },
                             home_matchups: true,

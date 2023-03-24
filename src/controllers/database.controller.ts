@@ -5,7 +5,9 @@ import { Request, Response } from 'express';
 import { Roster, RosterPlayer, Team, Transaction } from '@prisma/client';
 import { bool, json } from 'envalid';
 import randomstring from 'randomstring';
-import { remove } from 'winston';
+import { add, remove } from 'winston';
+import { Console } from 'console';
+import { TransactionWithPlayers } from '@/interfaces/prisma.interface';
 
 
 class DatabaseController {
@@ -103,19 +105,6 @@ class DatabaseController {
       res.sendStatus(400);
   };
 
-  public addPlayer = async (req: Request, res: Response): Promise<void> => {
-      const addPlayerId = req.body.addPlayerId;
-      const addPlayerExternalId = req.body.addPlayerExternalId;
-      const rosterId = req.body.rosterId;
-      const teamId = req.body.teamId;
-      const userId = req.body.userId;
-      const week = req.body.week;
-
-      const rp: RosterPlayer = await this.databaseService.proposeAddPlayer(addPlayerId, addPlayerExternalId, rosterId, teamId, userId, week);
-
-      rp ? res.status(200).json(rp) : res.sendStatus(400);
-  };
-
   public editLineup = async (req: Request, res: Response): Promise<void> => {
     const rosterPlayerId = req.body.rosterPlayerId;
     const newPosition = req.body.newPosition;
@@ -136,10 +125,108 @@ class DatabaseController {
       const userId = req.body.userId;
       const week = req.body.week;
 
-      const transaction: Transaction = await this.databaseService.proposeTrade(sendPlayerIds, recPlayerIds, proposeRosterId, relatedRosterId, proposeTeamId, relatedTeamId, userId, week);
+      let duplicate = false;
 
-      transaction ? res.status(200).json(transaction) : res.sendStatus(400);
+      //check if a Trade of this type already exists
+      let transactions: TransactionWithPlayers[] = await this.databaseService.getTeamPendingTransactions(proposeTeamId);
+      transactions = transactions.filter((transaction) => transaction.type === 'Trade');
+
+      transactions.forEach((transaction) => 
+      {
+
+        const addPlayers = transaction.players.filter((player) => 
+            player.joins_proposing_team === true,
+          ).map((transaction) => transaction.player_id);
+
+
+          const droppingPlayers = transaction.players.filter((player) => 
+          player.joins_proposing_team === false,
+        ).map((transaction) => transaction.player_id);
+
+
+        sendPlayerIds.forEach((sendPlayerId) => 
+        {
+          if(droppingPlayers.includes(sendPlayerId))
+          {
+            const index = droppingPlayers.indexOf(sendPlayerId);
+            if(index > -1)
+            {
+              droppingPlayers.splice(index, 1);
+            }          
+          }
+        });
+
+
+        recPlayerIds.forEach((recPlayerId) => 
+        {
+          if(addPlayers.includes(recPlayerId))
+          {
+            const index = addPlayers.indexOf(recPlayerId);
+            if(index > -1)
+            {
+              addPlayers.splice(index, 1);
+            } 
+          }
+        });
+
+
+        if(droppingPlayers.length === 0 && addPlayers.length == 0)
+        {
+          duplicate = true;
+        }
+        
+      });
+      
+      
+      if(!duplicate)
+      {
+        const transaction: Transaction = await this.databaseService.proposeTrade(sendPlayerIds, recPlayerIds, proposeRosterId, relatedRosterId, proposeTeamId, relatedTeamId, userId, week);
+        transaction ? res.status(200).json(transaction) : res.sendStatus(400);
+      }
+      else
+      {
+        res.sendStatus(400);
+      }
   };
+
+  public addPlayer = async (req: Request, res: Response): Promise<void> => {
+    const addPlayerId = req.body.addPlayerId;
+    const addPlayerExternalId = req.body.addPlayerExternalId;
+    const rosterId = req.body.rosterId;
+    const teamId = req.body.teamId;
+    const userId = req.body.userId;
+    const week = req.body.week;
+    let duplicate = false;
+    
+    
+    let transactions: TransactionWithPlayers[] = await this.databaseService.getTeamPendingTransactions(teamId);
+    transactions = transactions.filter((transaction) => transaction.type === 'Add');
+    
+    
+    transactions.forEach((transaction) => 
+    {
+      const addPlayer = transaction.players.find((player) => 
+      player.joins_proposing_team === true,
+      ).player_id;
+
+      if(addPlayer === addPlayerId)
+      {
+        duplicate = true;
+      }
+
+    });
+    
+    
+    if(!duplicate)
+    {
+      const rp: RosterPlayer = await this.databaseService.proposeAddPlayer(addPlayerId, addPlayerExternalId, rosterId, teamId, userId, week);
+      rp ? res.status(200).json(rp) : res.sendStatus(400);
+    }
+    else
+    {
+      res.sendStatus(400);
+    }
+};
 
 
   public addDropPlayer = async (req: Request, res: Response): Promise<void> => {
@@ -151,9 +238,57 @@ class DatabaseController {
       const userId = req.body.userId;
       const week = req.body.week;
 
-      const roster: Roster = await this.databaseService.proposeAddDropPlayer(addPlayerId, addPlayerExternalId, dropPlayerIds, rosterId, teamId, userId, week);
+      let duplicate = false;
 
-      roster ? res.status(200).json(roster) : res.sendStatus(400);
+      //check if a addDrop of this type already exists
+      let transactions: TransactionWithPlayers[] = await this.databaseService.getTeamPendingTransactions(teamId);
+      transactions = transactions.filter((transaction) => transaction.type === 'AddDrop');
+
+      transactions.forEach((transaction)=> {
+
+        const addPlayer = transaction.players.find((player) => 
+          player.joins_proposing_team === true,
+        ).player_id;
+
+
+        const droppingPlayers = transaction.players.filter((player) => 
+          player.joins_proposing_team === false,
+        ).map((transaction) => transaction.player_id);
+
+        if(addPlayer === addPlayerId)
+        {
+
+          dropPlayerIds.forEach((dropId) => {
+
+            if(droppingPlayers.includes(dropId))
+            {
+              const index = droppingPlayers.indexOf(dropId);
+              if(index > -1)
+              {
+                droppingPlayers.splice(index, 1);
+              }
+            }
+          });
+
+          //if this is 0 then a copy of this addDrop exists
+          if(droppingPlayers.length === 0)
+          {
+           duplicate = true;
+          }
+        }
+      });
+      
+      if(!duplicate)
+      {
+        const roster: Roster = await this.databaseService.proposeAddDropPlayer(addPlayerId, addPlayerExternalId, dropPlayerIds, rosterId, teamId, userId, week);
+        roster ? res.status(200).json(roster) : res.sendStatus(400);
+      }
+      else
+      {
+        res.sendStatus(400);
+      }
+
+      
   };
 
   public dropPlayer = async (req: Request, res: Response): Promise<void> => {
@@ -163,8 +298,33 @@ class DatabaseController {
       const userId = req.body.userId;
       const week = req.body.week;
 
-      const created = await this.databaseService.proposeDropPlayer(dropPlayerId, rosterId, teamId, userId, week);
-      created ? res.sendStatus(200) : res.sendStatus(400);
+      let duplicate = false;
+
+      //check if a addDrop of this type already exists
+      let transactions: TransactionWithPlayers[] = await this.databaseService.getTeamPendingTransactions(teamId);
+      transactions = transactions.filter((transaction) => transaction.type === 'Drop');
+
+      transactions.forEach((transaction)=> {
+        
+        const dropPlayer = transaction.players.find((player) => 
+          player.joins_proposing_team === false,
+        ).player_id;
+
+        if(dropPlayer === dropPlayerId)
+        {
+          duplicate = true;
+        }
+      });
+
+      if(!duplicate)
+      {
+        const created = await this.databaseService.proposeDropPlayer(dropPlayerId, rosterId, teamId, userId, week);
+        created ? res.sendStatus(200) : res.sendStatus(400);
+      }
+      else
+      {
+        res.sendStatus(400);
+      }
   };
 
 
