@@ -21,6 +21,8 @@ model League {
   settings        LeagueSettings @relation(name: "settings", fields: [settings_id], references: [id])
   settings_id     Int            @unique
   matchups        Matchup[]
+  draft_players    DraftPlayer[]
+  draft_queues    DraftQueue[]
 }
 
 model LeagueSettings {
@@ -142,6 +144,8 @@ model Team {
   away_matchups         Matchup[]     @relation(name: "away_team")
   proposed_transactions Transaction[] @relation(name: "proposing_team")
   related_transactions  Transaction[] @relation(name: "related_team")
+  draft_players         DraftPlayer[] 
+  draft_queue           DraftQueue[]
 }
 
 model TeamSettings {
@@ -220,6 +224,29 @@ model TransactionAction {
   action_type    String
 }
 
+//DRAFT models
+
+model DraftPlayer {
+    id          Int    @id @default(autoincrement())
+    league      League        @relation(fields: [league_id], references: [id])
+    league_id   Int
+    player      Player  @relation(fields: [player_id], references: [id])
+    player_id   Int
+    team        Team @relation(fields: [team_id], references: [id])
+    team_id      Int
+    pick_number Int
+}
+
+model DraftQueue {
+    id        Int    @id @default(autoincrement())
+    league    League        @relation(fields: [league_id], references: [id])
+    league_id Int
+    team      Team  @relation(fields: [team_id], references: [id])
+    team_id   Int @unique
+    player    Player @relation(fields: [player_id], references: [id])
+    player_id Int
+}
+
 //***************** MODELS USED FOR STORING API DATA ***************************
 
 model News {
@@ -276,6 +303,8 @@ model Player {
   player_projections           PlayerProjections[]
   roster_players               RosterPlayer[]
   transaction_players          TransactionPlayer[]
+  draft_players                DraftPlayer[]
+  draft_queue                  DraftQueue[]
 }
 
 model NFLGame {
