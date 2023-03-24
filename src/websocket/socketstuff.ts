@@ -11,28 +11,33 @@ function broadcast(message){
     }
 }
 
+function getConnectionKey(connection) {
+    return connection.id;
+}
+
 export function runWebsocket() {
 
     const echo = sockjs.createServer();
 
     echo.on('connection', function(conn) {
+        console.log('New connection: ', getConnectionKey(conn));
 
-        clients[conn.remoteAddress] = conn;
+        clients[getConnectionKey(conn)] = conn;
 
         conn.on('data', function(message) {
             // console.log(JSON.parse(message));
-            broadcast(JSON.parse(message));
+            // broadcast(JSON.parse(message));
         });
 
         conn.on('close', function() {
-            console.log('Closing connection to: ', conn.remoteAddress);
-            delete clients[conn.remoteAddress];
+            console.log('Closing connection to: ', getConnectionKey(conn));
+            delete clients[getConnectionKey(conn)];
         });
     
         console.log('Number of clients: ', Object.keys(clients).length);
 
         for (const client in clients){
-            console.log('Client address: ', client);
+            console.log('Client: ', client);
         }
 
     });
@@ -43,3 +48,5 @@ export function runWebsocket() {
 
     server.listen(9999, '0.0.0.0');
 }
+
+
