@@ -2,12 +2,24 @@ import * as http from 'http';
 import * as sockjs from 'sockjs';
 
 const clients = {};
+const PORT = 9999;
+const HOST = '0.0.0.0';
+const PREFIX = '/echo';
+const PING_INTERVAL = 5000;
 
+function broadcast(message = null){
 
-function broadcast(message){
+    const now = new Date().getTime();
+
     for (const client in clients){
-        const written = clients[client].write(JSON.stringify(message));
-        console.log(written);
+
+        message = {
+            ...message,
+            time: now,
+            clientKey: client,
+        };
+
+        clients[client].write(JSON.stringify(message));
     }
 }
 
@@ -17,10 +29,9 @@ function getConnectionKey(connection) {
 
 export function runWebsocket() {
 
-    const echo = sockjs.createServer();
+    const serverSocket = sockjs.createServer();
 
-    echo.on('connection', function(conn) {
-        console.log('New connection: ', getConnectionKey(conn));
+    serverSocket.on('connection', function(conn) {
 
         clients[getConnectionKey(conn)] = conn;
 
@@ -34,19 +45,19 @@ export function runWebsocket() {
             delete clients[getConnectionKey(conn)];
         });
     
+        console.log('New connection: ', getConnectionKey(conn));
         console.log('Number of clients: ', Object.keys(clients).length);
-
-        for (const client in clients){
-            console.log('Client: ', client);
-        }
-
     });
 
-    const server = http.createServer();
+    const httpServer = http.createServer();
 
-    echo.installHandlers(server, { prefix:'/echo' });
+    serverSocket.installHandlers(httpServer, { prefix: PREFIX });
 
-    server.listen(9999, '0.0.0.0');
+    httpServer.listen(PORT, HOST);
+
+    setInterval(() => {
+        broadcast();
+    }, PING_INTERVAL);
 }
 
 
