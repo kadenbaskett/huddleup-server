@@ -36,6 +36,7 @@ export function runWebsocket() {
         clients[getConnectionKey(conn)] = conn;
 
         conn.on('data', function(message) {
+            console.log(message);
             // console.log(JSON.parse(message));
             // broadcast(JSON.parse(message));
         });

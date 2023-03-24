@@ -14,6 +14,7 @@ import { calculateSeasonLength, createMatchups } from '@services/general.service
 import randomstring from 'randomstring';
 import DatabaseService from '@services/datasink_database.service';
 import StatsService from '@/services/stats.service';
+import { createTeamWithRoster } from '@/services/database.service';
 /*
  *  Seeds the database with mock data. The simulate league function will
  *  create new users, leagues, teams, rosters, and roster players
@@ -626,6 +627,8 @@ class Seed {
         token,
         team_settings_id: ts.id,
       };
+
+      await createTeamWithRoster(team);
 
       const resp = await this.client.team.create({
         data: team,

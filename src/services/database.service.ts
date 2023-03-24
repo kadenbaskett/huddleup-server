@@ -1,5 +1,13 @@
 import { TransactionWithPlayers } from '@/interfaces/prisma.interface';
 import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster, RosterPlayer, Timeframe, User, LeagueSettings, WaiverSettings, ScheduleSettings, ScoringSettings, RosterSettings, DraftSettings, TradeSettings, News, PlayerProjections, TransactionPlayer, Transaction, TransactionAction, TeamSettings, UserToTeam } from '@prisma/client';
+
+
+export async function createTeamWithRoster(data): Promise<Team> {
+    const team: Team = await this.client.team.create(data);
+
+    return team;
+}
+
 class DatabaseService {
 
     client: PrismaClient;
@@ -121,14 +129,16 @@ class DatabaseService {
     public async createTeam(leagueId: number, teamName : string, teamOwnerId: number, settingsId:number, token: string): Promise<Team>
     {
         try {
-            const team: Team = await this.client.team.create({
-                data: {
-                    league_id: leagueId,
-                    name: teamName,
-                    team_settings_id: settingsId,
-                    token,
+            const team: Team = await createTeamWithRoster(
+                {
+                    data: {
+                        league_id: leagueId,
+                        name: teamName,
+                        team_settings_id: settingsId,
+                        token,
+                    },
                 },
-            });
+            );
 
             return team;
         }
