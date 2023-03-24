@@ -61,6 +61,8 @@ model DraftOrder {
   draft_settings_id Int
   team              Team           @relation(fields: [team_id], references: [id])
   team_id           Int
+
+  @@unique([pick_number, team_id])
 }
 
 model RosterSettings {
@@ -125,6 +127,8 @@ model UserToTeam {
   team       Team    @relation(fields: [team_id], references: [id])
   team_id    Int
   is_captain Boolean
+
+  @@unique([user_id, team_id])
 }
 
 model Team {
@@ -158,6 +162,8 @@ model Matchup {
   home_team_id Int
   away_team    Team   @relation("away_team", fields: [away_team_id], references: [id])
   away_team_id Int
+
+  @@unique([away_team_id, home_team_id])
 }
 
 // We will keep history of the roster that played each week, and with the current week, we will track the current roster as players are added/dropped
