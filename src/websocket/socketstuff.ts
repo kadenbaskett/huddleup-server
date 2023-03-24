@@ -5,10 +5,9 @@ const clients = {};
 
 
 function broadcast(message){
-    console.log('Number of clients: ', Object.keys(clients).length);
-
     for (const client in clients){
-        clients[client].write(JSON.stringify(message));
+        const written = clients[client].write(JSON.stringify(message));
+        console.log(written);
     }
 }
 
@@ -26,9 +25,16 @@ export function runWebsocket() {
         });
 
         conn.on('close', function() {
+            console.log('Closing connection to: ', conn.remoteAddress);
             delete clients[conn.remoteAddress];
         });
     
+        console.log('Number of clients: ', Object.keys(clients).length);
+
+        for (const client in clients){
+            console.log('Client address: ', client);
+        }
+
     });
 
     const server = http.createServer();
