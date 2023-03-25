@@ -1,5 +1,5 @@
 import { TransactionWithPlayers } from '@/interfaces/prisma.interface';
-import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster, RosterPlayer, Timeframe, User, LeagueSettings, WaiverSettings, ScheduleSettings, ScoringSettings, RosterSettings, DraftSettings, TradeSettings, News, PlayerProjections, TransactionPlayer, Transaction, TransactionAction, TeamSettings, UserToTeam } from '@prisma/client';
+import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster, RosterPlayer, Timeframe, User, LeagueSettings, WaiverSettings, ScheduleSettings, ScoringSettings, RosterSettings, DraftSettings, TradeSettings, News, PlayerProjections, TransactionPlayer, Transaction, TransactionAction, TeamSettings, UserToTeam, DraftPlayer, DraftQueue } from '@prisma/client';
 
 
 
@@ -1044,17 +1044,18 @@ class DatabaseService {
         }
     }
 
-    public async draftPlayer(playerId: number, teamId: number, leagueId: number){
+    public async draftPlayer(playerId: number, teamId: number, leagueId: number): Promise<DraftPlayer> {
         try {
-            // const news = this.client.news.findMany({
-            //     take: amount,
-            // },
-            // );
-            console.log('Player ID to draft: ', playerId);
-            console.log('Team ID drafting: ', teamId);
-            console.log('League ID team is drafting in: ', leagueId);
+            const dp: DraftPlayer = await this.client.draftPlayer.create({
+                data: { 
+                    league_id: leagueId,
+                    player_id: playerId,
+                    team_id: teamId,
+                    pick_number: 1,
+                 },
+            });
 
-            // return news;
+            return dp;
         }
         catch(e)
         {
@@ -1063,17 +1064,18 @@ class DatabaseService {
         }
     }
 
-    public async queuePlayer(playerId: number, teamId: number, leagueId: number){
+    public async queuePlayer(playerId: number, teamId: number, leagueId: number): Promise<DraftQueue> {
         try {
-            // const news = this.client.news.findMany({
-            //     take: amount,
-            // },
-            // );
-            console.log('Player ID to queue: ', playerId);
-            console.log('Team ID queueing: ', teamId);
-            console.log('League ID team is queuing in: ', leagueId);
+            const qp: DraftQueue = await this.client.draftQueue.create({
+                data: { 
+                    league_id: leagueId,
+                    player_id: playerId,
+                    team_id: teamId,
+                    order: new Date().getTime(),
+                 },
+            });
 
-            // return news;
+            return qp;
         }
         catch(e)
         {
