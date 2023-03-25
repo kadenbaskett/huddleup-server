@@ -147,16 +147,23 @@ class Seed {
 
     for (let i = 0; i < leagueNames.length; i++) {
       const commish = users[Math.floor(Math.random() * users.length)];
-      await this.simulateLeague(
-        users,
-        leagueNames[i],
-        commish,
-        numTeams,
-        season,
-        currentWeek,
-        numPlayoffTeams,
-        numUsers,
-      );
+      try 
+      {
+        await this.simulateLeague(
+          users,
+          leagueNames[i],
+          commish,
+          numTeams,
+          season,
+          currentWeek,
+          numPlayoffTeams,
+          numUsers,
+        );
+      }
+      catch(error)
+      {
+        console.log(error);
+      }
     }
   }
 
@@ -628,13 +635,9 @@ class Seed {
         team_settings_id: ts.id,
       };
 
-      await createTeamWithRoster(team);
+      const teamResp = await createTeamWithRoster(team, 2022);
 
-      const resp = await this.client.team.create({
-        data: team,
-      });
-
-      teams.push(resp);
+      teams.push(teamResp);
     }
 
     let userNum = 0;
@@ -705,9 +708,9 @@ class Seed {
     const roster = await this.client.roster.upsert({
       where: {
         season_week_team_id: {
-          season: Number(season),
-          week: Number(week),
-          team_id: Number(team_id),
+          season: season,
+          week: week,
+          team_id: team_id,
         },
       },
       update: {},

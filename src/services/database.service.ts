@@ -3,7 +3,8 @@ import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, 
 
 
 export async function createTeamWithRoster(data, season): Promise<Team> {
-    const team: Team = await this.client.team.create(data);
+    const client = new PrismaClient();
+    const team: Team = await client.team.create({ data });
 
     const rosterOneData = {
       week: 1,
@@ -11,7 +12,7 @@ export async function createTeamWithRoster(data, season): Promise<Team> {
       season,
     };
 
-    await this.client.roster.create({
+    await client.roster.create({
       data: rosterOneData,
     });
 
@@ -139,16 +140,13 @@ class DatabaseService {
     public async createTeam(leagueId: number, teamName : string, teamOwnerId: number, settingsId:number, token: string): Promise<Team>
     {
         try {
-            const team: Team = await createTeamWithRoster(
-                {
-                    data: {
+            const data = {
                         league_id: leagueId,
                         name: teamName,
                         team_settings_id: settingsId,
                         token,
-                    },
-                },
-            );
+                    };
+            const team: Team = await createTeamWithRoster(data, 2022);
 
             return team;
         }
