@@ -1,3 +1,4 @@
+import { DraftPlayer, DraftQueue } from '@prisma/client';
 import DatabaseService from '@services/database.service';
 
 import * as http from 'http';
@@ -61,9 +62,11 @@ class SocketStuff {
         switch (data.type) {
             case 'queuePlayer':
                 await this.db.queuePlayer(data.content.player_id, data.content.team_id, data.content.league_id);
+                const dqs: DraftQueue[] = await this.db.getDraftQueue(data.content.league_id);
                 break;
             case 'draftPlayer':
                 await this.db.draftPlayer(data.content.player_id, data.content.team_id, data.content.league_id);
+                const dps: DraftPlayer[] = await this.db.getDraftPlayers(data.content.league_id);
                 break;
             default:
                 console.log('Unhandles type.');

@@ -1044,6 +1044,41 @@ class DatabaseService {
         }
     }
 
+    public async getDraftPlayers(leagueId: number): Promise<DraftPlayer[]> {
+        try {
+            const draftPlayers: DraftPlayer[] = await this.client.draftPlayer.findMany({
+                where: { 
+                    league_id: leagueId,
+                 },
+            });
+
+            return draftPlayers;
+        }
+        catch(e)
+        {
+            console.log(e);
+            return null;
+        }
+    }
+
+    public async getDraftQueue(leagueId: number): Promise<DraftQueue[]> {
+        try {
+            const draftQueue: DraftQueue[] = await this.client.draftQueue.findMany({
+                where: { 
+                    league_id: leagueId,
+                 },
+            });
+
+            return draftQueue;
+        }
+        catch(e)
+        {
+            console.log(e);
+            return null;
+        }
+    }
+
+
     public async draftPlayer(playerId: number, teamId: number, leagueId: number): Promise<DraftPlayer> {
         try {
             const dp: DraftPlayer = await this.client.draftPlayer.create({
