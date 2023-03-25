@@ -6,7 +6,7 @@ import validateEnv from '@utils/validateEnv';
 import DataSinkApp from './datasink/app';
 import Seed from './datasink/seed';
 import DatabaseRoute from './routes/database.route';
-import { runWebsocket } from './websocket/socketstuff';
+import SocketStuff from './websocket/socketstuff';
 
 validateEnv();
 
@@ -24,6 +24,8 @@ const simulateMatchups = args.includes('simulateMatchups');
 const simulateWeek = args.includes('simulateWeek');
 const seedUsers = args.includes('seedUsers');
 
+const websocket = new SocketStuff();
+
 if(process.env.SERVICE === 'backend')
 {
     const routes = [
@@ -39,7 +41,13 @@ if(process.env.SERVICE === 'backend')
 }
 else if(process.env.SERVICE === 'websocket')
 {
-  runWebsocket();
+  try{
+    websocket.runWebsocket();
+  }
+  catch(e){
+    console.log(e);
+  }
+
 }
 else if(process.env.SERVICE === 'datasink')
 {

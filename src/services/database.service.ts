@@ -1041,6 +1041,44 @@ class DatabaseService {
             return null;
         }
     }
+
+    public async draftPlayer(playerId: number, teamId: number, leagueId: number){
+        try {
+            // const news = this.client.news.findMany({
+            //     take: amount,
+            // },
+            // );
+            console.log('Player ID to draft: ', playerId);
+            console.log('Team ID drafting: ', teamId);
+            console.log('League ID team is drafting in: ', leagueId);
+
+            // return news;
+        }
+        catch(e)
+        {
+            console.log(e);
+            return null;
+        }
+    }
+
+    public async queuePlayer(playerId: number, teamId: number, leagueId: number){
+        try {
+            // const news = this.client.news.findMany({
+            //     take: amount,
+            // },
+            // );
+            console.log('Player ID to queue: ', playerId);
+            console.log('Team ID queueing: ', teamId);
+            console.log('League ID team is queuing in: ', leagueId);
+
+            // return news;
+        }
+        catch(e)
+        {
+            console.log(e);
+            return null;
+        }
+    }
 }
 
 export default DatabaseService;

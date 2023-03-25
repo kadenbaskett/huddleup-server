@@ -1,78 +1,104 @@
+import DatabaseService from '@services/database.service';
+
 import * as http from 'http';
-import { JsonWebTokenError } from 'jsonwebtoken';
+// import { JsonWebTokenError } from 'jsonwebtoken';
 import * as sockjs from 'sockjs';
 
-const clients = {};
-const PORT = 9999;
-const HOST = '0.0.0.0';
-const PREFIX = '/echo';
-const PING_INTERVAL = 5000;
 
-function broadcast(message = null){
+class SocketStuff {
+    db: DatabaseService;
+    clients: any;
+    PORT: number;
+    HOST: string;
+    PREFIX: string;
+    PING_INTERVAL: number;
+  
+    constructor() {
+        this.clients = {};
+        this.PORT = 9999;
+        this.HOST = '0.0.0.0';
+        this.PREFIX = '/echo';
+        this.PING_INTERVAL = 5000;
+        this.db = new DatabaseService();
+    }
 
-    const now = new Date().getTime();
+    broadcast(message = null){
+        console.log('broadcast firing');
 
-    for (const client in clients){
+        const now = new Date().getTime();
 
-        message = {
-            ...message,
-            time: now,
-            clientKey: client,
-        };
+        for (const client in this.clients){
 
-        clients[client].write(JSON.stringify(message));
+            message = {
+                ...message,
+                time: now,
+                clientKey: client,
+            };
+
+            this.clients[client].write(JSON.stringify(message));
+        }
+    }
+
+    getConnectionKey(connection) {
+        console.log('getting connection key firing');
+        return connection.id;
+    }
+
+    public runWebsocket() {
+        const serverSocket = sockjs.createServer();
+
+        serverSocket.on('connection', function(conn) {
+            console.log('Connection happening');
+            this.clients[this.getConnectionKey(conn)] = conn;
+
+            conn.on('data', async function(message) {
+                const data = JSON.parse(message);
+                console.log('Type: ', data.type);
+
+                switch (data.type) {
+                    case 'queuePlayer':
+                        await this.db.queuePlayer(data.content.player_id, data.content.team_id, data.content.league_id);
+                        break;
+                    case 'draftPlayer':
+                        await this.db.draftPlayer(data.content.player_id, data.content.team_id, data.content.league_id);
+                        break;
+                    default:
+                        console.log('Unhandles type.');
+                }
+
+                // broadcast a message to the rest of the draft
+
+                // broadcast(JSON.parse(message));
+            });
+
+            conn.on('close', function() {
+                console.log('Closing connection to: ', this.getConnectionKey(conn));
+                delete this.clients[this.getConnectionKey(conn)];
+            });
+        
+            console.log('New connection: ', this.getConnectionKey(conn));
+            console.log('Number of clients: ', Object.keys(this.clients).length);
+        });
+
+
+        const httpServer = http.createServer();
+
+        serverSocket.installHandlers(httpServer, { prefix: this.PREFIX });
+
+        httpServer.listen(this.PORT, this.HOST);
+
+
+        setInterval(() => {
+            try{
+                this.broadcast();
+            }
+            catch(e){
+                console.log('Error: ', e);
+            }
+        }, this.PING_INTERVAL);
     }
 }
 
-function getConnectionKey(connection) {
-    return connection.id;
-}
-
-export function runWebsocket() {
-
-    const serverSocket = sockjs.createServer();
-
-    serverSocket.on('connection', function(conn) {
-
-        clients[getConnectionKey(conn)] = conn;
-
-        conn.on('data', function(message) {
-            const data = JSON.parse(message);
-            console.log('Type: ', data.type);
-
-            switch (data.type) {
-                case 'queuePlayer':
-                    console.log('handlign queueing a player! ');
-                    break;
-                case 'draftPlayer':
-                    console.log('handlign drafting a player! ');
-                  break;
-                default:
-                  console.log('Unhandles type.');
-            }
-
-            // console.log(JSON.parse(message));
-            // broadcast(JSON.parse(message));
-        });
-
-        conn.on('close', function() {
-            console.log('Closing connection to: ', getConnectionKey(conn));
-            delete clients[getConnectionKey(conn)];
-        });
-    
-        console.log('New connection: ', getConnectionKey(conn));
-        console.log('Number of clients: ', Object.keys(clients).length);
-    });
-
-    const httpServer = http.createServer();
-
-    serverSocket.installHandlers(httpServer, { prefix: PREFIX });
-
-    httpServer.listen(PORT, HOST);
-
-    setInterval(() => {
-        broadcast();
-    }, PING_INTERVAL);
-}
+export default SocketStuff;
 
 
