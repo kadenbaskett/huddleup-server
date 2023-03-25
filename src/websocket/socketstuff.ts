@@ -23,7 +23,7 @@ class SocketStuff {
         this.db = new DatabaseService();
     }
 
-    broadcast(msgContent: string = null, msgType = 'ping'){
+    broadcast(msgContent: any = null, msgType = 'ping'){
         const now = new Date().getTime();
 
         for (const client in this.clients){
