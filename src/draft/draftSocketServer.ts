@@ -133,7 +133,7 @@ class DraftSocketServer {
             case MSG_TYPES.QUEUE_PLAYER:
                 if(this.playerAlreadyQueued(player_id, team_id)) break;
 
-                qPlayer = await this.db.queuePlayer(player_id, team_id, league_id);
+                qPlayer = await this.db.queuePlayer(player_id, team_id, league_id, data.content.order);
                 this.draftState = {
                     ...this.draftState,
                     draftQueue: [
@@ -144,7 +144,7 @@ class DraftSocketServer {
                 this.sendDraftState();
                 break;
             case MSG_TYPES.REMOVE_QUEUE_PLAYER:
-                qPlayer = await this.db.removeQueuePlayer(player_id, team_id, league_id);
+                await this.db.removeQueuePlayer(data.content.qPlayerId);
                 this.draftState = {
                     ...this.draftState,
                     draftQueue: [

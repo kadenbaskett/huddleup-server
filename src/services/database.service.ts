@@ -1107,14 +1107,14 @@ class DatabaseService {
         }
     }
 
-    public async queuePlayer(playerId: number, teamId: number, leagueId: number): Promise<DraftQueue> {
+    public async queuePlayer(playerId: number, teamId: number, leagueId: number, order: number): Promise<DraftQueue> {
         try {
             const qp: DraftQueue = await this.client.draftQueue.create({
                 data: { 
                     league_id: leagueId,
                     player_id: playerId,
                     team_id: teamId,
-                    order: new Date().getTime(),
+                    order: order,
                  },
             });
 
