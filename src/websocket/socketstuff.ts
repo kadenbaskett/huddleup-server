@@ -1,4 +1,5 @@
 import * as http from 'http';
+import { JsonWebTokenError } from 'jsonwebtoken';
 import * as sockjs from 'sockjs';
 
 const clients = {};
@@ -36,7 +37,20 @@ export function runWebsocket() {
         clients[getConnectionKey(conn)] = conn;
 
         conn.on('data', function(message) {
-            console.log(message);
+            const data = JSON.parse(message);
+            console.log('Type: ', data.type);
+
+            switch (data.type) {
+                case 'queuePlayer':
+                    console.log('handlign queueing a player! ');
+                    break;
+                case 'draftPlayer':
+                    console.log('handlign drafting a player! ');
+                  break;
+                default:
+                  console.log('Unhandles type.');
+            }
+
             // console.log(JSON.parse(message));
             // broadcast(JSON.parse(message));
         });
