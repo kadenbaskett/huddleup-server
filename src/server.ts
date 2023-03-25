@@ -3,7 +3,7 @@ import validateEnv from '@utils/validateEnv';
 import DataSinkApp from './datasink/app';
 import Seed from './datasink/seed';
 import DatabaseRoute from './routes/database.route';
-import SocketStuff from './websocket/socketstuff';
+import DraftSocketServer from './draft/draftSocketServer';
 
 validateEnv();
 
@@ -20,7 +20,7 @@ const simulateMatchups = args.includes('simulateMatchups');
 const simulateWeek = args.includes('simulateWeek');
 const seedUsers = args.includes('seedUsers');
 
-const websocket = new SocketStuff();
+let draftSocketServer;
 
 if(process.env.SERVICE === 'backend')
 {
@@ -35,7 +35,16 @@ if(process.env.SERVICE === 'backend')
 else if(process.env.SERVICE === 'websocket')
 {
   try{
-    websocket.runWebsocket();
+    const leagueId = Number(args[0]);
+
+    if(!leagueId)
+    {
+      throw new Error('Provide a league id to start the draft for');
+    }
+
+    console.log('Starting up draft websocket for league ', leagueId);
+    draftSocketServer = new DraftSocketServer(leagueId);
+    draftSocketServer.start();
   }
   catch(e){
     console.log(e);

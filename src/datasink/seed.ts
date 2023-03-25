@@ -175,6 +175,8 @@ class Seed {
     // The order that the tables are cleared in is important
     // We can't clear a table that is referenced by another table using a foreign key without first clearing
     // the table that references it
+    await this.client.draftPlayer.deleteMany();
+    await this.client.draftOrder.deleteMany();
     await this.client.transactionPlayer.deleteMany();
     await this.client.transactionAction.deleteMany();
     await this.client.transaction.deleteMany();
@@ -639,7 +641,7 @@ class Seed {
         team_settings_id: ts.id,
       };
 
-      const teamResp = await this.dbSevice.createTeamWithRoster(team);
+      const teamResp = await this.dbService.createTeamWithRoster(team);
 
       teams.push(teamResp);
     }

@@ -1081,12 +1081,20 @@ class DatabaseService {
 
     public async draftPlayer(playerId: number, teamId: number, leagueId: number): Promise<DraftPlayer> {
         try {
+            const numPicks: DraftPlayer[] = await this.client.draftPlayer.findMany({
+                where: {
+                    league_id: leagueId,
+                },
+            });
+
+            const pickNum = numPicks.length + 1;
+
             const dp: DraftPlayer = await this.client.draftPlayer.create({
                 data: { 
                     league_id: leagueId,
                     player_id: playerId,
                     team_id: teamId,
-                    pick_number: 1,
+                    pick_number: pickNum,
                  },
             });
 
@@ -1111,6 +1119,67 @@ class DatabaseService {
             });
 
             return qp;
+        }
+        catch(e)
+        {
+            console.log(e);
+            return null;
+        }
+    }
+
+
+    // TODO this might fail prisma because of the constraint of orders on the queue
+    public async swapQueuePlayers(qPlayerOneId: number, qPlayerTwoId: number): Promise<DraftQueue[]> {
+        try {
+
+            const qp1: DraftQueue = await this.client.draftQueue.findFirst({
+                where: {
+                    id: qPlayerOneId,
+                },
+            });
+
+            const qp2: DraftQueue = await this.client.draftQueue.findFirst({
+                where: {
+                    id: qPlayerTwoId,
+                },
+            });
+
+            const updated: DraftQueue[] = await this.client.$transaction([
+                this.client.draftQueue.update({
+                    where: {
+                        id: qPlayerOneId,
+                    },
+                    data: { 
+                        order: qp2.order,
+                    },
+                }),
+                this.client.draftQueue.update({
+                    where: {
+                        id: qPlayerTwoId,
+                    },
+                    data: { 
+                        order: qp1.order,
+                    },
+                }),
+            ]);
+
+            return updated;
+        }
+        catch(e)
+        {
+            console.log(e);
+            return null;
+        }
+    }
+
+
+    public async removeQueuePlayer(qPlayerId: number): Promise<void> {
+        try {
+            await this.client.draftQueue.delete({
+                where: { 
+                    id: qPlayerId,
+                 },
+            });
         }
         catch(e)
         {
