@@ -44,49 +44,52 @@ class SocketStuff {
         return connection.id;
     }
 
-    public runWebsocket() {
-        const serverSocket = sockjs.createServer();
-
-        serverSocket.on('connection', function(conn) {
+    onConnection(conn)
+    {
             console.log('Connection happening');
             this.clients[this.getConnectionKey(conn)] = conn;
 
-            conn.on('data', async function(message) {
-                const data = JSON.parse(message);
-                console.log('Type: ', data.type);
+            conn.on('data', (data) => this.onData(data));
 
-                switch (data.type) {
-                    case 'queuePlayer':
-                        await this.db.queuePlayer(data.content.player_id, data.content.team_id, data.content.league_id);
-                        break;
-                    case 'draftPlayer':
-                        await this.db.draftPlayer(data.content.player_id, data.content.team_id, data.content.league_id);
-                        break;
-                    default:
-                        console.log('Unhandles type.');
-                }
-
-                // broadcast a message to the rest of the draft
-
-                // broadcast(JSON.parse(message));
-            });
-
-            conn.on('close', function() {
-                console.log('Closing connection to: ', this.getConnectionKey(conn));
-                delete this.clients[this.getConnectionKey(conn)];
-            });
+            conn.on('close', () => this.onClose(conn));
         
             console.log('New connection: ', this.getConnectionKey(conn));
             console.log('Number of clients: ', Object.keys(this.clients).length);
-        });
+    }
 
+    async onData(data)
+    {
+        console.log('Data: ', data);
+        // console.log('Type: ', data.type);
+
+        switch (data.type) {
+            case 'queuePlayer':
+                await this.db.queuePlayer(data.content.player_id, data.content.team_id, data.content.league_id);
+                break;
+            case 'draftPlayer':
+                await this.db.draftPlayer(data.content.player_id, data.content.team_id, data.content.league_id);
+                break;
+            default:
+                console.log('Unhandles type.');
+        }
+    }
+
+    onClose(conn)
+    {
+        console.log('Closing connection to: ', this.getConnectionKey(conn));
+        delete this.clients[this.getConnectionKey(conn)];
+    }
+
+    public runWebsocket() {
+        const serverSocket = sockjs.createServer();
+
+        serverSocket.on('connection', (conn) => this.onConnection(conn));
 
         const httpServer = http.createServer();
 
         serverSocket.installHandlers(httpServer, { prefix: this.PREFIX });
 
         httpServer.listen(this.PORT, this.HOST);
-
 
         setInterval(() => {
             try{
