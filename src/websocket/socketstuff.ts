@@ -23,7 +23,7 @@ class SocketStuff {
         this.db = new DatabaseService();
     }
 
-    broadcast(msgContent: any = null, msgType = 'ping'){
+    broadcastAll(msgContent: any = null, msgType = 'ping'){
         const now = new Date().getTime();
 
         for (const client in this.clients){
@@ -38,6 +38,18 @@ class SocketStuff {
         }
     }
 
+    broadcastClient(msgContent: any = null, msgType = 'ping', client: string){
+        const now = new Date().getTime();
+
+        const message = {
+            content: msgContent,
+            time: now,
+            type: msgType,
+        };
+
+        this.clients[client].write(JSON.stringify(message));
+    }
+
     getConnectionKey(connection) {
         return connection.id;
     }
@@ -46,7 +58,7 @@ class SocketStuff {
     {
             this.clients[this.getConnectionKey(conn)] = conn;
 
-            conn.on('data', (data) => this.onData(data));
+            conn.on('data', (data) => this.onData(data, this.getConnectionKey(conn)));
 
             conn.on('close', () => this.onClose(conn));
         
@@ -54,21 +66,21 @@ class SocketStuff {
             console.log('Number of clients: ', Object.keys(this.clients).length);
     }
 
-    async onData(data)
+    async onData(data, client)
     {
         console.log('Data: ', data);
         data = JSON.parse(data);
 
         switch (data.type) {
             case 'queuePlayer':
-                await this.db.queuePlayer(data.content.player_id, data.content.team_id, data.content.league_id);
+                await this.db.queuePlayer(data.content.player_id, data.content.team_id, data.content.league_id, data.content.order);
                 const dqs: DraftQueue[] = await this.db.getDraftQueue(data.content.league_id);
-                this.broadcast(JSON.stringify(dqs), '');
+                this.broadcastClient(dqs, 'queueUpdate', client);
                 break;
             case 'draftPlayer':
                 await this.db.draftPlayer(data.content.player_id, data.content.team_id, data.content.league_id);
                 const dps: DraftPlayer[] = await this.db.getDraftPlayers(data.content.league_id);
-                this.broadcast(JSON.stringify(dps), 'draftUpdate');
+                this.broadcastAll(dps, 'draftUpdate');
                 break;
             default:
                 console.log('Unhandles type.');
@@ -94,7 +106,7 @@ class SocketStuff {
 
         setInterval(() => {
             try{
-                this.broadcast();
+                this.broadcastAll();
             }
             catch(e){
                 console.log('Error: ', e);
