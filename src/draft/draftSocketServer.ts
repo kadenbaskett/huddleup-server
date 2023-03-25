@@ -1,5 +1,5 @@
-import { DraftState } from '@/interfaces/draftstate.interface';
-import { DraftPlayer, DraftQueue } from '@prisma/client';
+import { DraftState, AutoDraft, DraftOrder } from '@/interfaces/draftstate.interface';
+import { DraftPlayer, DraftQueue, Team } from '@prisma/client';
 import DatabaseService from '@services/database.service';
 
 import * as http from 'http';
@@ -15,7 +15,6 @@ const MSG_TYPES = {
     DRAFT_PLAYER: 'draftPlayer',
     ERROR: 'error',
 };
-
 
 class DraftSocketServer {
     db: DatabaseService;
@@ -37,24 +36,78 @@ class DraftSocketServer {
         this.draftState = {
             draftPlayers: [],
             draftQueue: [],
+            draftOrder: [],
+            autoDraft: [],
+            currentPickNum: 1,
+            currentPickTeamId: -1, // this shouldn't matter but who knows
+            currentRoundNum: 1,
         };
         this.leagueId = leagueId;
     }
 
-    async initDraftState()
+    // THIS SHOULD EVENTUALLY BE DONE BY THE UI
+    // COMISH SHOULD SET DRAFT ORDER AND DRAFT TIME BEFORE DRAFT IS LAUNCHED
+    async setDraftDateAndOrder()
     {
-       this.draftState = await this.getUpdatedDraftState();
-       console.log('Intial draft state: ', this.draftState);
+        const secondsBeforeStart = 120;
+        const now = new Date();
+        now.setSeconds(now.getSeconds() + secondsBeforeStart);
+        await this.db.setDraftDate(now, this.leagueId);
+        await this.db.setRandomDraftOrder(this.leagueId);
+
     }
 
-    async getUpdatedDraftState() {
+    async initDraftState()
+    {
+       this.draftState = await this.loadDraftStateFromDB();
+       //this.draftOrder = await this.getUpdatedDraftOrder();
+    //    console.log('Intial draft state: ', this.draftState);
+    }
+
+    async loadDraftOrderFromDB(leagueId: number, round: number): Promise<DraftOrder[]> {
+        let draftOrder = await this.db.getDraftOrder(leagueId);
+        if (round % 2 !== 0) draftOrder = draftOrder.reverse();
+        const formattedDraftOrder: DraftOrder[] = draftOrder.map((order) => {
+            return {
+                teamId: order.team_id,
+                pick: order.pick_number,
+            };
+        });
+        return formattedDraftOrder;
+    }
+
+    async loadAutoDraftFromDB(leagueId: number): Promise<AutoDraft[]> {
+        const league = await this.db.getLeagueInfo(leagueId);
+        const autoDraft: AutoDraft[] = league.teams.map((team)=> { return {
+            teamId: team.id,
+            auto: true,
+        };});
+        return autoDraft;
+    }
+
+    async loadDraftRound(leagueId: number, pick: number) {
+        const league = await this.db.getLeagueInfo(leagueId);
+        const numTeams: number = league.teams.length;
+        return Math.floor(pick/numTeams);
+    }
+
+    async loadDraftStateFromDB(): Promise<DraftState> {
         const dqs: DraftQueue[] = await this.db.getDraftQueue(this.leagueId);
         const dps: DraftPlayer[] = await this.db.getDraftPlayers(this.leagueId);
+        const ads: AutoDraft[] = await this.loadAutoDraftFromDB(this.leagueId);
+        const pick: number = await this.db.getDraftPickNumber(this.leagueId);
+        const round: number = await this.loadDraftRound(this.leagueId, pick);
+        const dos: DraftOrder[] = await this.loadDraftOrderFromDB(this.leagueId, round);
+        const currentPickTeamId: number = dos.find((order) => order.pick === pick).teamId;
         const msgContent = {
             draftPlayers: dps,
             draftQueue: dqs,
+            autoDraft: ads,
+            draftOrder: dos,
+            currentPickNum: pick,
+            currentRoundNum: round,
+            currentPickTeamId: currentPickTeamId,
         };
-
         return msgContent;
     }
 
@@ -106,7 +159,7 @@ class DraftSocketServer {
     onConnection(conn)
     {
         this.clients[this.getConnectionKey(conn)] = conn;
-
+    
         conn.on('data', (data) => this.onData(data));
 
         conn.on('close', () => this.onClose(conn));
@@ -169,6 +222,13 @@ class DraftSocketServer {
                 this.sendDraftState();
                 break;
             case MSG_TYPES.INITIAL_CONNECTION:
+                console.log('initial conn', data);
+                const autoIndex = this.draftState.autoDraft.findIndex((auto)=> auto.teamId === team_id);
+                this.draftState.autoDraft[autoIndex] = {
+                    teamId: team_id,
+                    auto: false,
+                };
+                console.log(this.draftState.autoDraft);
                 this.sendDraftState();
                 break;
             default:
@@ -186,6 +246,7 @@ class DraftSocketServer {
     public async start() {
 
         // Initialize the draft state before opening up websocket
+        await this.setDraftDateAndOrder();
         await this.initDraftState();
 
         const serverSocket = sockjs.createServer();

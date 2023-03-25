@@ -62,9 +62,7 @@ model DraftOrder {
   draft_settings    DraftSettings? @relation(fields: [draft_settings_id], references: [id])
   draft_settings_id Int
   team              Team           @relation(fields: [team_id], references: [id])
-  team_id           Int
-
-  @@unique([pick_number, team_id])
+  team_id           Int            @unique()
 }
 
 model RosterSettings {

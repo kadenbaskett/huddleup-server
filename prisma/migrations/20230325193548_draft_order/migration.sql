@@ -52,7 +52,7 @@ CREATE TABLE `DraftOrder` (
     `draft_settings_id` INTEGER NOT NULL,
     `team_id` INTEGER NOT NULL,
 
-    UNIQUE INDEX `DraftOrder_pick_number_team_id_key`(`pick_number`, `team_id`),
+    UNIQUE INDEX `DraftOrder_team_id_key`(`team_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
