@@ -2,22 +2,6 @@ import { TransactionWithPlayers } from '@/interfaces/prisma.interface';
 import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster, RosterPlayer, Timeframe, User, LeagueSettings, WaiverSettings, ScheduleSettings, ScoringSettings, RosterSettings, DraftSettings, TradeSettings, News, PlayerProjections, TransactionPlayer, Transaction, TransactionAction, TeamSettings, UserToTeam } from '@prisma/client';
 
 
-export async function createTeamWithRoster(data, season): Promise<Team> {
-    const client = new PrismaClient();
-    const team: Team = await client.team.create({ data });
-
-    const rosterOneData = {
-      week: 1,
-      team_id: team.id,
-      season,
-    };
-
-    await client.roster.create({
-      data: rosterOneData,
-    });
-
-    return team;
-}
 
 class DatabaseService {
 
@@ -26,6 +10,24 @@ class DatabaseService {
     constructor()
     {
         this.client = new PrismaClient();
+    }
+
+    // SHARED //
+    public async createTeamWithRoster(data): Promise<Team> {
+        const client = new PrismaClient();
+        const team: Team = await client.team.create({ data });
+
+        const rosterOneData = {
+            week: 1,
+            team_id: team.id,
+            season: 2022,
+        };
+
+        await client.roster.create({
+            data: rosterOneData,
+        });
+
+        return team;
     }
 
     // **************** SETTERS & UPDATERS ********************** //
@@ -146,7 +148,7 @@ class DatabaseService {
                         team_settings_id: settingsId,
                         token,
                     };
-            const team: Team = await createTeamWithRoster(data, 2022);
+            const team: Team = await this.createTeamWithRoster(data);
 
             return team;
         }

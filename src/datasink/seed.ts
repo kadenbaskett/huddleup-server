@@ -12,21 +12,25 @@ import {
 // import { createAccount } from '../firebase/firebase';
 import { calculateSeasonLength, createMatchups } from '@services/general.service';
 import randomstring from 'randomstring';
-import DatabaseService from '@services/datasink_database.service';
+import DatasinkDatabaseService from '@services/datasink_database.service';
 import StatsService from '@/services/stats.service';
-import { createTeamWithRoster } from '@/services/database.service';
+import DatabaseService from '@/services/database.service';
+
+
 /*
  *  Seeds the database with mock data. The simulate league function will
  *  create new users, leagues, teams, rosters, and roster players
  */
 class Seed {
   client: PrismaClient;
-  db: DatabaseService;
+  db: DatasinkDatabaseService;
+  dbService: DatabaseService;
   stats: StatsService;
 
   constructor() {
     this.client = new PrismaClient();
-    this.db = new DatabaseService();
+    this.db = new DatasinkDatabaseService();
+    this.dbService = new DatabaseService();
     this.stats = new StatsService();
   }
 
@@ -635,7 +639,7 @@ class Seed {
         team_settings_id: ts.id,
       };
 
-      const teamResp = await createTeamWithRoster(team, 2022);
+      const teamResp = await this.dbSevice.createTeamWithRoster(team);
 
       teams.push(teamResp);
     }

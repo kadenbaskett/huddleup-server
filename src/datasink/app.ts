@@ -1,6 +1,6 @@
 import { NFLGame, Player, Timeframe, News } from '@prisma/client';
 import { respObj } from './interfaces/respobj.interface';
-import DatabaseService from '@services/datasink_database.service';
+import DatasinkDatabaseService from '@services/datasink_database.service';
 import StatsService from '@services/stats.service';
 
 const hoursToMilliseconds = (hours) => {
@@ -21,11 +21,11 @@ const config = {
 
 class DataSinkApp {
   stats: StatsService;
-  db: DatabaseService;
+  db: DatasinkDatabaseService;
 
   constructor() {
     this.stats = new StatsService();
-    this.db = new DatabaseService();
+    this.db = new DatasinkDatabaseService();
   }
 
   startUpdateLoop() {

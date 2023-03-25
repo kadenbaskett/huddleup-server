@@ -9,7 +9,7 @@ import {
   PlayerProjections,
 } from '@prisma/client';
 
-class DatabaseService {
+class DatasinkDatabaseService {
   client: PrismaClient;
 
   constructor() {
@@ -502,4 +502,4 @@ class DatabaseService {
   }
 }
 
-export default DatabaseService;
+export default DatasinkDatabaseService;
