@@ -23,15 +23,15 @@ class SocketStuff {
         this.db = new DatabaseService();
     }
 
-    broadcast(message = null){
+    broadcast(msgContent: string = null, msgType = 'ping'){
         const now = new Date().getTime();
 
         for (const client in this.clients){
 
-            message = {
-                ...message,
+            const message = {
+                content: msgContent,
                 time: now,
-                clientKey: client,
+                type: msgType,
             };
 
             this.clients[client].write(JSON.stringify(message));
@@ -63,10 +63,12 @@ class SocketStuff {
             case 'queuePlayer':
                 await this.db.queuePlayer(data.content.player_id, data.content.team_id, data.content.league_id);
                 const dqs: DraftQueue[] = await this.db.getDraftQueue(data.content.league_id);
+                this.broadcast(JSON.stringify(dqs), '');
                 break;
             case 'draftPlayer':
                 await this.db.draftPlayer(data.content.player_id, data.content.team_id, data.content.league_id);
                 const dps: DraftPlayer[] = await this.db.getDraftPlayers(data.content.league_id);
+                this.broadcast(JSON.stringify(dps), 'draftUpdate');
                 break;
             default:
                 console.log('Unhandles type.');
