@@ -23,8 +23,6 @@ class SocketStuff {
     }
 
     broadcast(message = null){
-        console.log('broadcast firing');
-
         const now = new Date().getTime();
 
         for (const client in this.clients){
@@ -40,13 +38,11 @@ class SocketStuff {
     }
 
     getConnectionKey(connection) {
-        console.log('getting connection key firing');
         return connection.id;
     }
 
     onConnection(conn)
     {
-            console.log('Connection happening');
             this.clients[this.getConnectionKey(conn)] = conn;
 
             conn.on('data', (data) => this.onData(data));
@@ -60,7 +56,9 @@ class SocketStuff {
     async onData(data)
     {
         console.log('Data: ', data);
-        // console.log('Type: ', data.type);
+        data = JSON.parse(data);
+        console.log('Type: ', data.type);
+        console.log('Content: ', data.content);
 
         switch (data.type) {
             case 'queuePlayer':
