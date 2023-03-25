@@ -1,7 +1,4 @@
 import App from '@/app';
-import AuthRoute from '@routes/auth.route';
-import IndexRoute from '@routes/index.route';
-import UsersRoute from '@routes/users.route';
 import validateEnv from '@utils/validateEnv';
 import DataSinkApp from './datasink/app';
 import Seed from './datasink/seed';
@@ -12,7 +9,6 @@ validateEnv();
 
 const args = process.argv.slice(2);
 
-const runBackend = args.includes('backend');
 const initOnly = args.includes('init') && !args.includes('seed');
 const seedOnly = !args.includes('init') && args.includes('seed');
 const initAndSeed = args.includes('init') && args.includes('seed');
@@ -27,9 +23,6 @@ const seedUsers = args.includes('seedUsers');
 if(process.env.SERVICE === 'backend')
 {
     const routes = [
-        new IndexRoute(),
-        new UsersRoute(),
-        new AuthRoute(),
         new DatabaseRoute(),
     ];
 
