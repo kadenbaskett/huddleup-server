@@ -57,8 +57,6 @@ class SocketStuff {
     {
         console.log('Data: ', data);
         data = JSON.parse(data);
-        console.log('Type: ', data.type);
-        console.log('Content: ', data.content);
 
         switch (data.type) {
             case 'queuePlayer':
