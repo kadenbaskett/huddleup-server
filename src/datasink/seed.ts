@@ -9,6 +9,7 @@ import {
   TradeSettings,
   WaiverSettings,
 } from '@prisma/client';
+import { getFirebaseUsers } from '@/firebase/firebase';
 // import { createAccount } from '../firebase/firebase';
 import { calculateSeasonLength, createMatchups } from '@services/general.service';
 import randomstring from 'randomstring';
@@ -463,7 +464,34 @@ class Seed {
     }
   }
 
-  // async createFirebaseUsers(numUsers)
+  async syncDBWithFirebaseUsers() {
+    const firebaseUsers = await getFirebaseUsers();
+    
+    for (const firebaseUser of firebaseUsers) {
+      try{
+        await this.client.user.create({
+          data: {
+            username: firebaseUser.displayName ?? firebaseUser.email.split('@')[0],
+            email: firebaseUser.email,
+          },
+        });
+      }
+      catch(e){
+        // console.log('Error: ', e.message, 'end of error');
+          if(e.message.includes('Unique constraint failed on the constraint: `User_username_key`')){
+            console.log('Failed to add user from firebase: Username already exists.');
+          }
+          else if(e.message.includes('Unique constraint failed on the constraint: `User_email_key')){
+            console.log('Failed to add user from firebase: Email already exists.');
+          }
+          else{
+            console.log('Failed to add user from firebase: ', e);
+          }        
+      }
+      
+    }
+  }
+
   async createFirebaseUsers() {
     // const userNames = await this.createUsernames(numUsers);
 

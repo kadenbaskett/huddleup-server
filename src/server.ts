@@ -11,7 +11,6 @@ validateEnv();
 
 const args = process.argv.slice(2);
 
-const runBackend = args.includes('backend');
 const initOnly = args.includes('init') && !args.includes('seed');
 const seedOnly = !args.includes('init') && args.includes('seed');
 const initAndSeed = args.includes('init') && args.includes('seed');
@@ -22,7 +21,7 @@ const simulateDraft = args.includes('simulateDraft');
 const simulateMatchups = args.includes('simulateMatchups');
 const simulateWeek = args.includes('simulateWeek');
 const seedUsers = args.includes('seedUsers');
-
+const syncDBWithFirebase = args.includes('syncDBWithFirebase');
 
 if(process.env.SERVICE === 'backend')
 {
@@ -77,6 +76,9 @@ else if(process.env.SERVICE === 'datasink')
     } else if (seedUsers){
       console.log('seeding users');
       seed.createFirebaseUsers();
+    } else if(syncDBWithFirebase){
+      console.log('syncing DB with firebase users');
+      seed.syncDBWithFirebaseUsers();
     } else {
       console.log(
         'Must run with command line args to output the desired behavior. See package.json for a list of available args',
