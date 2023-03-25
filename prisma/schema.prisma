@@ -167,7 +167,7 @@ model Matchup {
   away_team    Team   @relation("away_team", fields: [away_team_id], references: [id])
   away_team_id Int
 
-  @@unique([away_team_id, home_team_id])
+  @@unique([away_team_id, home_team_id, week])
 }
 
 // We will keep history of the roster that played each week, and with the current week, we will track the current roster as players are added/dropped

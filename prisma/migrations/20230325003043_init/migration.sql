@@ -52,6 +52,7 @@ CREATE TABLE `DraftOrder` (
     `draft_settings_id` INTEGER NOT NULL,
     `team_id` INTEGER NOT NULL,
 
+    UNIQUE INDEX `DraftOrder_pick_number_team_id_key`(`pick_number`, `team_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -124,6 +125,7 @@ CREATE TABLE `UserToTeam` (
     `team_id` INTEGER NOT NULL,
     `is_captain` BOOLEAN NOT NULL,
 
+    UNIQUE INDEX `UserToTeam_user_id_team_id_key`(`user_id`, `team_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -155,6 +157,7 @@ CREATE TABLE `Matchup` (
     `home_team_id` INTEGER NOT NULL,
     `away_team_id` INTEGER NOT NULL,
 
+    UNIQUE INDEX `Matchup_away_team_id_home_team_id_week_key`(`away_team_id`, `home_team_id`, `week`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -165,6 +168,7 @@ CREATE TABLE `Roster` (
     `season` INTEGER NOT NULL,
     `team_id` INTEGER NOT NULL,
 
+    UNIQUE INDEX `Roster_season_week_team_id_key`(`season`, `week`, `team_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -214,6 +218,33 @@ CREATE TABLE `TransactionAction` (
     `action_date` DATETIME(3) NOT NULL,
     `action_type` VARCHAR(191) NOT NULL,
 
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `DraftPlayer` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `league_id` INTEGER NOT NULL,
+    `player_id` INTEGER NOT NULL,
+    `team_id` INTEGER NOT NULL,
+    `pick_number` INTEGER NOT NULL,
+
+    UNIQUE INDEX `DraftPlayer_league_id_player_id_key`(`league_id`, `player_id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `DraftQueue` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `league_id` INTEGER NOT NULL,
+    `team_id` INTEGER NOT NULL,
+    `player_id` INTEGER NOT NULL,
+    `order` INTEGER NOT NULL,
+
+    UNIQUE INDEX `DraftQueue_team_id_key`(`team_id`),
+    UNIQUE INDEX `DraftQueue_order_key`(`order`),
+    UNIQUE INDEX `DraftQueue_team_id_player_id_key`(`team_id`, `player_id`),
+    UNIQUE INDEX `DraftQueue_team_id_order_key`(`team_id`, `order`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -433,6 +464,24 @@ ALTER TABLE `TransactionAction` ADD CONSTRAINT `TransactionAction_transaction_id
 
 -- AddForeignKey
 ALTER TABLE `TransactionAction` ADD CONSTRAINT `TransactionAction_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `DraftPlayer` ADD CONSTRAINT `DraftPlayer_league_id_fkey` FOREIGN KEY (`league_id`) REFERENCES `League`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `DraftPlayer` ADD CONSTRAINT `DraftPlayer_player_id_fkey` FOREIGN KEY (`player_id`) REFERENCES `Player`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `DraftPlayer` ADD CONSTRAINT `DraftPlayer_team_id_fkey` FOREIGN KEY (`team_id`) REFERENCES `Team`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `DraftQueue` ADD CONSTRAINT `DraftQueue_league_id_fkey` FOREIGN KEY (`league_id`) REFERENCES `League`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `DraftQueue` ADD CONSTRAINT `DraftQueue_team_id_fkey` FOREIGN KEY (`team_id`) REFERENCES `Team`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `DraftQueue` ADD CONSTRAINT `DraftQueue_player_id_fkey` FOREIGN KEY (`player_id`) REFERENCES `Player`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Player` ADD CONSTRAINT `Player_current_nfl_team_external_id_fkey` FOREIGN KEY (`current_nfl_team_external_id`) REFERENCES `NFLTeam`(`external_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
