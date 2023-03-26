@@ -19,6 +19,7 @@
     "simulateWeek": "cross-env NODE_ENV=development SERVICE=datasink nodemon simulateWeek",
     "seedUsers": "cross-env NODE_ENV=development SERVICE=datasink nodemon seedUsers",
     "syncDBWithFirebase": "cross-env NODE_ENV=development SERVICE=datasink nodemon syncDBWithFirebase",
+    "clearFirebaseUsers": "cross-env NODE_ENV=development SERVICE=datasink nodemon clearFirebaseUsers",
     "build": "swc src -d dist --source-maps --copy-files",
     "build:tsc": "tsc && tsc-alias",
     "test": "jest --forceExit --detectOpenHandles",

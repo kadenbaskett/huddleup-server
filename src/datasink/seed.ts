@@ -9,7 +9,7 @@ import {
   TradeSettings,
   WaiverSettings,
 } from '@prisma/client';
-import { getFirebaseUsers } from '@/firebase/firebase';
+import { getFirebaseUsers, deleteFirebaseUsers } from '@/firebase/firebase';
 // import { createAccount } from '../firebase/firebase';
 import { calculateSeasonLength, createMatchups } from '@services/general.service';
 import randomstring from 'randomstring';
@@ -477,7 +477,6 @@ class Seed {
         });
       }
       catch(e){
-        // console.log('Error: ', e.message, 'end of error');
           if(e.message.includes('Unique constraint failed on the constraint: `User_username_key`')){
             console.log('Failed to add user from firebase: Username already exists.');
           }
@@ -488,8 +487,18 @@ class Seed {
             console.log('Failed to add user from firebase: ', e);
           }        
       }
-      
     }
+  }
+
+  async clearFirebaseUsers() {
+    const firebaseUsers = await getFirebaseUsers();
+    const userIds = [];
+
+    for (const firebaseUser of firebaseUsers) {
+      userIds.push(firebaseUser.uid);
+    }
+
+    deleteFirebaseUsers(userIds);
   }
 
   async createFirebaseUsers() {

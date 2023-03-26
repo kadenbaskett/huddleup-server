@@ -21,4 +21,19 @@ function getFirebaseUsers(nextPageToken?: string, allUsers: admin.auth.UserRecor
       });
   }
 
-export { getFirebaseUsers };
+  function deleteFirebaseUsers(userIds: string[]){
+    auth
+  .deleteUsers(userIds)
+  .then((deleteUsersResult) => {
+    console.log(`Successfully deleted ${deleteUsersResult.successCount} users`);
+    console.log(`Failed to delete ${deleteUsersResult.failureCount} users`);
+    deleteUsersResult.errors.forEach((err) => {
+      console.log(err.error.toJSON());
+    });
+  })
+  .catch((error) => {
+    console.log('Error deleting users:', error);
+  });
+  }
+
+export { getFirebaseUsers, deleteFirebaseUsers };
