@@ -21,8 +21,8 @@ function getFirebaseUsers(nextPageToken?: string, allUsers: admin.auth.UserRecor
       });
   }
 
-  function deleteFirebaseUsers(userIds: string[]){
-    auth
+  async function deleteFirebaseUsers(userIds: string[]){
+    await auth
   .deleteUsers(userIds)
   .then((deleteUsersResult) => {
     console.log(`Successfully deleted ${deleteUsersResult.successCount} users`);
@@ -36,4 +36,19 @@ function getFirebaseUsers(nextPageToken?: string, allUsers: admin.auth.UserRecor
   });
   }
 
-export { getFirebaseUsers, deleteFirebaseUsers };
+  function createFirebaseUser(username: string, email: string, password: string){ 
+    auth
+  .createUser({
+    displayName: username,
+    email: email,
+    password: password,
+  })
+  .then((userRecord) => {
+    // console.log('Successfully created new user:', userRecord.displayName);
+  })
+  .catch((error) => {
+    console.log('Error creating new user:', error);
+  });
+  }
+
+export { getFirebaseUsers, deleteFirebaseUsers, createFirebaseUser };

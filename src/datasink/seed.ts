@@ -9,8 +9,7 @@ import {
   TradeSettings,
   WaiverSettings,
 } from '@prisma/client';
-import { getFirebaseUsers, deleteFirebaseUsers } from '@/firebase/firebase';
-// import { createAccount } from '../firebase/firebase';
+import { getFirebaseUsers, deleteFirebaseUsers, createFirebaseUser } from '@/firebase/firebase';
 import { calculateSeasonLength, createMatchups } from '@services/general.service';
 import randomstring from 'randomstring';
 import DatabaseService from '@services/datasink_database.service';
@@ -498,11 +497,11 @@ class Seed {
       userIds.push(firebaseUser.uid);
     }
 
-    deleteFirebaseUsers(userIds);
+    await deleteFirebaseUsers(userIds);
   }
 
   async createFirebaseUsers() {
-    // const userNames = await this.createUsernames(numUsers);
+    await this.clearFirebaseUsers();
 
     const userNames = [
       'talloryx0',
@@ -545,18 +544,43 @@ class Seed {
         email: `${name}@gmail.com`,
       };
 
-      // await createAccount(u.username, u.email, 'password');
       users.push(u);
     }
 
     const createdUsers = [];
 
+    let firebaseUserCount = 0;
+    let dbUserCount = 0;
+
     for (const user of users) {
-      const resp = await this.client.user.create({
-        data: user,
-      });
-      createdUsers.push(resp);
+      // add to firebase
+      createFirebaseUser(user.username, user.email, 'password');
+      firebaseUserCount ++;
+
+      try{
+        // add to database
+        const resp = await this.client.user.create({
+          data: user,
+        });
+
+        dbUserCount ++;
+        createdUsers.push(resp);
+      }
+      catch(e){
+          if(e.message.includes('Unique constraint failed on the constraint: `User_username_key`')){
+            console.log('Failed to add user from firebase: Username already exists.');
+          }
+          else if(e.message.includes('Unique constraint failed on the constraint: `User_email_key')){
+            console.log('Failed to add user from firebase: Email already exists.');
+          }
+          else{
+            console.log('Failed to add user from firebase: ', e);
+          }   
+      }
     }
+
+    console.log(`Successfully added ${firebaseUserCount} users to firebase`);
+    console.log(`Successfully added ${dbUserCount} users to database`);
 
     return createdUsers;
   }
