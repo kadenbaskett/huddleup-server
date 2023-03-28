@@ -3,4 +3,4 @@
 
 npm i
 
-npx prisma migrate deploy
+npx prisma migrate dev
