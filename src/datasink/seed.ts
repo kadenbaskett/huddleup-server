@@ -12,20 +12,25 @@ import {
 import { getFirebaseUsers, deleteFirebaseUsers, createFirebaseUser } from '@/firebase/firebase';
 import { calculateSeasonLength, createMatchups } from '@services/general.service';
 import randomstring from 'randomstring';
-import DatabaseService from '@services/datasink_database.service';
+import DatasinkDatabaseService from '@services/datasink_database.service';
 import StatsService from '@/services/stats.service';
+import DatabaseService from '@/services/database.service';
+
+
 /*
  *  Seeds the database with mock data. The simulate league function will
  *  create new users, leagues, teams, rosters, and roster players
  */
 class Seed {
   client: PrismaClient;
-  db: DatabaseService;
+  db: DatasinkDatabaseService;
+  dbService: DatabaseService;
   stats: StatsService;
 
   constructor() {
     this.client = new PrismaClient();
-    this.db = new DatabaseService();
+    this.db = new DatasinkDatabaseService();
+    this.dbService = new DatabaseService();
     this.stats = new StatsService();
   }
 
@@ -146,16 +151,23 @@ class Seed {
 
     for (let i = 0; i < leagueNames.length; i++) {
       const commish = users[Math.floor(Math.random() * users.length)];
-      await this.simulateLeague(
-        users,
-        leagueNames[i],
-        commish,
-        numTeams,
-        season,
-        currentWeek,
-        numPlayoffTeams,
-        numUsers,
-      );
+      try 
+      {
+        await this.simulateLeague(
+          users,
+          leagueNames[i],
+          commish,
+          numTeams,
+          season,
+          currentWeek,
+          numPlayoffTeams,
+          numUsers,
+        );
+      }
+      catch(error)
+      {
+        console.log(error);
+      }
     }
   }
 
@@ -163,6 +175,8 @@ class Seed {
     // The order that the tables are cleared in is important
     // We can't clear a table that is referenced by another table using a foreign key without first clearing
     // the table that references it
+    await this.client.draftPlayer.deleteMany();
+    await this.client.draftOrder.deleteMany();
     await this.client.transactionPlayer.deleteMany();
     await this.client.transactionAction.deleteMany();
     await this.client.transaction.deleteMany();
@@ -688,11 +702,9 @@ class Seed {
         team_settings_id: ts.id,
       };
 
-      const resp = await this.client.team.create({
-        data: team,
-      });
+      const teamResp = await this.dbService.createTeamWithRoster(team);
 
-      teams.push(resp);
+      teams.push(teamResp);
     }
 
     let userNum = 0;
@@ -760,8 +772,16 @@ class Seed {
       season,
     };
 
-    const roster = await this.client.roster.create({
-      data: r,
+    const roster = await this.client.roster.upsert({
+      where: {
+        season_week_team_id: {
+          season: season,
+          week: week,
+          team_id: team_id,
+        },
+      },
+      update: {},
+      create: r,
     });
 
     const constraints = {

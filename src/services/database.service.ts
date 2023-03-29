@@ -1,5 +1,8 @@
-import { TransactionWithPlayers } from '@/interfaces/prisma.interface';
-import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster, RosterPlayer, Timeframe, User, LeagueSettings, WaiverSettings, ScheduleSettings, ScoringSettings, RosterSettings, DraftSettings, TradeSettings, News, PlayerProjections, TransactionPlayer, Transaction, TransactionAction, TeamSettings, UserToTeam } from '@prisma/client';
+import { TransactionWithPlayers, LeagueInfo } from '@/interfaces/prisma.interface';
+import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster, RosterPlayer, Timeframe, User, LeagueSettings, WaiverSettings, ScheduleSettings, ScoringSettings, RosterSettings, DraftSettings, TradeSettings, News, PlayerProjections, TransactionPlayer, Transaction, TransactionAction, TeamSettings, UserToTeam, DraftPlayer, DraftQueue, DraftOrder } from '@prisma/client';
+
+
+
 class DatabaseService {
 
     client: PrismaClient;
@@ -7,6 +10,24 @@ class DatabaseService {
     constructor()
     {
         this.client = new PrismaClient();
+    }
+
+    // SHARED //
+    public async createTeamWithRoster(data): Promise<Team> {
+        const client = new PrismaClient();
+        const team: Team = await client.team.create({ data });
+
+        const rosterOneData = {
+            week: 1,
+            team_id: team.id,
+            season: 2022,
+        };
+
+        await client.roster.create({
+            data: rosterOneData,
+        });
+
+        return team;
     }
 
     // **************** SETTERS & UPDATERS ********************** //
@@ -121,14 +142,13 @@ class DatabaseService {
     public async createTeam(leagueId: number, teamName : string, teamOwnerId: number, settingsId:number, token: string): Promise<Team>
     {
         try {
-            const team: Team = await this.client.team.create({
-                data: {
-                    league_id: leagueId,
-                    name: teamName,
-                    team_settings_id: settingsId,
-                    token,
-                },
-            });
+            const data = {
+                        league_id: leagueId,
+                        name: teamName,
+                        team_settings_id: settingsId,
+                        token,
+                    };
+            const team: Team = await this.createTeamWithRoster(data);
 
             return team;
         }
@@ -626,7 +646,7 @@ class DatabaseService {
         }
     }
 
-    public async getLeagueInfo(leagueId: number): Promise<League>
+    public async getLeagueInfo(leagueId: number): Promise<LeagueInfo>
     {
         try {
             return await this.client.league.findFirstOrThrow({
@@ -1023,6 +1043,281 @@ class DatabaseService {
             return null;
         }
     }
+
+    public async getDraftPlayers(leagueId: number): Promise<DraftPlayer[]> {
+        try {
+            const draftPlayers: DraftPlayer[] = await this.client.draftPlayer.findMany({
+                where: { 
+                    league_id: leagueId,
+                 },
+            });
+
+            return draftPlayers;
+        }
+        catch(e)
+        {
+            console.log(e);
+            return null;
+        }
+    }
+
+    public async getDraftOrder(leagueId: number): Promise<DraftOrder[]>
+    {
+        try {
+            const league: League = await this.client.league.findFirst({
+                where: {
+                    id: leagueId, 
+                },
+            });
+            const leagueSettings: LeagueSettings = await this.client.leagueSettings.findFirst({
+                where: {
+                    id: league.settings_id,
+                },  
+            });
+            const draftSettings: DraftSettings = await this.client.draftSettings.findFirst({
+                where: {
+                    id: leagueSettings.draft_settings_id,
+                },
+            });
+            const draftOrder: DraftOrder[] = await this.client.draftOrder.findMany({
+                where: {
+                    draft_settings_id: draftSettings.id,
+                },
+            });
+            return draftOrder;
+        } catch (e) {
+            console.log(e);
+            return null;
+        }
+    }
+
+    public async getDraftQueue(leagueId: number): Promise<DraftQueue[]> {
+        try {
+            const draftQueue: DraftQueue[] = await this.client.draftQueue.findMany({
+                where: { 
+                    league_id: leagueId,
+                 },
+            });
+
+            return draftQueue;
+        }
+        catch(e)
+        {
+            console.log(e);
+            return null;
+        }
+    }
+
+    public async getDraftPickNumber(leagueId: number) {
+        const numPicks: DraftPlayer[] = await this.client.draftPlayer.findMany({
+            where: {
+                league_id: leagueId,
+            },
+        });
+
+        return numPicks.length + 1;
+    }
+
+    public async draftPlayer(playerId: number, teamId: number, leagueId: number): Promise<DraftPlayer> {
+        try {
+            const pickNum = await this.getDraftPickNumber(leagueId);
+
+            const dp: DraftPlayer = await this.client.draftPlayer.create({
+                data: { 
+                    league_id: leagueId,
+                    player_id: playerId,
+                    team_id: teamId,
+                    pick_number: pickNum,
+                 },
+            });
+
+            return dp;
+        }
+        catch(e)
+        {
+            console.log(e);
+            return null;
+        }
+    }
+
+    public async queuePlayer(playerId: number, teamId: number, leagueId: number, order: number): Promise<DraftQueue> {
+        try {
+            const qp: DraftQueue = await this.client.draftQueue.create({
+                data: { 
+                    league_id: leagueId,
+                    player_id: playerId,
+                    team_id: teamId,
+                    order: order,
+                 },
+            });
+
+            return qp;
+        }
+        catch(e)
+        {
+            console.log(e);
+            return null;
+        }
+    }
+
+
+    // TODO this might fail prisma because of the constraint of orders on the queue
+    public async swapQueuePlayers(qPlayerOneId: number, qPlayerTwoId: number): Promise<DraftQueue[]> {
+        try {
+
+            const qp1: DraftQueue = await this.client.draftQueue.findFirst({
+                where: {
+                    id: qPlayerOneId,
+                },
+            });
+
+            const qp2: DraftQueue = await this.client.draftQueue.findFirst({
+                where: {
+                    id: qPlayerTwoId,
+                },
+            });
+
+            const updated: DraftQueue[] = await this.client.$transaction([
+                this.client.draftQueue.update({
+                    where: {
+                        id: qPlayerOneId,
+                    },
+                    data: { 
+                        order: qp2.order,
+                    },
+                }),
+                this.client.draftQueue.update({
+                    where: {
+                        id: qPlayerTwoId,
+                    },
+                    data: { 
+                        order: qp1.order,
+                    },
+                }),
+            ]);
+
+            return updated;
+        }
+        catch(e)
+        {
+            console.log(e);
+            return null;
+        }
+    }
+
+
+    public async removeQueuePlayer(qPlayerId: number): Promise<void> {
+        try {
+            await this.client.draftQueue.delete({
+                where: { 
+                    id: qPlayerId,
+                 },
+            });
+        }
+        catch(e)
+        {
+            console.log(e);
+            return null;
+        }
+    }
+
+    public async getLeagueSettings(leagueId): Promise<LeagueSettings> {
+        const league: League = await this.client.league.findFirst({
+            where: {
+                id: leagueId, 
+            },
+        });
+
+        const leagueSettings: LeagueSettings = await this.client.leagueSettings.findFirst({
+            where: {
+                id: league.settings_id,
+            },  
+        });
+
+        return leagueSettings;
+    }
+
+    public async setDraftDate(draftDate, leagueId): Promise<DraftSettings> {
+        try {
+            const leagueSettings = await this.getLeagueSettings(leagueId);
+
+            const draftSettings: DraftSettings = await this.client.draftSettings.update({
+                where: {
+                    id: leagueSettings.draft_settings_id,
+                },
+                data: {
+                    date: draftDate,
+                },
+            });
+
+            return draftSettings;
+        }
+        catch(e)
+        {
+            console.log(e);
+            return null;
+        }
+    }
+
+    public async getTeamsInLeague(leagueId): Promise<Team[]> {
+        try {
+
+            const teams: Team[] = await this.client.team.findMany({
+                where: {
+                    league_id: leagueId,
+                },
+            });
+
+            return teams;
+        }
+        catch(e)
+        {
+            console.log(e);
+            return null;
+        }
+    }
+
+    private shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [ array[i], array[j] ] = [ array[j], array[i] ];
+        }
+    }
+
+    public async setRandomDraftOrder(leagueId): Promise<void> {
+        try {
+            const leagueSettings: LeagueSettings = await this.getLeagueSettings(leagueId);
+            const teams: Team[] = await this.getTeamsInLeague(leagueId);
+            this.shuffleArray(teams);
+
+            for(let pickNum = 1; pickNum <= teams.length; pickNum++)
+            {
+                const team = teams[pickNum - 1];
+
+                await this.client.draftOrder.upsert({
+                    where: {
+                        team_id: team.id,
+                    },
+                    update: {
+                      pick_number: pickNum,
+                      team_id: team.id,
+                      draft_settings_id: leagueSettings.draft_settings_id,
+                    },
+                    create: {
+                      pick_number: pickNum,
+                      team_id: team.id,
+                      draft_settings_id: leagueSettings.draft_settings_id,
+                    },
+                });   
+            }
+        }
+        catch(e)
+        {
+            console.log(e);
+            return null;
+        }
+    }
+
 }
 
 export default DatabaseService;

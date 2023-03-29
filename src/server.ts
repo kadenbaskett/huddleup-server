@@ -1,11 +1,9 @@
 import App from '@/app';
-import AuthRoute from '@routes/auth.route';
-import IndexRoute from '@routes/index.route';
-import UsersRoute from '@routes/users.route';
 import validateEnv from '@utils/validateEnv';
 import DataSinkApp from './datasink/app';
 import Seed from './datasink/seed';
 import DatabaseRoute from './routes/database.route';
+import DraftSocketServer from './draft/draftSocketServer';
 
 validateEnv();
 
@@ -21,21 +19,39 @@ const simulateDraft = args.includes('simulateDraft');
 const simulateMatchups = args.includes('simulateMatchups');
 const simulateWeek = args.includes('simulateWeek');
 const seedUsers = args.includes('seedUsers');
+
+let draftSocketServer;
 const syncDBWithFirebase = args.includes('syncDBWithFirebase');
 const clearFirebaseUsers = args.includes('clearFirebaseUsers');
 
 if(process.env.SERVICE === 'backend')
 {
     const routes = [
-        new IndexRoute(),
-        new UsersRoute(),
-        new AuthRoute(),
         new DatabaseRoute(),
     ];
 
     const backendApp = new App(routes);
 
     backendApp.listen();
+}
+else if(process.env.SERVICE === 'websocket')
+{
+  try{
+    const leagueId = Number(args[0]);
+
+    if(!leagueId)
+    {
+      throw new Error('Provide a league id to start the draft for');
+    }
+
+    console.log('Starting up draft websocket for league ', leagueId);
+    draftSocketServer = new DraftSocketServer(leagueId);
+    draftSocketServer.start();
+  }
+  catch(e){
+    console.log(e);
+  }
+
 }
 else if(process.env.SERVICE === 'datasink')
 {

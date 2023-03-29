@@ -21,6 +21,8 @@ model League {
   settings        LeagueSettings @relation(name: "settings", fields: [settings_id], references: [id])
   settings_id     Int            @unique
   matchups        Matchup[]
+  draft_players    DraftPlayer[]
+  draft_queues    DraftQueue[]
 }
 
 model LeagueSettings {
@@ -60,7 +62,7 @@ model DraftOrder {
   draft_settings    DraftSettings? @relation(fields: [draft_settings_id], references: [id])
   draft_settings_id Int
   team              Team           @relation(fields: [team_id], references: [id])
-  team_id           Int
+  team_id           Int            @unique()
 }
 
 model RosterSettings {
@@ -125,6 +127,8 @@ model UserToTeam {
   team       Team    @relation(fields: [team_id], references: [id])
   team_id    Int
   is_captain Boolean
+
+  @@unique([user_id, team_id])
 }
 
 model Team {
@@ -142,6 +146,8 @@ model Team {
   away_matchups         Matchup[]     @relation(name: "away_team")
   proposed_transactions Transaction[] @relation(name: "proposing_team")
   related_transactions  Transaction[] @relation(name: "related_team")
+  draft_players         DraftPlayer[] 
+  draft_queue           DraftQueue[]
 }
 
 model TeamSettings {
@@ -158,6 +164,8 @@ model Matchup {
   home_team_id Int
   away_team    Team   @relation("away_team", fields: [away_team_id], references: [id])
   away_team_id Int
+
+  @@unique([away_team_id, home_team_id, week])
 }
 
 // We will keep history of the roster that played each week, and with the current week, we will track the current roster as players are added/dropped
@@ -168,6 +176,8 @@ model Roster {
   team    Team           @relation(fields: [team_id], references: [id])
   team_id Int
   players RosterPlayer[]
+
+  @@unique([season, week, team_id])
 }
 
 // Map player id to the position in the lineup (bench, flex, WR, etc)
@@ -218,6 +228,35 @@ model TransactionAction {
   user           User        @relation(fields: [user_id], references: [id])
   action_date    DateTime
   action_type    String
+}
+
+//DRAFT models
+
+model DraftPlayer {
+    id          Int    @id @default(autoincrement())
+    league      League        @relation(fields: [league_id], references: [id])
+    league_id   Int
+    player      Player  @relation(fields: [player_id], references: [id])
+    player_id   Int
+    team        Team @relation(fields: [team_id], references: [id])
+    team_id      Int
+    pick_number Int
+
+    @@unique([league_id, player_id])
+}
+
+model DraftQueue {
+    id        Int    @id @default(autoincrement())
+    league    League        @relation(fields: [league_id], references: [id])
+    league_id Int
+    team      Team  @relation(fields: [team_id], references: [id])
+    team_id   Int @unique
+    player    Player @relation(fields: [player_id], references: [id])
+    player_id Int
+    order     Int @unique
+
+    @@unique([team_id, player_id])
+    @@unique([team_id, order])
 }
 
 //***************** MODELS USED FOR STORING API DATA ***************************
@@ -276,6 +315,8 @@ model Player {
   player_projections           PlayerProjections[]
   roster_players               RosterPlayer[]
   transaction_players          TransactionPlayer[]
+  draft_players                DraftPlayer[]
+  draft_queue                  DraftQueue[]
 }
 
 model NFLGame {

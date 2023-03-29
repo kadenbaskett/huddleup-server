@@ -9,7 +9,6 @@ import swaggerJSDoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 import { NODE_ENV, PORT, LOG_FORMAT, ORIGIN, CREDENTIALS } from '@config';
 import { Routes } from '@interfaces/routes.interface';
-import errorMiddleware from '@middlewares/error.middleware';
 import { logger, stream } from '@utils/logger';
 
 class App {
@@ -29,7 +28,6 @@ class App {
     this.initializeMiddlewares();
     this.initializeRoutes(routes);
     this.initializeSwagger();
-    this.initializeErrorHandling();
   }
 
   public listen() {
@@ -78,9 +76,6 @@ class App {
     this.app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
   }
 
-  private initializeErrorHandling() {
-    this.app.use(errorMiddleware);
-  }
 }
 
 export default App;
