@@ -564,6 +564,11 @@ class DatabaseService {
                 },
                 include: {
                     league: true,
+                    rosters: {
+                        include: {
+                            players: true,
+                        },
+                    },
                 },
             });
         }
@@ -795,6 +800,11 @@ class DatabaseService {
                 },
                 include: {
                     teams: true,
+                    settings: {
+                        include: {
+                            roster_settings: true,
+                        },
+                    },
                 },
             });
         }
@@ -805,7 +815,23 @@ class DatabaseService {
         }
     }
 
-
+    public async getUsers(): Promise<User[]>
+    {
+        try {
+            return await this.client.user.findMany({
+                include: {
+                    user_to_team: {
+                        include: { 
+                            team:true,
+                        },
+                    },
+                },
+            });
+        } catch (e) {
+            console.log(e);
+            return null;
+        }
+    }
 
     public async getPublicLeagues(): Promise<League[]>
     {

@@ -39,6 +39,49 @@ class Seed {
     await this.createLeague('fake name', 'fake description', 1, leagueSettings.id);
   }
 
+
+  async fillLeagueRandomUsers(leagueId: number) {
+    const league = await this.client.league.findFirst({
+      where: { id: leagueId },
+      include: {
+        settings: true,
+        teams: {
+          include: {
+            managers: true,
+          },
+        },
+      },
+    });
+    let users = await this.dbService.getUsers(); 
+    // console.log('users', users);
+    // remove users who are on teams from users to be added to league
+    league.teams.forEach((team) => {
+      team.managers.forEach((manager) => {
+        users = users.filter((user) => user.id !== manager.user_id);
+      });
+    });
+
+    for(const team of league.teams)
+    {
+      // add managers to unfinished teams
+      let numManagers = team.managers.length;
+      while (numManagers < league.settings.min_players) {
+        const newUser = users[0];
+        // add user to team
+        await this.client.userToTeam.create({
+          data: { team_id: team.id, user_id: newUser.id, is_captain: false },
+        });
+        users = users.filter((user) => user.id !== newUser.id);
+        numManagers++;
+      }
+    }
+
+    // add remaining teams
+    const neededTeams = league.settings.num_teams - league.teams.length;
+    const teamNames = this.generateTeamNames(neededTeams);
+    await this.createTeams(league, users, teamNames);
+  }
+
   async fillLeague(leagueId: number) {
     const league = await this.client.league.findFirst({
       where: { id: leagueId },
@@ -514,6 +557,7 @@ class Seed {
     await deleteFirebaseUsers(userIds);
   }
 
+
   async createFirebaseUsers() {
     await this.clearFirebaseUsers();
 
@@ -592,9 +636,6 @@ class Seed {
           }   
       }
     }
-
-    console.log(`Successfully added ${firebaseUserCount} users to firebase`);
-    console.log(`Successfully added ${dbUserCount} users to database`);
 
     return createdUsers;
   }
@@ -711,7 +752,7 @@ class Seed {
     for (let teamNum = 0; teamNum < teams.length; teamNum++) {
       const team = teams[teamNum];
 
-      for (let i = userNum; i < userNum + 3; i++) {
+      for (let i = userNum; i < userNum + league.settings.min_players; i++) {
         await this.client.userToTeam.create({
           data: {
             team_id: team.id,
@@ -721,7 +762,7 @@ class Seed {
         });
       }
 
-      userNum += 3;
+      userNum += league.settings.min_players;
     }
 
     return teams;
@@ -883,6 +924,7 @@ class Seed {
   }
 
   generateTeamNames(numTeams) {
+    
     const names = [];
     const rand = Math.round(Math.random() * 1000);
 

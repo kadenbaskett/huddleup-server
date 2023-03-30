@@ -3,22 +3,25 @@ import TransactionService from '@services/transaction.service';
 import { calculateFantasyPoints } from '@/services/general.service';
 import { Request, Response } from 'express';
 import { Roster, RosterPlayer, Team, Transaction } from '@prisma/client';
-import { bool, json } from 'envalid';
 import randomstring from 'randomstring';
-import { add, remove } from 'winston';
-import { Console } from 'console';
 import { TransactionWithPlayers } from '@/interfaces/prisma.interface';
+import Seed from '@/datasink/seed';
+
+import { spawn } from 'child_process';
+import DraftSocketServer from '@/draft/draftSocketServer';
 
 
 class DatabaseController {
 
   public databaseService: DatabaseService;
   public transactionService: TransactionService;
+  public draftSocket;
 
   constructor()
   {
       this.databaseService = new DatabaseService();
       this.transactionService = new TransactionService();
+      this.draftSocket;
   }
 
   public empty = async (req: Request, res: Response): Promise<void> => {
@@ -38,6 +41,64 @@ class DatabaseController {
 
     league ? res.status(200).json(league) : res.sendStatus(400);
   };
+
+  public fillLeague = async(req: Request, res: Response): Promise<void> => {
+    const seed = new Seed();
+    const { leagueId } = req.body;
+    try {
+
+      seed.fillLeagueRandomUsers(leagueId);
+      res.sendStatus(200);
+    }
+    catch(e)
+    {
+      console.log(e);
+      res.sendStatus(400);
+    }
+  };
+
+  public startDraft = async(req: Request, res: Response): Promise<void> => {
+    const { leagueId } = req.body;
+    await this.setDraftDateAndOrder(leagueId);
+
+    
+    
+    // try {
+
+    //   const child = exec('npm', [ 'run', 'seedOnly' ]);
+
+    //   child.stdout.on('data', (data) => {
+    //     console.log(`stdout: ${data}`);
+    //   });
+      
+    //   child.stderr.on('data', (data) => {
+    //     console.error(`stderr: ${data}`);
+    //   });
+      
+    //   child.on('close', (code) => {
+    //     console.log(`child process exited with code ${code}`);
+    //   });
+    // }
+    // catch(e)
+    // {
+    //   console.log(e);
+    // }
+    
+
+    res.sendStatus(200);
+  };
+
+  
+  // THIS SHOULD EVENTUALLY BE DONE BY THE UI
+  // COMISH SHOULD SET DRAFT ORDER AND DRAFT TIME BEFORE DRAFT IS LAUNCHED
+  async setDraftDateAndOrder(leagueId)
+  {
+      const secondsBeforeStart = 120;
+      const now = new Date();
+      now.setSeconds(now.getSeconds() + secondsBeforeStart);
+      await this.databaseService.setDraftDate(now, leagueId);
+      await this.databaseService.setRandomDraftOrder(leagueId);
+  }
 
   public createUser = async (req: Request, res: Response): Promise<void> => {
       const username = req.body.username;

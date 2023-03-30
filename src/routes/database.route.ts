@@ -26,6 +26,8 @@ class DatabaseRoute implements Routes {
     this.router.post(`${this.path}/roster/proposeTrade`, this.controller.proposeTrade);
     this.router.post(`${this.path}/roster/editLineup`, this.controller.editLineup);
     this.router.post(`${this.path}/transaction/action`, this.controller.transactionAction);
+    this.router.post(`${this.path}/league/fill`, this.controller.fillLeague);
+    this.router.post(`${this.path}/league/startDraft`, this.controller.startDraft);
 
 
     //************* GET ROUTES  **************/

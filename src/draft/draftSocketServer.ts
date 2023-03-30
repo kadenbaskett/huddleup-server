@@ -45,17 +45,6 @@ class DraftSocketServer {
         this.leagueId = leagueId;
     }
 
-    // THIS SHOULD EVENTUALLY BE DONE BY THE UI
-    // COMISH SHOULD SET DRAFT ORDER AND DRAFT TIME BEFORE DRAFT IS LAUNCHED
-    async setDraftDateAndOrder()
-    {
-        const secondsBeforeStart = 120;
-        const now = new Date();
-        now.setSeconds(now.getSeconds() + secondsBeforeStart);
-        await this.db.setDraftDate(now, this.leagueId);
-        await this.db.setRandomDraftOrder(this.leagueId);
-
-    }
 
     async initDraftState()
     {
@@ -246,7 +235,6 @@ class DraftSocketServer {
     public async start() {
 
         // Initialize the draft state before opening up websocket
-        await this.setDraftDateAndOrder();
         await this.initDraftState();
 
         const serverSocket = sockjs.createServer();
