@@ -62,27 +62,26 @@ class DatabaseController {
     await this.setDraftDateAndOrder(leagueId);
 
     
-    
-    // try {
+    try {
 
-    //   const child = exec('npm', [ 'run', 'seedOnly' ]);
+      const child = spawn('node', [ '--experimental-modules','src/draftScript.ts' ]);
 
-    //   child.stdout.on('data', (data) => {
-    //     console.log(`stdout: ${data}`);
-    //   });
-      
-    //   child.stderr.on('data', (data) => {
-    //     console.error(`stderr: ${data}`);
-    //   });
-      
-    //   child.on('close', (code) => {
-    //     console.log(`child process exited with code ${code}`);
-    //   });
-    // }
-    // catch(e)
-    // {
-    //   console.log(e);
-    // }
+      child.on('exit', (code, signal) => {
+        console.log(`Child process exited with code ${code} and signal ${signal}`);
+      });
+
+      child.stderr.on('data', (data) => {
+        console.error(`stderr: ${data}`);
+      });
+
+      child.on('close', (code) => {
+        console.log(`child process exited with code ${code}`);
+      });
+    }
+    catch(e)
+    {
+      console.log(e);
+    }
     
 
     res.sendStatus(200);
