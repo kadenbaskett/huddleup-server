@@ -4,6 +4,7 @@ import DataSinkApp from './datasink/app';
 import Seed from './datasink/seed';
 import DatabaseRoute from './routes/database.route';
 import DraftSocketServer from './draft/draftSocketServer';
+import DatabaseController from './controllers/database.controller';
 
 validateEnv();
 
@@ -32,20 +33,21 @@ if(process.env.SERVICE === 'backend')
 
     const backendApp = new App(routes);
 
+
     backendApp.listen();
-}
+  }
 else if(process.env.SERVICE === 'websocket')
 {
   try{
     const leagueId = Number(args[0]);
+    const port = Number(args[1]);
 
     if(!leagueId)
     {
       throw new Error('Provide a league id to start the draft for');
     }
-
-    console.log('Starting up draft websocket for league ', leagueId);
-    draftSocketServer = new DraftSocketServer(leagueId);
+    console.log('Starting up draft websocket for league ', leagueId, 'on port', port);
+    draftSocketServer = new DraftSocketServer(leagueId, port);
     draftSocketServer.start();
   }
   catch(e){

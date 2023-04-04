@@ -25,10 +25,10 @@ class DraftSocketServer {
     PING_INTERVAL: number;
     draftState: DraftState;
     leagueId: number;
-  
-    constructor(leagueId: number) {
+
+    constructor(leagueId: number, port: number) {
         this.clients = {};
-        this.PORT = 9999;
+        this.PORT = port;
         this.HOST = '0.0.0.0';
         this.PREFIX = '/websocket/draft';
         this.PING_INTERVAL = 5000;
@@ -120,7 +120,7 @@ class DraftSocketServer {
         this.broadcast(this.draftState, MSG_TYPES.DRAFT_UPDATE);
     }
 
-    sendPing() 
+    sendPing()
     {
         this.broadcast({}, MSG_TYPES.PING);
     }
@@ -148,11 +148,11 @@ class DraftSocketServer {
     onConnection(conn)
     {
         this.clients[this.getConnectionKey(conn)] = conn;
-    
+
         conn.on('data', (data) => this.onData(data));
 
         conn.on('close', () => this.onClose(conn));
-    
+
         console.log('New connection: ', this.getConnectionKey(conn));
         console.log('Number of clients: ', Object.keys(this.clients).length);
     }
