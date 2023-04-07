@@ -16,6 +16,10 @@ const MSG_TYPES = {
     ERROR: 'error',
 };
 
+let timerOn = false;
+let timer: NodeJS.Timeout;
+
+
 class DraftSocketServer {
     db: DatabaseService;
     clients: any;
@@ -45,6 +49,24 @@ class DraftSocketServer {
         this.leagueId = leagueId;
     }
 
+    async startTimer() {
+      timerOn = true;
+      console.log('starting timer');
+      timer = setInterval(async () => {
+        // Code to be executed every 3 seconds
+        console.log('Timer looped');
+        // await this.autoDraft();
+        // await this.advanceDraftPick();
+      }, 3000);
+    }
+
+    stopTimer() {
+      console.log('stopping timer');
+      timerOn = false;
+      clearInterval(timer);
+    }
+
+    delay = ms => new Promise(res => setTimeout(res, ms));
 
     async initDraftState()
     {
@@ -55,11 +77,12 @@ class DraftSocketServer {
 
     async loadDraftOrderFromDB(leagueId: number, round: number): Promise<DraftOrder[]> {
         let draftOrder = await this.db.getDraftOrder(leagueId);
+        console.log('draftOrder', draftOrder);
         if (round % 2 !== 0) draftOrder = draftOrder.reverse();
         const formattedDraftOrder: DraftOrder[] = draftOrder.map((order) => {
             return {
                 teamId: order.team_id,
-                pick: order.pick_number,
+                pick: order.pick_number + (round - 1) * draftOrder.length,
             };
         });
         return formattedDraftOrder;
@@ -77,7 +100,9 @@ class DraftSocketServer {
     async loadDraftRound(leagueId: number, pick: number) {
         const league = await this.db.getLeagueInfo(leagueId);
         const numTeams: number = league.teams.length;
-        return Math.floor(pick/numTeams);
+        let round = Math.floor(pick/numTeams);
+        round += 1;
+        return round;
     }
 
     async loadDraftStateFromDB(): Promise<DraftState> {
@@ -157,6 +182,48 @@ class DraftSocketServer {
         console.log('Number of clients: ', Object.keys(this.clients).length);
     }
 
+    async advanceDraftPick() {
+      // round over
+      if(this.draftState.currentPickNum % this.draftState.draftOrder.length === 0) {
+        console.log('round over');
+        this.draftState.currentRoundNum += 1;
+        this.draftState.currentPickNum += 1;
+        this.draftState.draftOrder = await this.loadDraftOrderFromDB(this.leagueId, this.draftState.currentRoundNum);
+      } else {
+        console.log('pick advancing');
+        this.draftState.currentPickNum += 1;
+      }
+    }
+
+
+    async autoDraft() {
+      const players = await this.db.getAllPlayersDetails();
+      const draftPlayers = await this.db.getDraftPlayers(this.leagueId);
+      const draftPlayerPlayerIds = draftPlayers.map((p) => p.player_id);
+      console.log('draftPlayerPlayerIds', draftPlayerPlayerIds);
+      const availablePlayers = await players.filter((p) => {if (!draftPlayerPlayerIds.includes(p.id)) return p;} );
+
+      // TODO: Further filtering on available players
+      const player = availablePlayers[0];
+      // const draftPlayer = await this.db.draftPlayer(player.id, this.draftState.currentPickTeamId, this.leagueId);
+      await this.draftPlayer(player.id, this.draftState.currentPickTeamId, this.leagueId);
+      console.log(`${this.draftState.currentPickTeamId} auto drafted ${player}`);
+    }
+
+    async draftPlayer(player_id, team_id, league_id): Promise<DraftPlayer> {
+      await this.db.draftPlayerToRoster(player_id, team_id, league_id);
+      const draftPlayer = await this.db.draftPlayer(player_id, team_id, league_id);
+      console.log('Player drafted: ', draftPlayer);
+      this.draftState = {
+          ...this.draftState,
+          draftPlayers: [
+            ...this.draftState.draftPlayers,
+            draftPlayer,
+          ],
+        };
+      return draftPlayer;
+    }
+
     async onData(data)
     {
         data = JSON.parse(data);
@@ -197,17 +264,15 @@ class DraftSocketServer {
                 this.sendDraftState();
                 break;
             case MSG_TYPES.DRAFT_PLAYER:
-                if(this.playerAlreadyDrafted(player_id)) break;
-
-                draftPlayer = await this.db.draftPlayer(player_id, team_id, league_id);
-                console.log('Player drafted: ', draftPlayer);
-                this.draftState = {
-                    ...this.draftState,
-                    draftPlayers: [
-                        ...this.draftState.draftPlayers,
-                        draftPlayer,
-                    ],
-                };
+              if(this.playerAlreadyDrafted(player_id)) break;
+              //if(this.draftState.currentPickTeamId !== data.content.team_id) break;
+              if(timerOn) {
+                this.stopTimer();
+                this.draftState.currentPickNum += 1;
+                // await this.delay(5000);
+                await this.startTimer();
+              }
+                draftPlayer = await this.draftPlayer(player_id, team_id, league_id);
                 this.sendDraftState();
                 break;
             case MSG_TYPES.INITIAL_CONNECTION:
@@ -233,9 +298,10 @@ class DraftSocketServer {
     }
 
     public async start() {
-
         // Initialize the draft state before opening up websocket
         await this.initDraftState();
+
+        await this.startTimer();
 
         const serverSocket = sockjs.createServer();
 

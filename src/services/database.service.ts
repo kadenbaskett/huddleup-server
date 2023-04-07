@@ -326,6 +326,35 @@ class DatabaseService {
         }
     }
 
+    public async draftPlayerToRoster(player_id: number, team_id: number, league_id: number) {
+      try {
+        const player = await this.client.player.findFirst({
+          where: {
+            id: player_id,
+          },
+        });
+
+        const roster = await this.client.roster.findFirst({
+          where: {
+            team_id: team_id,
+            week: 1,
+          },
+        });
+
+        const rp: RosterPlayer = await this.client.rosterPlayer.create({
+          data: {
+              external_id: player.external_id,
+              position: 'BE',
+              roster_id: roster.id,
+              player_id: player_id,
+          },
+        });
+        console.log('rp', rp);
+      } catch (e) {
+        return;
+      }
+    }
+
 
     public async proposeTrade(sendPlayerIds: number[], recPlayerIds: number[], proposeRosterId: number, relatedRosterId: number, proposeTeamId: number, relatedTeamId: number, userId: number, week: number): Promise<Transaction> {
         try {
@@ -609,7 +638,7 @@ class DatabaseService {
                     where:{
                         proposing_team_id: teamID,
                         status: 'Pending',
-                        
+
                     },
                     include:{
                         players: true,
@@ -821,7 +850,7 @@ class DatabaseService {
             return await this.client.user.findMany({
                 include: {
                     user_to_team: {
-                        include: { 
+                        include: {
                             team:true,
                         },
                     },
@@ -1073,7 +1102,7 @@ class DatabaseService {
     public async getDraftPlayers(leagueId: number): Promise<DraftPlayer[]> {
         try {
             const draftPlayers: DraftPlayer[] = await this.client.draftPlayer.findMany({
-                where: { 
+                where: {
                     league_id: leagueId,
                  },
             });
@@ -1092,13 +1121,13 @@ class DatabaseService {
         try {
             const league: League = await this.client.league.findFirst({
                 where: {
-                    id: leagueId, 
+                    id: leagueId,
                 },
             });
             const leagueSettings: LeagueSettings = await this.client.leagueSettings.findFirst({
                 where: {
                     id: league.settings_id,
-                },  
+                },
             });
             const draftSettings: DraftSettings = await this.client.draftSettings.findFirst({
                 where: {
@@ -1120,7 +1149,7 @@ class DatabaseService {
     public async getDraftQueue(leagueId: number): Promise<DraftQueue[]> {
         try {
             const draftQueue: DraftQueue[] = await this.client.draftQueue.findMany({
-                where: { 
+                where: {
                     league_id: leagueId,
                  },
             });
@@ -1149,7 +1178,7 @@ class DatabaseService {
             const pickNum = await this.getDraftPickNumber(leagueId);
 
             const dp: DraftPlayer = await this.client.draftPlayer.create({
-                data: { 
+                data: {
                     league_id: leagueId,
                     player_id: playerId,
                     team_id: teamId,
@@ -1169,7 +1198,7 @@ class DatabaseService {
     public async queuePlayer(playerId: number, teamId: number, leagueId: number, order: number): Promise<DraftQueue> {
         try {
             const qp: DraftQueue = await this.client.draftQueue.create({
-                data: { 
+                data: {
                     league_id: leagueId,
                     player_id: playerId,
                     team_id: teamId,
@@ -1208,7 +1237,7 @@ class DatabaseService {
                     where: {
                         id: qPlayerOneId,
                     },
-                    data: { 
+                    data: {
                         order: qp2.order,
                     },
                 }),
@@ -1216,7 +1245,7 @@ class DatabaseService {
                     where: {
                         id: qPlayerTwoId,
                     },
-                    data: { 
+                    data: {
                         order: qp1.order,
                     },
                 }),
@@ -1235,7 +1264,7 @@ class DatabaseService {
     public async removeQueuePlayer(qPlayerId: number): Promise<void> {
         try {
             await this.client.draftQueue.delete({
-                where: { 
+                where: {
                     id: qPlayerId,
                  },
             });
@@ -1250,14 +1279,14 @@ class DatabaseService {
     public async getLeagueSettings(leagueId): Promise<LeagueSettings> {
         const league: League = await this.client.league.findFirst({
             where: {
-                id: leagueId, 
+                id: leagueId,
             },
         });
 
         const leagueSettings: LeagueSettings = await this.client.leagueSettings.findFirst({
             where: {
                 id: league.settings_id,
-            },  
+            },
         });
 
         return leagueSettings;
@@ -1334,7 +1363,7 @@ class DatabaseService {
                       team_id: team.id,
                       draft_settings_id: leagueSettings.draft_settings_id,
                     },
-                });   
+                });
             }
         }
         catch(e)
