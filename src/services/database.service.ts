@@ -364,7 +364,7 @@ class DatabaseService {
           },
         });
 
-        const rp: RosterPlayer = await this.client.rosterPlayer.create({
+        await this.client.rosterPlayer.create({
           data: {
               external_id: player.external_id,
               position: 'BE',
@@ -372,7 +372,6 @@ class DatabaseService {
               player_id: player_id,
           },
         });
-        console.log('rp', rp);
       } catch (e) {
         return;
       }

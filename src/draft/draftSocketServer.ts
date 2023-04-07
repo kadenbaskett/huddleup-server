@@ -17,6 +17,9 @@ const MSG_TYPES = {
     END_DRAFT: 'end_draft',
 };
 
+// Ten mins
+const DRAFT_BUFFER_TIME = 10 * 10000;
+
 let timerOn = false;
 let timer: NodeJS.Timeout;
 
@@ -212,8 +215,9 @@ class DraftSocketServer {
 
       // TODO: Further filtering on available players
       const player = availablePlayers[0];
-      // const draftPlayer = await this.db.draftPlayer(player.id, this.draftState.currentPickTeamId, this.leagueId);
+      // Actually Draft Player
       await this.draftPlayer(player.id, this.draftState.currentPickTeamId, this.leagueId);
+      this.sendDraftState();
       console.log(`${this.draftState.currentPickTeamId} auto drafted ${player}`);
     }
 
@@ -276,10 +280,10 @@ class DraftSocketServer {
               if(timerOn) {
                 this.stopTimer();
                 // await this.delay(5000);
+                draftPlayer = await this.draftPlayer(player_id, team_id, league_id);
                 this.advanceDraftPick();
                 await this.startTimer();
               }
-                draftPlayer = await this.draftPlayer(player_id, team_id, league_id);
                 this.sendDraftState();
                 break;
             case MSG_TYPES.INITIAL_CONNECTION:
@@ -304,12 +308,21 @@ class DraftSocketServer {
         delete this.clients[this.getConnectionKey(conn)];
     }
 
-    private async checkIfDraftShouldStart()
+    private async startDraft()
     {
-        const draftTime = await this.db.getDraftTime(this.leagueId);
+        const draftTimeFromDB = await this.db.getDraftTime(this.leagueId);
+        const draftTime = new Date(draftTimeFromDB).getTime();
+        const now = new Date().getTime();
+        const diff = draftTime - now;
 
+        // If draft scheduled to start in the future, delay
+        if(diff > 0)
+        {
+            console.log('delaying by ', diff / 1000, ' seconds');
+            await this.delay(diff);
+        }
 
-
+        console.log('starting the draft timer now');
         await this.startTimer();
     }
 
@@ -329,7 +342,6 @@ class DraftSocketServer {
         // Initialize the draft state before opening up websocket
         await this.initDraftState();
 
-        await this.checkIfDraftShouldStart();
 
         this.serverSocket = sockjs.createServer();
 
@@ -344,6 +356,9 @@ class DraftSocketServer {
         setInterval(() => {
             this.sendPing();
         }, this.PING_INTERVAL);
+
+        // TODO is void correct?
+        void this.startDraft();
     }
 }
 
