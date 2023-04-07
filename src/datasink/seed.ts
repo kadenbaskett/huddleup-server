@@ -724,7 +724,16 @@ class Seed {
       data: league,
     });
 
-    return resp;
+    const leagueWithSettings = await this.client.league.findFirst({
+      where: {
+        id: resp.id,
+      },
+      include: {
+        settings: true,
+      },
+    });
+
+    return leagueWithSettings;
   }
 
   async createTeams(league, users, teamNames) {
