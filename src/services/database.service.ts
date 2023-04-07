@@ -30,6 +30,29 @@ class DatabaseService {
         return team;
     }
 
+    public async getDraftTime(leagueId: number): Promise<Date>
+    {
+        try {
+            const leagueSettings = await this.client.leagueSettings.findFirst({
+                where: {
+                    league: {
+                        id: leagueId,
+                    },
+                },
+                include: {
+                    draft_settings: true,
+                },
+            });
+
+            return leagueSettings.draft_settings.date;
+        }
+        catch(err)
+        {
+            console.log(err);
+            return null;
+        }
+    }
+
     // **************** SETTERS & UPDATERS ********************** //
 
     public async createLeague(commissioner_id: number, name: string, description: string, settings: LeagueSettings, token: string): Promise<League>
