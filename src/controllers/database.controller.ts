@@ -3,22 +3,31 @@ import TransactionService from '@services/transaction.service';
 import { calculateFantasyPoints } from '@/services/general.service';
 import { Request, Response } from 'express';
 import { Roster, RosterPlayer, Team, Transaction } from '@prisma/client';
-import { bool, json } from 'envalid';
 import randomstring from 'randomstring';
-import { add, remove } from 'winston';
-import { Console } from 'console';
 import { TransactionWithPlayers } from '@/interfaces/prisma.interface';
+import Seed from '@/datasink/seed';
 
+import { spawn } from 'child_process';
+import DraftSocketServer from '@/draft/draftSocketServer';
+export interface leagueDraftSocket {
+  port: number,
+  leagueId: number,
+}
 
 class DatabaseController {
 
   public databaseService: DatabaseService;
   public transactionService: TransactionService;
+  public draftSockets: leagueDraftSocket[];
+  public tempPort: number;
+
 
   constructor()
   {
       this.databaseService = new DatabaseService();
       this.transactionService = new TransactionService();
+      this.draftSockets = [];
+      this.tempPort = 49152;
   }
 
   public empty = async (req: Request, res: Response): Promise<void> => {
@@ -38,6 +47,73 @@ class DatabaseController {
 
     league ? res.status(200).json(league) : res.sendStatus(400);
   };
+
+  public fillLeague = async(req: Request, res: Response): Promise<void> => {
+    const seed = new Seed();
+    const { leagueId } = req.body;
+    try {
+
+      await seed.fillLeagueRandomUsers(leagueId);
+      await seed.simulateMatchups(leagueId);
+      res.sendStatus(200);
+    }
+    catch(e)
+    {
+      console.log(e);
+      res.sendStatus(400);
+    }
+  };
+
+  public startDraft = async(req?: Request, res?: Response): Promise<void> => {
+    const { leagueId } = req.body;
+    // await this.setDraftDateAndOrder(leagueId);
+    this.tempPort += 1;
+    this.draftSockets = [ ...this.draftSockets, { leagueId, port: this.tempPort } ];
+    try {
+      const child = spawn('cross-env', [ 'NODE_ENV=development', 'SERVICE=websocket', 'nodemon', leagueId.toString(), `${this.tempPort}` ], { shell: true });
+
+      child.stdout.on('exit', (code, signal) => {
+        console.log(`league(${leagueId}) draft process exited with code ${code} and signal ${signal}`);
+      });
+
+      child.stdout.on('data', (data) => {
+        console.log(`league(${leagueId}) draft}: ${data}`);
+      });
+      child.stdout.on('error', (error) => {
+        console.error(`league(${leagueId}) draft}: ${error}`);
+      });
+    }
+    catch(e)
+    {
+      console.log(e);
+    }
+    res.sendStatus(200);
+  };
+
+  public getDraftSocket = async(req?: Request, res?: Response): Promise<void> => {
+    try {
+      const { leagueId } = req.params;
+      console.log(leagueId);
+      const sock = this.draftSockets.filter((s) => {return(s.leagueId === Number(leagueId));});
+      res.status(200).json(sock[0].port);
+    } catch (e) {
+      console.log('e', e);
+      res.sendStatus(400);
+    }
+  };
+
+
+  // THIS SHOULD EVENTUALLY BE DONE BY THE UI
+  // COMISH SHOULD SET DRAFT ORDER AND DRAFT TIME BEFORE DRAFT IS LAUNCHED
+  async setDraftDateAndOrder(leagueId)
+  {
+      const secondsBeforeStart = 120;
+      const now = new Date();
+      now.setSeconds(now.getSeconds() + secondsBeforeStart);
+      await this.databaseService.setDraftDate(now, leagueId);
+      await this.databaseService.setRandomDraftOrder(leagueId);
+      await this.databaseService.simulateMatchups(leagueId);
+  }
 
   public createUser = async (req: Request, res: Response): Promise<void> => {
       const username = req.body.username;
@@ -131,20 +207,20 @@ class DatabaseController {
       let transactions: TransactionWithPlayers[] = await this.databaseService.getTeamPendingTransactions(proposeTeamId);
       transactions = transactions.filter((transaction) => transaction.type === 'Trade');
 
-      transactions.forEach((transaction) => 
+      transactions.forEach((transaction) =>
       {
 
-        const addPlayers = transaction.players.filter((player) => 
+        const addPlayers = transaction.players.filter((player) =>
             player.joins_proposing_team === true,
           ).map((transaction) => transaction.player_id);
 
 
-          const droppingPlayers = transaction.players.filter((player) => 
+          const droppingPlayers = transaction.players.filter((player) =>
           player.joins_proposing_team === false,
         ).map((transaction) => transaction.player_id);
 
 
-        sendPlayerIds.forEach((sendPlayerId) => 
+        sendPlayerIds.forEach((sendPlayerId) =>
         {
           if(droppingPlayers.includes(sendPlayerId))
           {
@@ -152,12 +228,12 @@ class DatabaseController {
             if(index > -1)
             {
               droppingPlayers.splice(index, 1);
-            }          
+            }
           }
         });
 
 
-        recPlayerIds.forEach((recPlayerId) => 
+        recPlayerIds.forEach((recPlayerId) =>
         {
           if(addPlayers.includes(recPlayerId))
           {
@@ -165,7 +241,7 @@ class DatabaseController {
             if(index > -1)
             {
               addPlayers.splice(index, 1);
-            } 
+            }
           }
         });
 
@@ -174,10 +250,10 @@ class DatabaseController {
         {
           duplicate = true;
         }
-        
+
       });
-      
-      
+
+
       if(!duplicate)
       {
         const transaction: Transaction = await this.databaseService.proposeTrade(sendPlayerIds, recPlayerIds, proposeRosterId, relatedRosterId, proposeTeamId, relatedTeamId, userId, week);
@@ -197,15 +273,15 @@ class DatabaseController {
     const userId = req.body.userId;
     const week = req.body.week;
     let duplicate = false;
-    
-    
+
+
     let transactions: TransactionWithPlayers[] = await this.databaseService.getTeamPendingTransactions(teamId);
     transactions = transactions.filter((transaction) => transaction.type === 'Add');
-    
-    
-    transactions.forEach((transaction) => 
+
+
+    transactions.forEach((transaction) =>
     {
-      const addPlayer = transaction.players.find((player) => 
+      const addPlayer = transaction.players.find((player) =>
       player.joins_proposing_team === true,
       ).player_id;
 
@@ -215,8 +291,8 @@ class DatabaseController {
       }
 
     });
-    
-    
+
+
     if(!duplicate)
     {
       const rp: RosterPlayer = await this.databaseService.proposeAddPlayer(addPlayerId, addPlayerExternalId, rosterId, teamId, userId, week);
@@ -246,12 +322,12 @@ class DatabaseController {
 
       transactions.forEach((transaction)=> {
 
-        const addPlayer = transaction.players.find((player) => 
+        const addPlayer = transaction.players.find((player) =>
           player.joins_proposing_team === true,
         ).player_id;
 
 
-        const droppingPlayers = transaction.players.filter((player) => 
+        const droppingPlayers = transaction.players.filter((player) =>
           player.joins_proposing_team === false,
         ).map((transaction) => transaction.player_id);
 
@@ -277,7 +353,7 @@ class DatabaseController {
           }
         }
       });
-      
+
       if(!duplicate)
       {
         const roster: Roster = await this.databaseService.proposeAddDropPlayer(addPlayerId, addPlayerExternalId, dropPlayerIds, rosterId, teamId, userId, week);
@@ -288,7 +364,7 @@ class DatabaseController {
         res.sendStatus(400);
       }
 
-      
+
   };
 
   public dropPlayer = async (req: Request, res: Response): Promise<void> => {
@@ -305,8 +381,8 @@ class DatabaseController {
       transactions = transactions.filter((transaction) => transaction.type === 'Drop');
 
       transactions.forEach((transaction)=> {
-        
-        const dropPlayer = transaction.players.find((player) => 
+
+        const dropPlayer = transaction.players.find((player) =>
           player.joins_proposing_team === false,
         ).player_id;
 
