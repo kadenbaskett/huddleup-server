@@ -55,9 +55,9 @@ class DraftSocketServer {
       timer = setInterval(async () => {
         // Code to be executed every 3 seconds
         console.log('Timer looped');
-        // await this.autoDraft();
-        // await this.advanceDraftPick();
-      }, 3000);
+        await this.autoDraft();
+        await this.advanceDraftPick();
+      }, 30000);
     }
 
     stopTimer() {
@@ -187,12 +187,11 @@ class DraftSocketServer {
       if(this.draftState.currentPickNum % this.draftState.draftOrder.length === 0) {
         console.log('round over');
         this.draftState.currentRoundNum += 1;
-        this.draftState.currentPickNum += 1;
         this.draftState.draftOrder = await this.loadDraftOrderFromDB(this.leagueId, this.draftState.currentRoundNum);
-      } else {
-        console.log('pick advancing');
-        this.draftState.currentPickNum += 1;
       }
+      this.draftState.currentPickNum += 1;
+      const nextTeam = this.draftState.draftOrder.find((d)=> d.pick === this.draftState.currentPickNum);
+      this.draftState.currentPickTeamId = nextTeam.teamId;
     }
 
 
@@ -268,8 +267,9 @@ class DraftSocketServer {
               //if(this.draftState.currentPickTeamId !== data.content.team_id) break;
               if(timerOn) {
                 this.stopTimer();
-                this.draftState.currentPickNum += 1;
+                // this.draftState.currentPickNum += 1;
                 // await this.delay(5000);
+                this.advanceDraftPick();
                 await this.startTimer();
               }
                 draftPlayer = await this.draftPlayer(player_id, team_id, league_id);
