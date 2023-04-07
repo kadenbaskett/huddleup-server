@@ -9,13 +9,13 @@ import {
   TradeSettings,
   WaiverSettings,
 } from '@prisma/client';
-import { getFirebaseUsers, deleteFirebaseUsers, createFirebaseUser } from '@/firebase/firebase';
 import { calculateSeasonLength, createMatchups } from '@services/general.service';
 import randomstring from 'randomstring';
 import DatasinkDatabaseService from '@services/datasink_database.service';
 import StatsService from '@/services/stats.service';
 import DatabaseService from '@/services/database.service';
-
+import { UserRecord } from 'firebase-admin/lib/auth/user-record';
+import { firebaseAdminAuth } from '@/server';
 
 /*
  *  Seeds the database with mock data. The simulate league function will
@@ -478,7 +478,7 @@ class Seed {
   }
 
   async syncDBWithFirebaseUsers() {
-    const firebaseUsers = await getFirebaseUsers();
+    const firebaseUsers = await this.getFirebaseUsers();
     
     for (const firebaseUser of firebaseUsers) {
       try{
@@ -504,14 +504,14 @@ class Seed {
   }
 
   async clearFirebaseUsers() {
-    const firebaseUsers = await getFirebaseUsers();
+    const firebaseUsers = await this.getFirebaseUsers();
     const userIds = [];
 
     for (const firebaseUser of firebaseUsers) {
       userIds.push(firebaseUser.uid);
     }
 
-    await deleteFirebaseUsers(userIds);
+    await this.deleteFirebaseUsers(userIds);
   }
 
   async createFirebaseUsers() {
@@ -568,7 +568,7 @@ class Seed {
 
     for (const user of users) {
       // add to firebase
-      createFirebaseUser(user.username, user.email, 'password');
+      this.createFirebaseUser(user.username, user.email, 'password');
       firebaseUserCount ++;
 
       try{
@@ -916,6 +916,49 @@ class Seed {
     }
 
     return names;
+  }
+
+  // FIREBASE HELPER FUNCTIONS
+  getFirebaseUsers(nextPageToken?: string, allUsers: UserRecord[] = []): Promise<UserRecord[]> {
+    return firebaseAdminAuth.listUsers(1000, nextPageToken)
+      .then((listUsersResult) => {
+        allUsers.push(...listUsersResult.users);
+        if (listUsersResult.pageToken) {
+          return this.getFirebaseUsers(listUsersResult.pageToken, allUsers);
+        } else {
+          return allUsers;
+        }
+      });
+  }
+
+  async deleteFirebaseUsers(userIds: string[]){
+    await firebaseAdminAuth
+  .deleteUsers(userIds)
+  .then((deleteUsersResult) => {
+    console.log(`Successfully deleted ${deleteUsersResult.successCount} users`);
+    console.log(`Failed to delete ${deleteUsersResult.failureCount} users`);
+    deleteUsersResult.errors.forEach((err) => {
+      console.log(err.error.toJSON());
+    });
+  })
+  .catch((error) => {
+    console.log('Error deleting users:', error);
+  });
+  }
+
+  createFirebaseUser(username: string, email: string, password: string){ 
+    firebaseAdminAuth
+  .createUser({
+    displayName: username,
+    email: email,
+    password: password,
+  })
+  .then((userRecord) => {
+    // console.log('Successfully created new user:', userRecord.displayName);
+  })
+  .catch((error) => {
+    console.log('Error creating new user:', error);
+  });
   }
 }
 export default Seed;
