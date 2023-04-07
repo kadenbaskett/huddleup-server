@@ -1,5 +1,5 @@
 import { DraftState, AutoDraft, DraftOrder } from '@/interfaces/draftstate.interface';
-import { DraftPlayer, DraftQueue, Team } from '@prisma/client';
+import { DraftPlayer, DraftQueue } from '@prisma/client';
 import DatabaseService from '@services/database.service';
 
 import * as http from 'http';
@@ -17,8 +17,8 @@ const MSG_TYPES = {
     END_DRAFT: 'end_draft',
 };
 
-// Ten mins
-const DRAFT_BUFFER_TIME = 10 * 10000;
+// 30 seconds
+const DRAFT_END_BUFFER_TIME_MS = 30 * 1000;
 
 let timerOn = false;
 let timer: NodeJS.Timeout;
@@ -62,7 +62,7 @@ class DraftSocketServer {
         console.log('Timer looped');
         await this.autoDraft();
         await this.advanceDraftPick();
-      }, 30000);
+      }, 5000);
     }
 
     stopTimer() {
@@ -112,19 +112,12 @@ class DraftSocketServer {
 
     async loadDraftStateFromDB(): Promise<DraftState> {
         const dqs: DraftQueue[] = await this.db.getDraftQueue(this.leagueId);
-        // console.log('dqs', dqs);
         const dps: DraftPlayer[] = await this.db.getDraftPlayers(this.leagueId);
-        // console.log('dps', dps);
         const ads: AutoDraft[] = await this.loadAutoDraftFromDB(this.leagueId);
-        // console.log('ads', ads);
         const pick: number = await this.db.getDraftPickNumber(this.leagueId);
-        // console.log('pick', pick);
         const round: number = await this.loadDraftRound(this.leagueId, pick);
-        // console.log('round', round);
         const dos: DraftOrder[] = await this.loadDraftOrderFromDB(this.leagueId, round);
-        // console.log('dos', dos);
         const currentPickTeamId: number = dos.find((order) => order.pick === pick).teamId;
-        // console.log('currentPickTeamId', currentPickTeamId);
         const msgContent = {
             draftPlayers: dps,
             draftQueue: dqs,
@@ -155,6 +148,12 @@ class DraftSocketServer {
     sendDraftState()
     {
         this.broadcast(this.draftState, MSG_TYPES.DRAFT_UPDATE);
+
+        // TODO don't hard code the length
+        if(this.draftState.draftPlayers.length === 15 * this.draftState.draftOrder.length)
+        {
+            this.endDraft();
+        }
     }
 
     sendPing()
@@ -194,6 +193,7 @@ class DraftSocketServer {
         console.log('Number of clients: ', Object.keys(this.clients).length);
     }
 
+    // Current pick num is the pick that has just been made
     async advanceDraftPick() {
       // round over
       if(this.draftState.currentPickNum % this.draftState.draftOrder.length === 0) {
@@ -204,6 +204,7 @@ class DraftSocketServer {
       this.draftState.currentPickNum += 1;
       const nextTeam = this.draftState.draftOrder.find((d)=> d.pick === this.draftState.currentPickNum);
       this.draftState.currentPickTeamId = nextTeam.teamId;
+      this.sendDraftState();
     }
 
 
@@ -284,7 +285,6 @@ class DraftSocketServer {
                 this.advanceDraftPick();
                 await this.startTimer();
               }
-                this.sendDraftState();
                 break;
             case MSG_TYPES.INITIAL_CONNECTION:
                 console.log('initial conn', data);
@@ -328,20 +328,26 @@ class DraftSocketServer {
 
     private async endDraft()
     {
-        console.log('ending draft');
+        console.log(`Ending draft in ${DRAFT_END_BUFFER_TIME_MS}`);
 
         this.broadcast({
             type: MSG_TYPES.END_DRAFT,
+            message: `Draft ending in ${DRAFT_END_BUFFER_TIME_MS} seconds`,
         });
 
+        console.log('Closing server socket');
         this.serverSocket?.close();
-        process.exit();
+
+        await this.delay(DRAFT_END_BUFFER_TIME_MS);
+
+        const statusCode = 1;
+        console.log(`Exiting process with status code ${statusCode}`);
+        process.exit(statusCode);
     }
 
     public async start() {
         // Initialize the draft state before opening up websocket
         await this.initDraftState();
-
 
         this.serverSocket = sockjs.createServer();
 
@@ -357,7 +363,6 @@ class DraftSocketServer {
             this.sendPing();
         }, this.PING_INTERVAL);
 
-        // TODO is void correct?
         void this.startDraft();
     }
 }

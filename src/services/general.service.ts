@@ -1,6 +1,6 @@
 // File for re usable functions/services
 
-export function calculateFantasyPoints(s, pprValue = 1) 
+export function calculateFantasyPoints(s, pprValue = 1)
 {
     if (s) {
         let points = 0;

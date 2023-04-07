@@ -53,8 +53,8 @@ class DatabaseController {
     const { leagueId } = req.body;
     try {
 
-      seed.fillLeagueRandomUsers(leagueId);
-      await this.setDraftDateAndOrder(leagueId);
+      await seed.fillLeagueRandomUsers(leagueId);
+      await seed.simulateMatchups(leagueId);
       res.sendStatus(200);
     }
     catch(e)
@@ -112,6 +112,7 @@ class DatabaseController {
       now.setSeconds(now.getSeconds() + secondsBeforeStart);
       await this.databaseService.setDraftDate(now, leagueId);
       await this.databaseService.setRandomDraftOrder(leagueId);
+      await this.databaseService.simulateMatchups(leagueId);
   }
 
   public createUser = async (req: Request, res: Response): Promise<void> => {
