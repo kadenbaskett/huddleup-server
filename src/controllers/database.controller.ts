@@ -54,6 +54,7 @@ class DatabaseController {
     try {
 
       seed.fillLeagueRandomUsers(leagueId);
+      await this.setDraftDateAndOrder(leagueId);
       res.sendStatus(200);
     }
     catch(e)
@@ -65,7 +66,7 @@ class DatabaseController {
 
   public startDraft = async(req?: Request, res?: Response): Promise<void> => {
     const { leagueId } = req.body;
-    await this.setDraftDateAndOrder(leagueId);
+    // await this.setDraftDateAndOrder(leagueId);
     this.tempPort += 1;
     this.draftSockets = [ ...this.draftSockets, { leagueId, port: this.tempPort } ];
     try {
@@ -92,6 +93,7 @@ class DatabaseController {
   public getDraftSocket = async(req?: Request, res?: Response): Promise<void> => {
     try {
       const { leagueId } = req.params;
+      console.log(leagueId);
       const sock = this.draftSockets.filter((s) => {return(s.leagueId === Number(leagueId));});
       res.status(200).json(sock[0].port);
     } catch (e) {
