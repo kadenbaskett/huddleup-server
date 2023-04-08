@@ -65,14 +65,20 @@ class App {
 
   private initializeSwagger() {
     const options = {
-      swaggerDefinition: {
+      definition: {
+        openapi: '3.0.0',
         info: {
-          title: 'REST API',
+          title: 'HuddleUp API',
           version: '1.0.0',
-          description: 'Example docs',
+          description: 'Documentation for HuddleUp API',
         },
+        servers: [
+          {
+            url: 'http://localhost:3000',
+          },
+        ],
       },
-      apis: [ 'swagger.yaml' ],
+      apis: [ './routes/*.ts' ],
     };
 
     const specs = swaggerJSDoc(options);

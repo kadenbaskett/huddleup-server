@@ -3,6 +3,10 @@ import { Request, Response, NextFunction } from 'express';
 
 export default async function verifyJWT (req : Request, res : Response, next : NextFunction) {
   try{
+        if(req.path.startsWith('/api-docs')){ //skip swagger docs
+          return next();
+        }
+
         const authHeader = req.headers.authorization;
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
           return res.status(401).json({ message: 'Missing or invalid Authorization header' });
