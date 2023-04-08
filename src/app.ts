@@ -53,15 +53,16 @@ class App {
   }
 
   private initializeMiddlewares() {
-    this.app.use(this.verifyJWT);
     this.app.use(morgan(LOG_FORMAT, { stream }));
-    this.app.use(cors({ origin: ORIGIN, credentials: CREDENTIALS }));
+    this.app.use(cors({ origin: ORIGIN, credentials: CREDENTIALS, allowedHeaders: [ 'Authorization' ],
+  }));
     this.app.use(hpp());
     this.app.use(helmet());
     this.app.use(compression());
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: true }));
     this.app.use(cookieParser());
+    this.app.use(this.verifyJWT);
   }
 
   private initializeRoutes(routes: Routes[]) {
@@ -88,12 +89,16 @@ class App {
 
   private async verifyJWT (req : Request, res : Response, next : NextFunction) {
     try{
-      const token = req.header('authorization');
-  
-      if(!token){
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ message: 'Missing or invalid Authorization header' });
+      }
+
+      const token = authHeader.split(' ')[1];
+      if (!token) {
         res.status(401).send('Unauthorized');
         return;
-      } 
+      }
       
       const isValid = await this.verifyFirebaseJWT(token);
       if(!isValid){

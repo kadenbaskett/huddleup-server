@@ -28,7 +28,6 @@ let draftSocketServer;
 // create firebase admin app instance
 const serviceAccountKey = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 try {
-  console.log('Initing firebase admin app');
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccountKey),
   });
