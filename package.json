@@ -7,7 +7,7 @@
   "scripts": {
     "start:backend": "npm run build:tsc && cross-env NODE_ENV=production SERVICE=backend node dist/server.js",
     "start:datasink": "npm run build:tsc && cross-env NODE_ENV=production SERVICE=datasink node dist/server.js",
-    "dev": "cross-env NODE_ENV=development SERVICE=backend nodemon backend",
+    "dev": "cross-env NODE_ENV=development SERVICE=backend nodemon --experimental-modules backend",
     "websocket": "cross-env NODE_ENV=development SERVICE=websocket nodemon",
     "initAndSeed": "cross-env NODE_ENV=development SERVICE=datasink nodemon init seed",
     "seedOnly": "cross-env NODE_ENV=development SERVICE=datasink nodemon seed",
@@ -46,6 +46,7 @@
     "hpp": "^0.2.3",
     "jsonwebtoken": "^8.5.1",
     "morgan": "^1.10.0",
+    "node-schedule": "^2.1.1",
     "randomstring": "^1.2.3",
     "sockjs": "^0.3.24",
     "swagger-jsdoc": "^6.2.1",

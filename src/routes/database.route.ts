@@ -26,6 +26,8 @@ class DatabaseRoute implements Routes {
     this.router.post(`${this.path}/roster/proposeTrade`, this.controller.proposeTrade);
     this.router.post(`${this.path}/roster/editLineup`, this.controller.editLineup);
     this.router.post(`${this.path}/transaction/action`, this.controller.transactionAction);
+    this.router.post(`${this.path}/league/fill`, this.controller.fillLeague);
+    this.router.post(`${this.path}/league/startDraft`, this.controller.startDraft);
 
 
     //************* GET ROUTES  **************/
@@ -50,6 +52,8 @@ class DatabaseRoute implements Routes {
     this.router.get(`${this.path}/teams/user/:userId(\\d+)`, this.controller.getUserTeams);
     this.router.get(`${this.path}/teams/currentroster/:teamId(\\d+)`, this.controller.getCurrentTeamRoster);
     this.router.get(`${this.path}/teams/roster/:teamId(\\d+)/:week`, this.controller.getTeamRoster);
+
+    this.router.get(`${this.path}/league/getDraftSocket/:leagueId(\\d+)`, this.controller.getDraftSocket);
   }
 }
 

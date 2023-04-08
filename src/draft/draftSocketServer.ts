@@ -1,5 +1,5 @@
 import { DraftState, AutoDraft, DraftOrder } from '@/interfaces/draftstate.interface';
-import { DraftPlayer, DraftQueue, Team } from '@prisma/client';
+import { DraftPlayer, DraftQueue } from '@prisma/client';
 import DatabaseService from '@services/database.service';
 
 import * as http from 'http';
@@ -14,7 +14,15 @@ const MSG_TYPES = {
     RE_ORDER_QUEUE_PLAYER: 'removeQueuePlayer',
     DRAFT_PLAYER: 'draftPlayer',
     ERROR: 'error',
+    END_DRAFT: 'end_draft',
 };
+
+// 30 seconds
+const DRAFT_END_BUFFER_TIME_MS = 30 * 1000;
+
+let timerOn = false;
+let timer: NodeJS.Timeout;
+
 
 class DraftSocketServer {
     db: DatabaseService;
@@ -25,10 +33,11 @@ class DraftSocketServer {
     PING_INTERVAL: number;
     draftState: DraftState;
     leagueId: number;
-  
-    constructor(leagueId: number) {
+    serverSocket: any;
+
+    constructor(leagueId: number, port: number) {
         this.clients = {};
-        this.PORT = 9999;
+        this.PORT = port;
         this.HOST = '0.0.0.0';
         this.PREFIX = '/websocket/draft';
         this.PING_INTERVAL = 5000;
@@ -45,17 +54,24 @@ class DraftSocketServer {
         this.leagueId = leagueId;
     }
 
-    // THIS SHOULD EVENTUALLY BE DONE BY THE UI
-    // COMISH SHOULD SET DRAFT ORDER AND DRAFT TIME BEFORE DRAFT IS LAUNCHED
-    async setDraftDateAndOrder()
-    {
-        const secondsBeforeStart = 120;
-        const now = new Date();
-        now.setSeconds(now.getSeconds() + secondsBeforeStart);
-        await this.db.setDraftDate(now, this.leagueId);
-        await this.db.setRandomDraftOrder(this.leagueId);
-
+    async startTimer() {
+      timerOn = true;
+      console.log('starting timer');
+      timer = setInterval(async () => {
+        // Code to be executed every 3 seconds
+        console.log('Timer looped');
+        await this.autoDraft();
+        await this.advanceDraftPick();
+      }, 5000);
     }
+
+    stopTimer() {
+      console.log('stopping timer');
+      timerOn = false;
+      clearInterval(timer);
+    }
+
+    delay = ms => new Promise(res => setTimeout(res, ms));
 
     async initDraftState()
     {
@@ -66,11 +82,12 @@ class DraftSocketServer {
 
     async loadDraftOrderFromDB(leagueId: number, round: number): Promise<DraftOrder[]> {
         let draftOrder = await this.db.getDraftOrder(leagueId);
+        console.log('draftOrder', draftOrder);
         if (round % 2 !== 0) draftOrder = draftOrder.reverse();
         const formattedDraftOrder: DraftOrder[] = draftOrder.map((order) => {
             return {
                 teamId: order.team_id,
-                pick: order.pick_number,
+                pick: order.pick_number + (round - 1) * draftOrder.length,
             };
         });
         return formattedDraftOrder;
@@ -88,7 +105,9 @@ class DraftSocketServer {
     async loadDraftRound(leagueId: number, pick: number) {
         const league = await this.db.getLeagueInfo(leagueId);
         const numTeams: number = league.teams.length;
-        return Math.floor(pick/numTeams);
+        let round = Math.floor((pick - 1)/numTeams);
+        round += 1;
+        return round;
     }
 
     async loadDraftStateFromDB(): Promise<DraftState> {
@@ -129,9 +148,15 @@ class DraftSocketServer {
     sendDraftState()
     {
         this.broadcast(this.draftState, MSG_TYPES.DRAFT_UPDATE);
+
+        // TODO don't hard code the length
+        if(this.draftState.draftPlayers.length === 15 * this.draftState.draftOrder.length)
+        {
+            this.endDraft();
+        }
     }
 
-    sendPing() 
+    sendPing()
     {
         this.broadcast({}, MSG_TYPES.PING);
     }
@@ -159,13 +184,56 @@ class DraftSocketServer {
     onConnection(conn)
     {
         this.clients[this.getConnectionKey(conn)] = conn;
-    
+
         conn.on('data', (data) => this.onData(data));
 
         conn.on('close', () => this.onClose(conn));
-    
+
         console.log('New connection: ', this.getConnectionKey(conn));
         console.log('Number of clients: ', Object.keys(this.clients).length);
+    }
+
+    // Current pick num is the pick that has just been made
+    async advanceDraftPick() {
+      // round over
+      if(this.draftState.currentPickNum % this.draftState.draftOrder.length === 0) {
+        console.log(`round ${this.draftState.currentRoundNum} over`);
+        this.draftState.currentRoundNum += 1;
+        this.draftState.draftOrder = await this.loadDraftOrderFromDB(this.leagueId, this.draftState.currentRoundNum);
+      }
+      this.draftState.currentPickNum += 1;
+      const nextTeam = this.draftState.draftOrder.find((d)=> d.pick === this.draftState.currentPickNum);
+      this.draftState.currentPickTeamId = nextTeam.teamId;
+      this.sendDraftState();
+    }
+
+
+    async autoDraft() {
+      const players = await this.db.getAllPlayersDetails();
+      const draftPlayers = await this.db.getDraftPlayers(this.leagueId);
+      const draftPlayerPlayerIds = draftPlayers.map((p) => p.player_id);
+      const availablePlayers = await players.filter((p) => {if (!draftPlayerPlayerIds.includes(p.id)) return p;} );
+
+      // TODO: Further filtering on available players
+      const player = availablePlayers[0];
+      // Actually Draft Player
+      await this.draftPlayer(player.id, this.draftState.currentPickTeamId, this.leagueId);
+      this.sendDraftState();
+      console.log(`${this.draftState.currentPickTeamId} auto drafted ${player}`);
+    }
+
+    async draftPlayer(player_id, team_id, league_id): Promise<DraftPlayer> {
+      await this.db.draftPlayerToRoster(player_id, team_id, league_id);
+      const draftPlayer = await this.db.draftPlayer(player_id, team_id, league_id);
+      console.log('Player drafted: ', draftPlayer);
+      this.draftState = {
+          ...this.draftState,
+          draftPlayers: [
+            ...this.draftState.draftPlayers,
+            draftPlayer,
+          ],
+        };
+      return draftPlayer;
     }
 
     async onData(data)
@@ -208,18 +276,15 @@ class DraftSocketServer {
                 this.sendDraftState();
                 break;
             case MSG_TYPES.DRAFT_PLAYER:
-                if(this.playerAlreadyDrafted(player_id)) break;
-
-                draftPlayer = await this.db.draftPlayer(player_id, team_id, league_id);
-                console.log('Player drafted: ', draftPlayer);
-                this.draftState = {
-                    ...this.draftState,
-                    draftPlayers: [
-                        ...this.draftState.draftPlayers,
-                        draftPlayer,
-                    ],
-                };
-                this.sendDraftState();
+              if(this.playerAlreadyDrafted(player_id)) break;
+              if(this.draftState.currentPickTeamId !== data.content.team_id) break;
+              if(timerOn) {
+                this.stopTimer();
+                // await this.delay(5000);
+                draftPlayer = await this.draftPlayer(player_id, team_id, league_id);
+                this.advanceDraftPick();
+                await this.startTimer();
+              }
                 break;
             case MSG_TYPES.INITIAL_CONNECTION:
                 console.log('initial conn', data);
@@ -243,25 +308,62 @@ class DraftSocketServer {
         delete this.clients[this.getConnectionKey(conn)];
     }
 
-    public async start() {
+    private async startDraft()
+    {
+        const draftTimeFromDB = await this.db.getDraftTime(this.leagueId);
+        const draftTime = new Date(draftTimeFromDB).getTime();
+        const now = new Date().getTime();
+        const diff = draftTime - now;
 
+        // If draft scheduled to start in the future, delay
+        if(diff > 0)
+        {
+            console.log('delaying by ', diff / 1000, ' seconds');
+            await this.delay(diff);
+        }
+
+        console.log('starting the draft timer now');
+        await this.startTimer();
+    }
+
+    private async endDraft()
+    {
+        console.log(`Ending draft in ${DRAFT_END_BUFFER_TIME_MS}`);
+
+        this.broadcast({
+            type: MSG_TYPES.END_DRAFT,
+            message: `Draft ending in ${DRAFT_END_BUFFER_TIME_MS} seconds`,
+        });
+
+        console.log('Closing server socket');
+        this.serverSocket?.close();
+
+        await this.delay(DRAFT_END_BUFFER_TIME_MS);
+
+        const statusCode = 1;
+        console.log(`Exiting process with status code ${statusCode}`);
+        process.exit(statusCode);
+    }
+
+    public async start() {
         // Initialize the draft state before opening up websocket
-        await this.setDraftDateAndOrder();
         await this.initDraftState();
 
-        const serverSocket = sockjs.createServer();
+        this.serverSocket = sockjs.createServer();
 
-        serverSocket.on('connection', (conn) => this.onConnection(conn));
+        this.serverSocket.on('connection', (conn) => this.onConnection(conn));
 
         const httpServer = http.createServer();
 
-        serverSocket.installHandlers(httpServer, { prefix: this.PREFIX });
+        this.serverSocket.installHandlers(httpServer, { prefix: this.PREFIX });
 
         httpServer.listen(this.PORT, this.HOST);
 
         setInterval(() => {
             this.sendPing();
         }, this.PING_INTERVAL);
+
+        void this.startDraft();
     }
 }
 
