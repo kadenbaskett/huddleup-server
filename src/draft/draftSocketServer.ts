@@ -390,9 +390,9 @@ class DraftSocketServer {
 
         httpServer.listen(this.PORT, this.HOST);
 
-        setInterval(() => {
-            this.sendPing();
-        }, this.PING_INTERVAL);
+        // setInterval(() => {
+        //     this.sendPing();
+        // }, this.PING_INTERVAL);
 
         void this.startDraft();
     }

@@ -53,6 +53,39 @@ class DatabaseService {
         }
     }
 
+
+
+    public async getLeaguesDraftingSoon(bufferTimeMS: number): Promise<League[]>
+    {
+        try {
+            // A date X milliseconds in the future
+            const now = new Date();
+            const compareDate = new Date();
+            compareDate.setMilliseconds(compareDate.getMilliseconds() + bufferTimeMS);
+
+            // If the draft is set to start between now and the compareDate
+            const leagues: League[] = await this.client.league.findMany({
+                where: {
+                    settings: {
+                        draft_settings: {
+                            date: {
+                                lte: compareDate,
+                                gte: now,
+                            },
+                        },
+                    },
+                },
+            });
+
+            return leagues;
+        }
+        catch(err)
+        {
+            console.log(err);
+            return null;
+        }
+    }
+
     // **************** SETTERS & UPDATERS ********************** //
 
     public async createLeague(commissioner_id: number, name: string, description: string, settings: LeagueSettings, token: string): Promise<League>
@@ -1358,6 +1391,28 @@ class DatabaseService {
         for (let i = array.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [ array[i], array[j] ] = [ array[j], array[i] ];
+        }
+    }
+
+    public async hasCorrectDraftOrderLength(leagueId: number): Promise<boolean>
+    {
+        try {
+            const draftOrder: DraftOrder[] = await this.client.draftOrder.findMany({
+                where: {
+                    team: {
+                        league_id: leagueId,
+                    },
+                },
+            });
+
+            const teams: Team[] = await this.getTeamsInLeague(leagueId);
+
+            return draftOrder.length === teams.length;
+        }
+        catch (err)
+        {
+            console.log(err);
+            return null;
         }
     }
 

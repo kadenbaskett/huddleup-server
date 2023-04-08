@@ -4,7 +4,7 @@ import DataSinkApp from './datasink/app';
 import Seed from './datasink/seed';
 import DatabaseRoute from './routes/database.route';
 import DraftSocketServer from './draft/draftSocketServer';
-import DatabaseController from './controllers/database.controller';
+import { TaskManager } from './TaskManager/taskManager';
 
 validateEnv();
 
@@ -20,10 +20,12 @@ const simulateDraft = args.includes('simulateDraft');
 const simulateMatchups = args.includes('simulateMatchups');
 const simulateWeek = args.includes('simulateWeek');
 const seedUsers = args.includes('seedUsers');
-
-let draftSocketServer;
 const syncDBWithFirebase = args.includes('syncDBWithFirebase');
 const clearFirebaseUsers = args.includes('clearFirebaseUsers');
+
+let draftSocketServer: DraftSocketServer;
+let taskManager: TaskManager; 
+
 
 if(process.env.SERVICE === 'backend')
 {
@@ -53,7 +55,18 @@ else if(process.env.SERVICE === 'websocket')
   catch(e){
     console.log(e);
   }
-
+}
+else if(process.env.SERVICE === 'taskManager')
+{
+  try
+  {
+    console.log('Starting up the task manager service');
+    taskManager = new TaskManager();
+    taskManager.start();
+  }
+  catch(e){
+    console.log(e);
+  }
 }
 else if(process.env.SERVICE === 'datasink')
 {

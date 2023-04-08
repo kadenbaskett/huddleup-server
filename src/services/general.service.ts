@@ -1,4 +1,6 @@
 // File for re usable functions/services
+import { DRAFT } from '@/config/huddleup_config';
+import { spawn } from 'child_process';
 
 export function calculateFantasyPoints(s, pprValue = 1)
 {
@@ -62,6 +64,34 @@ export function createMatchups(teams, numWeeks)
     }
 
     return matchups;
+}
+
+// Generates a (mostly) unique port for 
+// TODO when we have thousands of leagues this will have to change
+export function getUniquePortForDraft(leagueId: number): number {
+    return DRAFT.START_PORT + leagueId; 
+}
+
+export function startDraftChildProcess(leagueId: number, port: number): void
+{
+    console.log(`Starting up the draft on port ${port} for league ${leagueId}`);
+
+    const child = spawn('cross-env', [ 'NODE_ENV=development', 'SERVICE=websocket', 'nodemon', leagueId.toString(), `${port}` ], { shell: true });
+
+    child.stdout.on('exit', (code, signal) => {
+        console.log(`league(${leagueId}) draft process exited with code ${code} and signal ${signal}`);
+    });
+
+    child.stdout.on('data', (data) => {
+        console.log(`league(${leagueId}) draft}: ${data}`);
+    });
+
+    child.stdout.on('error', (error) => {
+        console.error(`league(${leagueId}) draft}: ${error}`);
+    });
+
+    child.on('exit', console.log.bind(console, 'exited'));
+    child.on('close', console.log.bind(console, 'closed'));
 }
 
 

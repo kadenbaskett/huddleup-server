@@ -9,6 +9,7 @@
     "start:datasink": "npm run build:tsc && cross-env NODE_ENV=production SERVICE=datasink node dist/server.js",
     "dev": "cross-env NODE_ENV=development SERVICE=backend nodemon --experimental-modules backend",
     "websocket": "cross-env NODE_ENV=development SERVICE=websocket nodemon",
+    "taskManager": "cross-env NODE_ENV=development SERVICE=taskManager nodemon",
     "initAndSeed": "cross-env NODE_ENV=development SERVICE=datasink nodemon init seed",
     "seedOnly": "cross-env NODE_ENV=development SERVICE=datasink nodemon seed",
     "initOnly": "cross-env NODE_ENV=development SERVICE=datasink nodemon init",

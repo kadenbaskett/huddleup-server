@@ -1,33 +1,25 @@
 import DatabaseService from '@services/database.service';
 import TransactionService from '@services/transaction.service';
-import { calculateFantasyPoints } from '@/services/general.service';
+import { calculateFantasyPoints, getUniquePortForDraft } from '@/services/general.service';
 import { Request, Response } from 'express';
 import { Roster, RosterPlayer, Team, Transaction } from '@prisma/client';
 import randomstring from 'randomstring';
 import { TransactionWithPlayers } from '@/interfaces/prisma.interface';
 import Seed from '@/datasink/seed';
+import { DRAFT } from '@/config/huddleup_config';
 
-import { spawn } from 'child_process';
-// import DraftSocketServer from '@/draft/draftSocketServer';
-// export interface leagueDraftSocket {
-//   port: number,
-//   leagueId: number,
-// }
 
 class DatabaseController {
 
   public databaseService: DatabaseService;
   public transactionService: TransactionService;
-  public draftSockets;
-  public tempPort: number;
-
+  public seed: Seed;
 
   constructor()
   {
       this.databaseService = new DatabaseService();
       this.transactionService = new TransactionService();
-      this.draftSockets = {};
-      this.tempPort = 49152;
+      this.seed = new Seed();
   }
 
   public empty = async (req: Request, res: Response): Promise<void> => {
@@ -49,12 +41,10 @@ class DatabaseController {
   };
 
   public fillLeague = async(req: Request, res: Response): Promise<void> => {
-    const seed = new Seed();
     const { leagueId } = req.body;
     try {
-      await seed.fillLeagueRandomUsers(leagueId);
-      await this.setDraftDateAndOrder(leagueId);
-      await seed.simulateMatchups(leagueId);
+      await this.seed.fillLeagueRandomUsers(leagueId);
+      await this.setDraftDate(leagueId);
       res.sendStatus(200);
     }
     catch(e)
@@ -64,50 +54,29 @@ class DatabaseController {
     }
   };
 
-  public startDraft = async(req?: Request, res?: Response): Promise<void> => {
-    const { leagueId } = req.body;
-    this.tempPort += 1;
-    let port;
+  // We should not need this anymore
+  // public startDraft = async(req?: Request, res?: Response): Promise<void> => {
+  //   const { leagueId } = req.body;
 
-    if(this.draftSockets[leagueId])
-    {
-        port = this.draftSockets[leagueId];
-    }
-    else {
-      this.draftSockets[leagueId] = this.tempPort;
-      port = this.tempPort;
-    }
+  //   try 
+  //   {
+  //     startDraftChildProcess(leagueId, port);
+  //     res.sendStatus(200);
+  //   }
+  //   catch(e)
+  //   {
+  //     console.log(e);
+  //     res.sendStatus(400);
+  //   }
+  // };
 
-    try {
-      const child = spawn('cross-env', [ 'NODE_ENV=development', 'SERVICE=websocket', 'nodemon', leagueId.toString(), `${port}` ], { shell: true });
 
-      child.stdout.on('exit', (code, signal) => {
-        console.log(`league(${leagueId}) draft process exited with code ${code} and signal ${signal}`);
-      });
-
-      child.stdout.on('data', (data) => {
-        console.log(`league(${leagueId}) draft}: ${data}`);
-      });
-      child.stdout.on('error', (error) => {
-        console.error(`league(${leagueId}) draft}: ${error}`);
-      });
-    }
-    catch(e)
-    {
-      console.log(e);
-    }
-    res.sendStatus(200);
-  };
-
-  public getDraftSocket = async(req?: Request, res?: Response): Promise<void> => {
+  public getDraftPort = async(req?: Request, res?: Response): Promise<void> => {
     try {
       const { leagueId } = req.params;
-      console.log(leagueId);
-      const port = this.draftSockets[leagueId];
-      console.log('get draft port', port);
+      const port = getUniquePortForDraft(Number(leagueId));
       res.status(200).json(port);
     } catch (e) {
-      console.log('e', e);
       res.sendStatus(400);
     }
   };
@@ -115,13 +84,20 @@ class DatabaseController {
 
   // THIS SHOULD EVENTUALLY BE DONE BY THE UI
   // COMISH SHOULD SET DRAFT ORDER AND DRAFT TIME BEFORE DRAFT IS LAUNCHED
-  async setDraftDateAndOrder(leagueId)
+  // async setDraftDateAndOrder(leagueId)
+  // {
+  //     const secondsBeforeStart = 120;
+  //     const now = new Date();
+  //     now.setSeconds(now.getSeconds() + secondsBeforeStart);
+  //     await this.databaseService.setDraftDate(now, leagueId);
+  //     await this.databaseService.setRandomDraftOrder(leagueId);
+  // }
+
+  public async setDraftDate(leagueId)
   {
-      const secondsBeforeStart = 120;
       const now = new Date();
-      now.setSeconds(now.getSeconds() + secondsBeforeStart);
+      now.setMilliseconds(now.getMilliseconds() + DRAFT.TIME_BEFORE_DRAFT_START_MS);
       await this.databaseService.setDraftDate(now, leagueId);
-      await this.databaseService.setRandomDraftOrder(leagueId);
   }
 
   public createUser = async (req: Request, res: Response): Promise<void> => {

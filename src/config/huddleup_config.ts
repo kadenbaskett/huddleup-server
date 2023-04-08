@@ -1,4 +1,13 @@
 
+
+export const DRAFT = {
+    DRAFT_BUFFER_TIME_MS: 1000 * 60 * 5,
+    TRADE_BUFFER_TIME_MS: 1000 * 60 * 5,
+    DRAFT_INTERVAL_TIME: 1000 * 5,
+    START_PORT: 49152,
+    TIME_BEFORE_DRAFT_START_MS: 1000 * 90, // 90 secs 
+};
+
 export const TRANSACTION_TYPES = {
     TRADE: 'Trade',
     ADD: 'Add',
