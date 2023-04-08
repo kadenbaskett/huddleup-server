@@ -112,7 +112,6 @@ class DatabaseController {
       now.setSeconds(now.getSeconds() + secondsBeforeStart);
       await this.databaseService.setDraftDate(now, leagueId);
       await this.databaseService.setRandomDraftOrder(leagueId);
-      await this.databaseService.simulateMatchups(leagueId);
   }
 
   public createUser = async (req: Request, res: Response): Promise<void> => {
