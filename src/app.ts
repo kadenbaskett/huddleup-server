@@ -10,7 +10,8 @@ import swaggerUi from 'swagger-ui-express';
 import { NODE_ENV, PORT, LOG_FORMAT, ORIGIN, CREDENTIALS } from '@config';
 import { Routes } from '@interfaces/routes.interface';
 import { logger, stream } from '@utils/logger';
-import { firebaseAdminAuth } from '@/server';
+// import { firebaseAdminAuth } from '@/server';
+import verifyJWT from './middleware/verifyJWT';
 
 class App {
   public app: express.Application;
@@ -18,9 +19,6 @@ class App {
   public port: string | number;
 
   constructor(routes: Routes[]) {
-    this.verifyJWT = this.verifyJWT.bind(this);
-    this.verifyFirebaseJWT = this.verifyFirebaseJWT.bind(this);
-
     this.app = express();
     this.env = NODE_ENV || 'development';
     this.port = PORT || 3000;
@@ -62,7 +60,7 @@ class App {
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: true }));
     this.app.use(cookieParser());
-    this.app.use(this.verifyJWT);
+    this.app.use(verifyJWT);
   }
 
   private initializeRoutes(routes: Routes[]) {
@@ -85,43 +83,6 @@ class App {
 
     const specs = swaggerJSDoc(options);
     this.app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
-  }
-
-  private async verifyJWT (req : Request, res : Response, next : NextFunction) {
-    try{
-      const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ message: 'Missing or invalid Authorization header' });
-      }
-
-      const token = authHeader.split(' ')[1];
-      if (!token) {
-        res.status(401).send('Unauthorized');
-        return;
-      }
-      
-      const isValid = await this.verifyFirebaseJWT(token);
-      if(!isValid){
-        res.status(401).send('Unauthorized');
-        return;
-      }
-    
-      next(); //continue to next middleware
-    }
-    catch (err) {
-      console.error(err);
-      res.status(500).send('Internal error occurred');
-      return;
-    }
-  }
-
-  private async verifyFirebaseJWT(token: string): Promise<boolean> {
-    try {
-      const decodedToken = await firebaseAdminAuth.verifyIdToken(token);
-      return !!decodedToken;
-    } catch (error) {
-      return false;
-    }
   }
 }
 
