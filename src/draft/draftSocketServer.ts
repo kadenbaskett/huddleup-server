@@ -149,7 +149,7 @@ class DraftSocketServer {
         }
     }
 
-    sendDraftState()
+    async sendDraftState()
     {
         this.broadcast(this.draftState, DRAFT_CONFIG.MSG_TYPES.DRAFT_UPDATE);
 
@@ -159,7 +159,7 @@ class DraftSocketServer {
 
         if(numPlayersDraftedSoFar >= numPlayersToBeDrafted && draftOrderSet)
         {
-            this.endDraft();
+            await this.endDraft();
         }
     }
 
@@ -303,7 +303,6 @@ class DraftSocketServer {
                     teamId: team_id,
                     auto: false,
                 };
-                console.log(this.draftState.autoDraft);
                 this.sendDraftState();
                 break;
             default:

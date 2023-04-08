@@ -1,7 +1,7 @@
 
 export const DRAFT = {
     DRAFT_BUFFER_TIME_FUTURE_MS: 1000 * 60 * 5, // nything five mins in future
-    DRAFT_BUFFER_TIME_PAST_MS: 1000 * 60 * 5, // Anything five mins in past
+    DRAFT_BUFFER_TIME_PAST_MS: 1000 * 60 * 20, // Anything five mins in past
     // DRAFT_BUFFER_TIME_PAST_MS: 1000 * 60 * 0, // No drafts that have started
     DRAFT_INTERVAL_TIME: 1000 * 5,
     START_PORT: 49152,
