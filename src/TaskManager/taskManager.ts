@@ -20,10 +20,10 @@ export class TaskManager {
 
   async checkForDrafts()
   {
-    console.log('Checking for drafts to start');
+    // console.log('Checking for drafts to start');
 
     try {
-        const leagues = await this.db.getLeaguesDraftingSoon(DRAFT_CONFIG.DRAFT_BUFFER_TIME_MS);
+        const leagues = await this.db.getLeaguesDraftingSoon(DRAFT_CONFIG.DRAFT_BUFFER_TIME_FUTURE_MS, DRAFT_CONFIG.DRAFT_BUFFER_TIME_PAST_MS);
 
         for(const league of leagues)
         {
@@ -41,7 +41,7 @@ export class TaskManager {
                 startDraftChildProcess(league.id, this.draftPorts[league.id]);
             }
             else {
-                console.log('Draft already started for league', league.id);
+                // console.log('Draft already started for league', league.id);
             }
         }
     }

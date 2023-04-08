@@ -55,13 +55,13 @@ class DatabaseService {
 
 
 
-    public async getLeaguesDraftingSoon(bufferTimeMS: number): Promise<League[]>
+    public async getLeaguesDraftingSoon(bufferTimeFutureMS: number, bufferTimePastMS: number): Promise<League[]>
     {
         try {
-            // A date X milliseconds in the future
-            const now = new Date();
-            const compareDate = new Date();
-            compareDate.setMilliseconds(compareDate.getMilliseconds() + bufferTimeMS);
+            const pastDate = new Date();
+            const futureDate = new Date();
+            futureDate.setMilliseconds(futureDate.getMilliseconds() + bufferTimeFutureMS);
+            pastDate.setMilliseconds(pastDate.getMilliseconds() - bufferTimePastMS);
 
             // If the draft is set to start between now and the compareDate
             const leagues: League[] = await this.client.league.findMany({
@@ -69,8 +69,8 @@ class DatabaseService {
                     settings: {
                         draft_settings: {
                             date: {
-                                lte: compareDate,
-                                gte: now,
+                                lte: futureDate,
+                                gte: pastDate,
                             },
                         },
                     },

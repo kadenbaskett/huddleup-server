@@ -1,11 +1,26 @@
 
-
 export const DRAFT = {
-    DRAFT_BUFFER_TIME_MS: 1000 * 60 * 5,
-    TRADE_BUFFER_TIME_MS: 1000 * 60 * 5,
+    DRAFT_BUFFER_TIME_FUTURE_MS: 1000 * 60 * 5, // nything five mins in future
+    DRAFT_BUFFER_TIME_PAST_MS: 1000 * 60 * 5, // Anything five mins in past
+    // DRAFT_BUFFER_TIME_PAST_MS: 1000 * 60 * 0, // No drafts that have started
     DRAFT_INTERVAL_TIME: 1000 * 5,
     START_PORT: 49152,
-    TIME_BEFORE_DRAFT_START_MS: 1000 * 90, // 90 secs 
+    TIME_BEFORE_DRAFT_START_MS: 1000 * 90,
+    DRAFT_END_BUFFER_TIME_MS: 30 * 1000,
+    PICK_DELAY_MS: 2 * 1000,
+    AUTODRAFT_TIME_MS: 5 * 1000,
+    PICK_TIME_MS: 35 * 1000,
+    MSG_TYPES: {
+        PING: 'ping',
+        INITIAL_CONNECTION: 'initialConnectionGetDraftState',
+        DRAFT_UPDATE: 'draftUpdate',
+        QUEUE_PLAYER: 'queuePlayer',
+        REMOVE_QUEUE_PLAYER: 'removeQueuePlayer',
+        RE_ORDER_QUEUE_PLAYER: 'removeQueuePlayer',
+        DRAFT_PLAYER: 'draftPlayer',
+        ERROR: 'error',
+        END_DRAFT: 'endDraft',
+    },
 };
 
 export const TRANSACTION_TYPES = {
