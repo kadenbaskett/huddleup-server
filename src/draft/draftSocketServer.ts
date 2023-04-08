@@ -19,6 +19,7 @@ const MSG_TYPES = {
 
 // 30 seconds
 const DRAFT_END_BUFFER_TIME_MS = 30 * 1000;
+const PICK_DELAY = 2 * 1000;
 
 let timerOn = false;
 let timer: NodeJS.Timeout;
@@ -50,6 +51,7 @@ class DraftSocketServer {
             currentPickNum: 1,
             currentPickTeamId: -1, // this shouldn't matter but who knows
             currentRoundNum: 1,
+            currentPickTimeMS: 0,
         };
         this.leagueId = leagueId;
     }
@@ -57,12 +59,31 @@ class DraftSocketServer {
     async startTimer() {
       timerOn = true;
       console.log('starting timer');
-      timer = setInterval(async () => {
-        // Code to be executed every 3 seconds
-        console.log('Timer looped');
-        await this.autoDraft();
-        await this.advanceDraftPick();
-      }, 5000);
+      const isOnAuto = this.draftState.autoDraft.find((team) => team.teamId === this.draftState.currentPickTeamId).auto;
+      console.log('this.draftState.currentPickTeamId', this.draftState.currentPickTeamId);
+      console.log('isOnAuto', isOnAuto);
+      if(isOnAuto)
+      {
+          timer = setInterval(async () => {
+            // Code to be executed every 3 seconds
+            console.log('Timer looped');
+            await this.autoDraft();
+            await this.advanceDraftPick();
+            // await this.stopTimer();
+            // await this.startTimer();
+          }, 5000 + PICK_DELAY);
+      }
+      else
+      {
+        timer = setInterval(async () => {
+            // Code to be executed every 3 seconds
+            console.log('Timer looped');
+            await this.autoDraft();
+            await this.advanceDraftPick();
+            // await this.stopTimer();
+            // await this.startTimer();
+          }, 30000 + PICK_DELAY);
+      }
     }
 
     stopTimer() {
@@ -126,6 +147,8 @@ class DraftSocketServer {
             currentPickNum: pick,
             currentRoundNum: round,
             currentPickTeamId: currentPickTeamId,
+            // TODO is this correct?
+            currentPickTimeMS: 0,
         };
         return msgContent;
     }
@@ -204,6 +227,12 @@ class DraftSocketServer {
       this.draftState.currentPickNum += 1;
       const nextTeam = this.draftState.draftOrder.find((d)=> d.pick === this.draftState.currentPickNum);
       this.draftState.currentPickTeamId = nextTeam.teamId;
+
+      this.draftState = {
+        ...this.draftState,
+        currentPickTimeMS: new Date().getTime() + PICK_DELAY,
+      };
+
       this.sendDraftState();
     }
 
@@ -219,6 +248,7 @@ class DraftSocketServer {
       // Actually Draft Player
       await this.draftPlayer(player.id, this.draftState.currentPickTeamId, this.leagueId);
       this.sendDraftState();
+
       console.log(`${this.draftState.currentPickTeamId} auto drafted ${player}`);
     }
 
@@ -282,7 +312,8 @@ class DraftSocketServer {
                 this.stopTimer();
                 // await this.delay(5000);
                 draftPlayer = await this.draftPlayer(player_id, team_id, league_id);
-                this.advanceDraftPick();
+                await this.advanceDraftPick();
+                // await this.delay(2000);
                 await this.startTimer();
               }
                 break;

@@ -8,17 +8,17 @@ import { TransactionWithPlayers } from '@/interfaces/prisma.interface';
 import Seed from '@/datasink/seed';
 
 import { spawn } from 'child_process';
-import DraftSocketServer from '@/draft/draftSocketServer';
-export interface leagueDraftSocket {
-  port: number,
-  leagueId: number,
-}
+// import DraftSocketServer from '@/draft/draftSocketServer';
+// export interface leagueDraftSocket {
+//   port: number,
+//   leagueId: number,
+// }
 
 class DatabaseController {
 
   public databaseService: DatabaseService;
   public transactionService: TransactionService;
-  public draftSockets: leagueDraftSocket[];
+  public draftSockets;
   public tempPort: number;
 
 
@@ -26,7 +26,7 @@ class DatabaseController {
   {
       this.databaseService = new DatabaseService();
       this.transactionService = new TransactionService();
-      this.draftSockets = [];
+      this.draftSockets = {};
       this.tempPort = 49152;
   }
 
@@ -52,8 +52,8 @@ class DatabaseController {
     const seed = new Seed();
     const { leagueId } = req.body;
     try {
-
       await seed.fillLeagueRandomUsers(leagueId);
+      await this.setDraftDateAndOrder(leagueId);
       await seed.simulateMatchups(leagueId);
       res.sendStatus(200);
     }
@@ -66,11 +66,20 @@ class DatabaseController {
 
   public startDraft = async(req?: Request, res?: Response): Promise<void> => {
     const { leagueId } = req.body;
-    // await this.setDraftDateAndOrder(leagueId);
     this.tempPort += 1;
-    this.draftSockets = [ ...this.draftSockets, { leagueId, port: this.tempPort } ];
+    let port;
+
+    if(this.draftSockets[leagueId])
+    {
+        port = this.draftSockets[leagueId];
+    }
+    else {
+      this.draftSockets[leagueId] = this.tempPort;
+      port = this.tempPort;
+    }
+
     try {
-      const child = spawn('cross-env', [ 'NODE_ENV=development', 'SERVICE=websocket', 'nodemon', leagueId.toString(), `${this.tempPort}` ], { shell: true });
+      const child = spawn('cross-env', [ 'NODE_ENV=development', 'SERVICE=websocket', 'nodemon', leagueId.toString(), `${port}` ], { shell: true });
 
       child.stdout.on('exit', (code, signal) => {
         console.log(`league(${leagueId}) draft process exited with code ${code} and signal ${signal}`);
@@ -94,8 +103,9 @@ class DatabaseController {
     try {
       const { leagueId } = req.params;
       console.log(leagueId);
-      const sock = this.draftSockets.filter((s) => {return(s.leagueId === Number(leagueId));});
-      res.status(200).json(sock[0].port);
+      const port = this.draftSockets[leagueId];
+      console.log('get draft port', port);
+      res.status(200).json(port);
     } catch (e) {
       console.log('e', e);
       res.sendStatus(400);
