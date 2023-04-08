@@ -1,7 +1,7 @@
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import express, { NextFunction, Request, Response } from 'express';
+import express from 'express';
 import helmet from 'helmet';
 import hpp from 'hpp';
 import morgan from 'morgan';
@@ -10,7 +10,6 @@ import swaggerUi from 'swagger-ui-express';
 import { NODE_ENV, PORT, LOG_FORMAT, ORIGIN, CREDENTIALS } from '@config';
 import { Routes } from '@interfaces/routes.interface';
 import { logger, stream } from '@utils/logger';
-// import { firebaseAdminAuth } from '@/server';
 import verifyJWT from './middleware/verifyJWT';
 
 class App {
@@ -27,12 +26,7 @@ class App {
       res.status(200).send('Success');
     });
 
-    try{
-      this.initializeMiddlewares();
-    }
-    catch(error){
-      console.error('Error initializing middlewar for API: ', error);
-    }
+    this.initializeMiddlewares();
     this.initializeRoutes(routes);
     this.initializeSwagger();
   }
