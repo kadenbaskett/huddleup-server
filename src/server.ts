@@ -5,7 +5,6 @@ import Seed from './datasink/seed';
 import DatabaseRoute from './routes/database.route';
 import DraftSocketServer from './draft/draftSocketServer';
 import admin from 'firebase-admin';
-import DatabaseController from './controllers/database.controller';
 
 validateEnv();
 
