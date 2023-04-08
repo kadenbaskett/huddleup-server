@@ -38,6 +38,8 @@ class DraftSocketServer {
             currentRoundNum: 1,
             currentPickTimeMS: 0,
             draftStartTimeMS: 0,
+            secondsPerPick: DRAFT_CONFIG.SECONDS_PER_PICK,
+            autoSecondsPerPick: DRAFT_CONFIG.AUTO_SECONDS_PER_PICK,
         };
         this.leagueId = leagueId;
     }
@@ -54,7 +56,7 @@ class DraftSocketServer {
             await this.advanceDraftPick();
             await this.stopTimer();
             await this.startTimer();
-          }, DRAFT_CONFIG.AUTODRAFT_TIME_MS + DRAFT_CONFIG.PICK_DELAY_MS);
+          }, (DRAFT_CONFIG.AUTO_SECONDS_PER_PICK * 1000) + DRAFT_CONFIG.PICK_DELAY_MS);
       }
       else
       {
@@ -63,7 +65,7 @@ class DraftSocketServer {
             await this.advanceDraftPick();
             await this.stopTimer();
             await this.startTimer();
-          }, DRAFT_CONFIG.PICK_TIME_MS + DRAFT_CONFIG.PICK_DELAY_MS);
+          }, (DRAFT_CONFIG.SECONDS_PER_PICK * 1000) + DRAFT_CONFIG.PICK_DELAY_MS);
       }
     }
 
@@ -126,6 +128,8 @@ class DraftSocketServer {
             currentPickTeamId: currentPickTeamId,
             currentPickTimeMS: 0,
             draftStartTimeMS: draftStateTimeMS,
+            secondsPerPick: DRAFT_CONFIG.SECONDS_PER_PICK,
+            autoSecondsPerPick: DRAFT_CONFIG.AUTO_SECONDS_PER_PICK,
         };
         return msgContent;
     }

@@ -8,8 +8,8 @@ export const DRAFT = {
     TIME_BEFORE_DRAFT_START_MS: 1000 * 90,
     DRAFT_END_BUFFER_TIME_MS: 30 * 1000,
     PICK_DELAY_MS: 2 * 1000,
-    AUTODRAFT_TIME_MS: 5 * 1000,
-    PICK_TIME_MS: 35 * 1000,
+    AUTO_SECONDS_PER_PICK: 5,
+    SECONDS_PER_PICK: 30,
     MSG_TYPES: {
         PING: 'ping',
         INITIAL_CONNECTION: 'initialConnectionGetDraftState',
