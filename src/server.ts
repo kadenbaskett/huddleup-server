@@ -5,6 +5,7 @@ import Seed from './datasink/seed';
 import DatabaseRoute from './routes/database.route';
 import DraftSocketServer from './draft/draftSocketServer';
 import { TaskManager } from './TaskManager/taskManager';
+import admin from 'firebase-admin';
 
 validateEnv();
 
@@ -23,6 +24,18 @@ const seedUsers = args.includes('seedUsers');
 const syncDBWithFirebase = args.includes('syncDBWithFirebase');
 const clearFirebaseUsers = args.includes('clearFirebaseUsers');
 
+// create firebase admin app instance
+const serviceAccountKey = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+try {
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccountKey),
+  });
+} catch (error) {
+  console.error('Error initializing Firebase Admin SDK: ', error);
+}
+
+const firebaseAdminAuth = admin.auth();
+
 let draftSocketServer: DraftSocketServer;
 let taskManager: TaskManager; 
 
@@ -34,8 +47,6 @@ if(process.env.SERVICE === 'backend')
     ];
 
     const backendApp = new App(routes);
-
-
     backendApp.listen();
   }
 else if(process.env.SERVICE === 'websocket')
@@ -124,5 +135,7 @@ else if(process.env.SERVICE === 'datasink')
     dataSink.initialUpdate().then(() => dataSink.startUpdateLoop());
   }
 }
+
+export{ firebaseAdminAuth };
 
 

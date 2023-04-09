@@ -10,6 +10,7 @@ import swaggerUi from 'swagger-ui-express';
 import { NODE_ENV, PORT, LOG_FORMAT, ORIGIN, CREDENTIALS } from '@config';
 import { Routes } from '@interfaces/routes.interface';
 import { logger, stream } from '@utils/logger';
+import verifyJWT from './middleware/verifyJWT';
 
 class App {
   public app: express.Application;
@@ -45,13 +46,15 @@ class App {
 
   private initializeMiddlewares() {
     this.app.use(morgan(LOG_FORMAT, { stream }));
-    this.app.use(cors({ origin: ORIGIN, credentials: CREDENTIALS }));
+    this.app.use(cors({ origin: ORIGIN, credentials: CREDENTIALS, allowedHeaders: [ 'Authorization' ],
+  }));
     this.app.use(hpp());
     this.app.use(helmet());
     this.app.use(compression());
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: true }));
     this.app.use(cookieParser());
+    this.app.use(verifyJWT);
   }
 
   private initializeRoutes(routes: Routes[]) {
@@ -67,20 +70,25 @@ class App {
 
   private initializeSwagger() {
     const options = {
-      swaggerDefinition: {
+      definition: {
+        openapi: '3.0.0',
         info: {
-          title: 'REST API',
+          title: 'HuddleUp API',
           version: '1.0.0',
-          description: 'Example docs',
+          description: 'Documentation for HuddleUp API',
         },
+        servers: [
+          {
+            url: 'http://localhost:3000',
+          },
+        ],
       },
-      apis: [ 'swagger.yaml' ],
+      apis: [ './routes/*.ts' ],
     };
 
     const specs = swaggerJSDoc(options);
     this.app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
   }
-
 }
 
 export default App;
