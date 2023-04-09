@@ -56,7 +56,12 @@ class App {
 
   private initializeRoutes(routes: Routes[]) {
     routes.forEach(route => {
-      this.app.use('/', route.router);
+      if(process.env.NODE_ENV === 'development'){ //TODO change to production
+        this.app.use('/api', route.router);
+      }
+      else{
+        this.app.use('/', route.router);
+      }
     });
   }
 
