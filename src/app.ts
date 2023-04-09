@@ -22,12 +22,6 @@ class App {
     this.env = NODE_ENV || 'development';
     this.port = PORT || 3000;
 
-    if(process.env.NODE_ENV === 'production')
-    this.app.use('/api', (req, res, next) => {
-      req.url = req.url.replace(/^\/api/, '');
-      next();
-    });
-
     this.app.get('/health', (req, res) => {
       res.status(200).send('Success');
     });
@@ -65,7 +59,12 @@ class App {
 
   private initializeRoutes(routes: Routes[]) {
     routes.forEach(route => {
-      this.app.use('/', route.router);
+      if(process.env.NODE_ENV === 'development'){
+        this.app.use('/api', route.router);
+      }
+      else{
+        this.app.use('/', route.router);
+      }
     });
   }
 
