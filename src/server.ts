@@ -59,8 +59,6 @@ else if(process.env.SERVICE === 'websocket')
       throw new Error('Provide a league id to start the draft for');
     }
     console.log('Starting up draft websocket for league ', leagueId, 'on port', port);
-    console.log('LeagueID:', leagueId);
-    console.log('Port:', port);
     draftSocketServer = new DraftSocketServer(leagueId, port);
     draftSocketServer.start();
   }
