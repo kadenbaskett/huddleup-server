@@ -26,6 +26,7 @@ class DraftSocketServer {
         this.clients = {};
         this.PORT = port;
         this.HOST = '172.31.21.50';
+        // this.HOST = '0.0.0.0';
         this.PREFIX = '/websocket/draft';
         this.db = new DatabaseService();
         this.draftState = {
