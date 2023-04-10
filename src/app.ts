@@ -46,7 +46,7 @@ class App {
 
   private initializeMiddlewares() {
     this.app.use(morgan(LOG_FORMAT, { stream }));
-    this.app.use(cors({ origin: ORIGIN, credentials: CREDENTIALS, allowedHeaders: [ 'Authorization' ],
+    this.app.use(cors({ origin: ORIGIN, credentials: CREDENTIALS, allowedHeaders: [ 'Authorization', 'Content-Type' ], methods: [ 'GET', 'POST' ],
   }));
     this.app.use(hpp());
     this.app.use(helmet());
@@ -59,7 +59,12 @@ class App {
 
   private initializeRoutes(routes: Routes[]) {
     routes.forEach(route => {
-      this.app.use('/', route.router);
+      if(process.env.NODE_ENV === 'production'){ //TODO change to production
+        this.app.use('/api', route.router);
+      }
+      else{
+        this.app.use('/', route.router);
+      }
     });
   }
 

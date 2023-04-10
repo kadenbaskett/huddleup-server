@@ -4,6 +4,7 @@ import DataSinkApp from './datasink/app';
 import Seed from './datasink/seed';
 import DatabaseRoute from './routes/database.route';
 import DraftSocketServer from './draft/draftSocketServer';
+import { TaskManager } from './TaskManager/taskManager';
 import admin from 'firebase-admin';
 
 validateEnv();
@@ -23,8 +24,6 @@ const seedUsers = args.includes('seedUsers');
 const syncDBWithFirebase = args.includes('syncDBWithFirebase');
 const clearFirebaseUsers = args.includes('clearFirebaseUsers');
 
-let draftSocketServer;
-
 // create firebase admin app instance
 const serviceAccountKey = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 try {
@@ -36,6 +35,9 @@ try {
 }
 
 const firebaseAdminAuth = admin.auth();
+
+let draftSocketServer: DraftSocketServer;
+let taskManager: TaskManager; 
 
 if(process.env.SERVICE === 'backend')
 {
@@ -63,7 +65,18 @@ else if(process.env.SERVICE === 'websocket')
   catch(e){
     console.log(e);
   }
-
+}
+else if(process.env.SERVICE === 'taskManager')
+{
+  try
+  {
+    console.log('Starting up the task manager service');
+    taskManager = new TaskManager();
+    taskManager.start();
+  }
+  catch(e){
+    console.log(e);
+  }
 }
 else if(process.env.SERVICE === 'datasink')
 {

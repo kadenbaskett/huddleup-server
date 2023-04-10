@@ -3,7 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 
 export default async function verifyJWT (req : Request, res : Response, next : NextFunction) {
   try{
-        if(req.path.startsWith('/api-docs')){ //skip swagger docs
+        if(req.path.startsWith('/api-docs') || (req.path.startsWith('/database/user') && req.method === 'POST')){ //skip swagger docs
           return next();
         }
 
@@ -13,6 +13,7 @@ export default async function verifyJWT (req : Request, res : Response, next : N
         }
   
         const token = authHeader.split(' ')[1];
+
         if (!token) {
           res.status(401).send('Unauthorized');
           return;

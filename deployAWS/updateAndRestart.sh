@@ -31,3 +31,4 @@ npx prisma generate
 npm i
 pm2 start npm --name "backend" -- run start:backend
 pm2 start npm --name "datasink" -- run start:datasink
+pm2 start npm --name "taskManager" -- run start:taskManager

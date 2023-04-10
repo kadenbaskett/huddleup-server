@@ -18,4 +18,8 @@ export interface DraftState {
     currentPickTeamId: number,
     currentPickNum: number,
     currentRoundNum: number,
+    currentPickTimeMS: number,
+    draftStartTimeMS: number,
+    secondsPerPick: number,
+    autoSecondsPerPick: number,
 }
