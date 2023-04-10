@@ -83,7 +83,7 @@ export function startDraftChildProcess(leagueId: number, port: number): void
     
     const args = isProduction
       ? []
-      : [ leagueId.toString(), `${port}` ];
+      : [ leagueId.toString(), port.toString() ];
     
     const child = spawn('cross-env', [
       `NODE_ENV=${process.env.NODE_ENV || 'development'}`,
