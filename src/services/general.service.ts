@@ -76,8 +76,23 @@ export function startDraftChildProcess(leagueId: number, port: number): void
 {
     console.log(`Starting up the draft on port ${port} for league ${leagueId}`);
 
-    const child = spawn('cross-env', [ 'NODE_ENV=development', 'SERVICE=websocket', 'nodemon', leagueId.toString(), `${port}` ], { shell: true });
-
+    // uses nodemon if not production otherwise node dist/serv.js
+    //NODE_ENV defaults to development
+    const isProduction = process.env.NODE_ENV === 'production';
+    const script = isProduction ? 'dist/server.js' : leagueId.toString();
+    
+    const args = isProduction
+      ? []
+      : [ leagueId.toString(), `${port}` ];
+    
+    const child = spawn('cross-env', [
+      `NODE_ENV=${process.env.NODE_ENV || 'development'}`,
+      'SERVICE=websocket',
+      isProduction ? 'node' : 'nodemon',
+      script,
+      ...args,
+    ], { shell: true });
+      
     child.stdout.on('exit', (code, signal) => {
         console.log(`league(${leagueId}) draft process exited with code ${code} and signal ${signal}`);
     });

@@ -39,7 +39,6 @@ const firebaseAdminAuth = admin.auth();
 let draftSocketServer: DraftSocketServer;
 let taskManager: TaskManager; 
 
-
 if(process.env.SERVICE === 'backend')
 {
     const routes = [
