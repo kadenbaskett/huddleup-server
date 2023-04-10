@@ -79,18 +79,15 @@ export function startDraftChildProcess(leagueId: number, port: number): void
     // uses nodemon if not production otherwise node dist/serv.js
     //NODE_ENV defaults to development
     const isProduction = process.env.NODE_ENV === 'production';
-    const script = isProduction ? 'dist/server.js' : leagueId.toString();
+    const script = (isProduction ? 'dist/server.js' : '') + ' ' + leagueId.toString() + ' ' + port.toString();
     
-    const args = isProduction
-      ? []
-      : [ leagueId.toString(), port.toString() ];
+    console.log('script: ', script);
     
     const child = spawn('cross-env', [
       `NODE_ENV=${process.env.NODE_ENV || 'development'}`,
       'SERVICE=websocket',
       isProduction ? 'node' : 'nodemon',
       script,
-      ...args,
     ], { shell: true });
       
     child.stdout.on('exit', (code, signal) => {
