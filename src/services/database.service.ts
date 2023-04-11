@@ -108,7 +108,7 @@ class DatabaseService {
         }
     }
 
-    public async createLeagueSettings(numTeams: number, publicJoin: boolean, minPlayers: number, maxPlayers: number, scoring: string): Promise<LeagueSettings>
+    public async createLeagueSettings(numTeams: number, publicJoin: boolean, minPlayers: number, maxPlayers: number, scoring: string, draftDate: Date): Promise<LeagueSettings>
     {
       try {
         const waiverSettings: WaiverSettings = await this.client.waiverSettings.create({
@@ -148,8 +148,6 @@ class DatabaseService {
             roster_size_limit: 15,
           },
         });
-        const draftDate = new Date();
-        draftDate.setDate(draftDate.getDate() + 10);
         const draftSettings: DraftSettings = await this.client.draftSettings.create({
           data: {
             date: draftDate,

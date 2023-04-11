@@ -30,10 +30,11 @@ class DatabaseController {
 
   public createLeague = async (req: Request, res: Response): Promise<void> => {
 
-    const{ leagueName, numTeams, minPlayers, maxPlayers, leagueDescription, publicJoin, scoring, commissionerId } = req.body;
+    const{ leagueName, numTeams, minPlayers, maxPlayers, leagueDescription, publicJoin, scoring, commissionerId, date, draftTime } = req.body;
 
     // create league settings
-    const settings = await this.databaseService.createLeagueSettings(numTeams, publicJoin, minPlayers, maxPlayers, scoring);
+    const draftDate: Date = new Date(date + ' ' + draftTime);
+    const settings = await this.databaseService.createLeagueSettings(numTeams, publicJoin, minPlayers, maxPlayers, scoring, draftDate);
     const token = await randomstring.generate(7);
     const league = await this.databaseService.createLeague(commissionerId, leagueName, leagueDescription, settings, token);
 
