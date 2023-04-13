@@ -1,4 +1,5 @@
 import { DRAFT as DRAFT_CONFIG, ROSTER_START_CONSTRAINTS } from '@/config/huddleup_config';
+import Seed from '@/datasink/seed';
 import { DraftState, AutoDraft, DraftOrder } from '@/interfaces/draftstate.interface';
 import { DraftPlayer, DraftQueue, Team } from '@prisma/client';
 import DatabaseService from '@services/database.service';
@@ -341,8 +342,13 @@ class DraftSocketServer {
 
         this.broadcast({}, DRAFT_CONFIG.MSG_TYPES.END_DRAFT);
 
+        const seed = new Seed();
+
+        await seed.simulateMatchups(this.leagueId);
+
         console.log('Closing server socket');
         this.serverSocket?.close();
+
 
         await delay(DRAFT_CONFIG.DRAFT_END_BUFFER_TIME_MS);
 

@@ -52,7 +52,7 @@ class Seed {
         },
       },
     });
-    let users = await this.dbService.getUsers(); 
+    let users = await this.dbService.getUsers();
     // console.log('users', users);
     // remove users who are on teams from users to be added to league
     league.teams.forEach((team) => {
@@ -184,7 +184,7 @@ class Seed {
 
     const season = 2022;
     const numPlayoffTeams = 4;
-    const currentWeek = 6;
+    const currentWeek = 1;
     const numLeagues = 4;
     const numTeams = 10;
     const usersPerTeam = 3;
@@ -194,7 +194,7 @@ class Seed {
 
     for (let i = 0; i < leagueNames.length; i++) {
       const commish = users[Math.floor(Math.random() * users.length)];
-      try 
+      try
       {
         await this.simulateLeague(
           users,
@@ -261,7 +261,7 @@ class Seed {
 
     await this.buildRandomRostersSamePlayersEveryWeek(currentWeek, season, teams);
 
-    await this.simulateTransactions(league, currentWeek);
+    // await this.simulateTransactions(league, currentWeek);
 
     const regSeasonLen = calculateSeasonLength(numPlayoffTeams);
     const matchups = createMatchups(teams, regSeasonLen);
@@ -522,7 +522,7 @@ class Seed {
 
   async syncDBWithFirebaseUsers() {
     const firebaseUsers = await this.getFirebaseUsers();
-    
+
     for (const firebaseUser of firebaseUsers) {
       try{
         await this.client.user.create({
@@ -541,7 +541,7 @@ class Seed {
           }
           else{
             console.log('Failed to add user from firebase: ', e);
-          }        
+          }
       }
     }
   }
@@ -633,7 +633,7 @@ class Seed {
           }
           else{
             console.log('Failed to add user from firebase: ', e);
-          }   
+          }
       }
     }
 
@@ -933,7 +933,7 @@ class Seed {
   }
 
   generateTeamNames(numTeams) {
-    
+
     const names = [];
     const rand = Math.round(Math.random() * 1000);
 
@@ -997,7 +997,7 @@ class Seed {
   });
   }
 
-  createFirebaseUser(username: string, email: string, password: string){ 
+  createFirebaseUser(username: string, email: string, password: string){
     firebaseAdminAuth
   .createUser({
     displayName: username,

@@ -1,5 +1,6 @@
 import { TransactionWithPlayers, LeagueInfo } from '@/interfaces/prisma.interface';
 import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster, RosterPlayer, Timeframe, User, LeagueSettings, WaiverSettings, ScheduleSettings, ScoringSettings, RosterSettings, DraftSettings, TradeSettings, News, PlayerProjections, TransactionPlayer, Transaction, TransactionAction, TeamSettings, UserToTeam, DraftPlayer, DraftQueue, DraftOrder } from '@prisma/client';
+import { ROSTER_START_CONSTRAINTS } from '@/config/huddleup_config';
 
 
 
@@ -393,12 +394,39 @@ class DatabaseService {
             team_id: team_id,
             week: 1,
           },
+          include: {
+            players: true,
+        },
         });
+
+        let position = 'BE';
+
+        const positionedPlayers = roster.players.filter((p)=> p.position === player.position);
+
+        switch(player.position) {
+          case('QB'):
+            if (positionedPlayers.length < ROSTER_START_CONSTRAINTS.QB) position = 'QB';
+            break;
+          case('WR'):
+            if(positionedPlayers.length < ROSTER_START_CONSTRAINTS.WR) position = 'WR';
+            break;
+          case('RB'):
+            if(positionedPlayers.length < ROSTER_START_CONSTRAINTS.RB) position = 'RB';
+            break;
+          case('TE'):
+            if(positionedPlayers.length < ROSTER_START_CONSTRAINTS.TE) position = 'TE';
+            break;
+        }
+
+        if(position === 'BE') {
+          const benchedPlayers = roster.players.filter((p)=> p.position === 'FLEX');
+          if (benchedPlayers.length < 1) position = 'FLEX';
+        }
 
         await this.client.rosterPlayer.create({
           data: {
               external_id: player.external_id,
-              position: 'BE',
+              position: position,
               roster_id: roster.id,
               player_id: player_id,
           },
