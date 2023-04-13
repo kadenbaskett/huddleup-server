@@ -81,7 +81,8 @@ class DataSinkApp {
     await this.clearDB();
 
     console.log('Adding all NFL teams, schedules, and players to the db...');
-    await this.updateTimeframes();
+    await this.updateTimeframes(1);
+
     await this.updateTeams();
     await this.updateSchedule();
     await this.updatePlayers();
@@ -97,19 +98,19 @@ class DataSinkApp {
     await this.printDatabase();
   }
 
-  async updateTimeframes() {
+  async updateTimeframes(week) {
     const resp = await this.stats.getTimeframes();
 
     if (resp.data) {
       let timeframes = Object(resp.data);
 
       timeframes = timeframes.map((tf) => {
-        if (Number(tf.Season) > 2021 && Number(tf.Week) > 6 && Number(tf.SeasonType) === 1) {
+        if (Number(tf.Season) > 2021 && Number(tf.Week) > week && Number(tf.SeasonType) === 1) {
           tf.HasEnded = false;
           tf.HasStarted = false;
         } else if (
           Number(tf.Season) > 2021 &&
-          Number(tf.Week) === 6 &&
+          Number(tf.Week) === week &&
           Number(tf.SeasonType) === 1
         ) {
           tf.HasEnded = false;
