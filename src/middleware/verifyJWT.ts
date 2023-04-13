@@ -19,11 +19,11 @@ export default async function verifyJWT (req : Request, res : Response, next : N
           return;
         }
         
-        const isValid = await verifyFirebaseJWT(token);
-        if(!isValid){
-          res.status(401).send('Unauthorized');
-          return;
-        }
+        // const isValid = await verifyFirebaseJWT(token);
+        // if(!isValid){
+        //   res.status(401).send('Unauthorized');
+        //   return;
+        // }
       
         next(); //continue to next middleware
       }
