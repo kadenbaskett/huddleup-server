@@ -54,7 +54,7 @@ class App {
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: true }));
     this.app.use(cookieParser());
-    this.app.use(verifyJWT);
+    // this.app.use(verifyJWT);
   }
 
   private initializeRoutes(routes: Routes[]) {
