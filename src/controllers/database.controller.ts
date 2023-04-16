@@ -38,7 +38,7 @@ class DatabaseController {
     const token = await randomstring.generate(7);
     const league = await this.databaseService.createLeague(commissionerId, leagueName, leagueDescription, settings, token);
 
-    league ? res.status(200).json(league) : res.sendStatus(400);
+    league ? res.status(201).json(league) : res.sendStatus(400);
   };
 
   public fillLeague = async(req: Request, res: Response): Promise<void> => {
@@ -110,7 +110,7 @@ class DatabaseController {
       if(validationMessage == null){
         const user = await this.databaseService.createUser(username, email);
 
-        user ? res.status(200).json(user) : res.sendStatus(500);
+        user ? res.status(201).json(user) : res.sendStatus(500);
       }
       else{
         res.status(400).send(validationMessage);
@@ -130,7 +130,7 @@ class DatabaseController {
     // passing 1 here because when a user creates a team this user is the owner/captain
     const userToTeam = await this.databaseService.userToTeam(team.id, teamOwnerId, 1);
 
-    team && userToTeam ? res.status(200).json(team) : res.sendStatus(400);
+    team && userToTeam ? res.status(201).json(team) : res.sendStatus(400);
   };
 
   public deleteTeam = async (req: Request, res: Response): Promise<void> => {
