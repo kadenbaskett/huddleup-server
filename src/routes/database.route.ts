@@ -874,7 +874,26 @@ class DatabaseRoute implements Routes {
     this.router.post(`${this.path}/league/fill`, this.controller.fillLeague);
     // this.router.post(`${this.path}/league/startDraft`, this.controller.startDraft);
 
-    //************* GET ROUTES  **************/
+    //************* GET ROUTES  **************//
+
+    // TODO: add swagger docs
+    this.router.get(`${this.path}/players`, this.controller.getAllPlayersDetails);
+
+    // TODO: add swagger docs
+    this.router.get(
+      `${this.path}/players/:playerId(\\d+)`,
+      this.controller.getIndividualPlayerDetails,
+    );
+
+    // TODO: swagger doc
+    this.router.get(
+      `${this.path}/players/stats/:playerId(\\d+)`,
+      this.controller.getIndividualPlayerStats,
+    );
+
+    // TODO: add swagger docs
+    this.router.get(`${this.path}/players/stats`, this.controller.getAllPlayersStats);
+    
     /**
      * @swagger
      * /database/user/{email}:
@@ -903,18 +922,6 @@ class DatabaseRoute implements Routes {
      */
     this.router.get(`${this.path}/user/:email`, this.controller.getUser);
 
-    // TODO: add swagger docs
-    this.router.get(`${this.path}/players`, this.controller.getAllPlayersDetails);
-    
-    // TODO: add swagger docs
-    this.router.get(
-      `${this.path}/players/:playerId(\\d+)`,
-      this.controller.getIndividualPlayerDetails,
-    );
-
-    // TODO: add swagger docs
-    this.router.get(`${this.path}/players/stats`, this.controller.getAllPlayersStats);
-    
     /**
      * @swagger
      * /database/players/league/{leagueId}:
@@ -940,12 +947,6 @@ class DatabaseRoute implements Routes {
     this.router.get(
       `${this.path}/players/league/:leagueId(\\d+)`,
       this.controller.getLeaguePlayers,
-    );
-
-    // TODO: swagger doc
-    this.router.get(
-      `${this.path}/players/stats/:playerId(\\d+)`,
-      this.controller.getIndividualPlayerStats,
     );
 
     /**
