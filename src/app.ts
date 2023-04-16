@@ -79,15 +79,15 @@ class App {
         },
         servers: [
           {
-            url: 'http://localhost:3000',
+            url: 'http://localhost:8000',
           },
         ],
       },
-      apis: [ './routes/*.ts' ],
+      apis: [ 'src/**/*.ts' ],
     };
 
     const specs = swaggerJSDoc(options);
-    this.app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
+    this.app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, { explorer: true }));
   }
 }
 
