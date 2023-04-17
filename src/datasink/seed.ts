@@ -16,6 +16,7 @@ import StatsService from '@/services/stats.service';
 import DatabaseService from '@/services/database.service';
 import { UserRecord } from 'firebase-admin/lib/auth/user-record';
 import { firebaseAdminAuth } from '@/server';
+import projnamegenerator from 'project-name-generator';
 
 /*
  *  Seeds the database with mock data. The simulate league function will
@@ -933,12 +934,12 @@ class Seed {
   }
 
   generateTeamNames(numTeams) {
-
+    const generate = require('project-name-generator');
     const names = [];
     const rand = Math.round(Math.random() * 1000);
 
     for (let i = 0; i < numTeams; i++) {
-      names.push('Team ' + i * rand);
+      names.push('Team ' + generate({ words: 1 }).raw);
     }
 
     return names;
@@ -959,11 +960,12 @@ class Seed {
   }
 
   generateLeagueNames(numLeagues) {
+    const generate = require('project-name-generator');
     const names = [];
     const rand = Math.round(Math.random() * 1000);
 
     for (let i = 0; i < numLeagues; i++) {
-      names.push('League ' + i * rand);
+      names.push('League ' + generate({ words: 1 }).raw);
     }
 
     return names;
