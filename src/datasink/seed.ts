@@ -947,7 +947,7 @@ class Seed {
     const rand = Math.round(Math.random() * 1000);
 
     for (let i = 0; i < numTeams; i++) {
-      names.push('Team ' + generate({ words: 1 }).raw);
+      names.push(generate().spaced);
     }
 
     return names;
@@ -973,7 +973,7 @@ class Seed {
     const rand = Math.round(Math.random() * 1000);
 
     for (let i = 0; i < numLeagues; i++) {
-      names.push('League ' + generate({ words: 1 }).raw);
+      names.push(generate().spaced);
     }
 
     return names;
