@@ -68,6 +68,7 @@ class DataSinkApp {
     await this.db.client.teamSettings.deleteMany();
     await this.db.client.league.deleteMany();
     await this.db.client.user.deleteMany();
+
     await this.db.client.timeframe.deleteMany();
     await this.db.client.playerGameStats.deleteMany();
     await this.db.client.playerProjections.deleteMany();
@@ -85,9 +86,9 @@ class DataSinkApp {
 
     await this.updateTeams();
     await this.updateSchedule();
-    await this.updatePlayers();
     console.log('Adding all NFL games to the db...');
     await this.updateCompletedGames();
+    await this.updatePlayers();
     console.log('Updaing game scores and player stats...');
     await this.updateGameScoresAndPlayerStats();
     console.log('Updating general news...');
@@ -149,26 +150,59 @@ class DataSinkApp {
   }
 
   async updatePlayers() {
-    const resp: respObj = await this.stats.getPlayers();
 
-    if (resp.data) {
-      const data = Object(resp.data);
+    try {
+      const allPlayersResp: respObj = await this.stats.getPlayers();
+      const fantasyPlayersResp: respObj = await this.stats.getTopFantasyPlayersByADP();
 
-      const players: Player[] = data
-        .filter((p) => p.GlobalTeamID > 0 && config.allowedPositions.includes(p.Position))
-        .map((p) => {
-          return {
-            external_id: p.PlayerID,
-            first_name: p.FirstName,
-            last_name: p.LastName,
-            status: p.Status,
-            position: p.Position,
-            photo_url: p.PhotoUrl,
-            nfl_team_external_id: p.GlobalTeamID,
-          };
-        });
+      if(allPlayersResp.data && fantasyPlayersResp.data)
+      {
+          const allPlayerDetails = Object(allPlayersResp.data);
+          const fantasyPlayers = Object(fantasyPlayersResp.data);
 
-      await this.db.setPlayers(players);
+          const filtered = allPlayerDetails.filter((p) => {
+            const hasTeam = p.GlobalTeamID > 0;
+            const fantasyPosition = config.allowedPositions.includes(p.Position);
+            return hasTeam && fantasyPosition;
+            // const isFantasyPlayer = fantasyPlayers.find((fantasyPlayer) => fantasyPlayer.PlayerID === p.PlayerID);
+            
+            // if(isFantasyPlayer)
+            // {
+            //   console.log(hasTeam, fantasyPosition);
+            // }
+
+            // return hasTeam && fantasyPosition && isFantasyPlayer;
+          });
+
+          const players = filtered.map((p) => {
+            return {
+                external_id: p.PlayerID,
+                first_name: p.FirstName,
+                last_name: p.LastName,
+                status: p.Status,
+                position: p.Position,
+                photo_url: p.PhotoUrl,
+                nfl_team_external_id: p.GlobalTeamID,
+            };
+          });
+
+          console.log(players.length);
+
+          // const players: Player[] = allPlayers
+          //   .filter((p) => p.GlobalTeamID > 0 && config.allowedPositions.includes(p.Position))
+          //   .map((p) => {
+          //     return {
+          //     };
+          //   });
+
+          await this.db.setPlayers(players);
+      }
+      else {
+        console.log('no data');
+      }
+    }
+    catch(err) {
+      console.log(err);
     }
   }
 
