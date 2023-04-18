@@ -38,6 +38,7 @@ class TransactionService {
         },
       },
     });
+    
     if (transaction.type !== 'Trade') {
       await this.client.transaction.update({
         where: { id: transactionId },
@@ -65,22 +66,29 @@ class TransactionService {
     }
     if(!transaction) return false;
     try {
-      console.log('transaction', transaction);
         const timeframe: Timeframe = await this.databaseService.getTimeframe();
-        const roster = await this.client.roster.findFirst({
+        const proposingTeamRoster = await this.client.roster.findFirst({
           where: {
             team_id: transaction.proposing_team_id,
             week: timeframe.week,
           },
         });
-        const rosterId = roster.id;
+        const realtedTeamRoster = await this.client.roster.findFirst({
+          where: {
+            team_id: transaction.related_team_id,
+            week: timeframe.week,
+          },
+        });
+        const proposingTeamRosterId = proposingTeamRoster.id;
+        const relatedTeamRosterId = realtedTeamRoster.id;
+
         if(transaction.type === 'Drop' && action === 'Approve') {
           transaction.players.forEach(async (transactionPlayer) => {
-          await this.executePlayerDrop(transactionPlayer.player.id, rosterId);
+          await this.executePlayerDrop(transactionPlayer.player.id, proposingTeamRosterId);
         });
       } else if (transaction.type === 'Add' && action === 'Approve') {
         transaction.players.forEach(async (transactionPlayer) => {
-          await this.executePlayerAdd(transactionPlayer.player.id, rosterId, transactionPlayer.player.external_id);
+          await this.executePlayerAdd(transactionPlayer.player.id, proposingTeamRosterId, transactionPlayer.player.external_id);
         });
       } else if (transaction.type === 'AddDrop' && action === 'Approve') {
         // get player being added
@@ -92,18 +100,18 @@ class TransactionService {
           return transactionPlayer.joins_proposing_team === false;
         });
         // get roster_id for proposing team on current week
-        if (!roster) return false;
+        if (!proposingTeamRoster) return false;
 
         const droppingPlayerIds: number[] = droppingPlayers.map((transactionPlayer) => {return transactionPlayer.player_id;});
         // Execute
-        await this.executePlayerAddDrop(addingPlayer.id, addingPlayer.external_id, droppingPlayerIds, roster.id);
+        await this.executePlayerAddDrop(addingPlayer.id, addingPlayer.external_id, droppingPlayerIds, proposingTeamRoster.id);
       }
       // else if (transaction.type === 'Trade' && transaction.status === 'Pending' && action === 'Approve') {
       //   console.log('sending to related team');
       //   await this.sendTradeToOtherTeam(transactionId);
       // }
-       else if (transaction.type === 'Trade' && transaction.status === 'SentToRelatedTeam' && action === 'Approve') {
-        await this.completeTrade(transactionId);
+      else if (transaction.type === 'Trade' && transaction.status === 'SentToRelatedTeam' && action === 'Approve') {
+        await this.completeTrade(transactionId, proposingTeamRosterId, relatedTeamRosterId);
       }
       // TODO: reject all pending transactions involving dropped players
       return true;
@@ -183,7 +191,7 @@ class TransactionService {
     }
   }
 
-  public async completeTrade(transactionId: number)
+  public async completeTrade(transactionId: number, proposingTeamRosterId: number, relatedTeamRosterId: number)
     {
         try {
             const transaction: Transaction = await this.client.transaction.findFirst({
@@ -191,7 +199,6 @@ class TransactionService {
                     id: transactionId,
                 },
             });
-
             const tPlayers: TransactionPlayer[] = await this.client.transactionPlayer.findMany({
                 where: {
                     transaction_id: transactionId,
@@ -199,7 +206,9 @@ class TransactionService {
             });
 
             const playerIds: number[] = tPlayers.map((tp) => tp.player_id);
-
+            const rosterIds: number[] = [];
+            rosterIds.push(proposingTeamRosterId);
+            rosterIds.push(relatedTeamRosterId);
             const rosterPlayers: RosterPlayer[] = await this.client.rosterPlayer.findMany({
                 where: {
                     roster: {
@@ -208,12 +217,14 @@ class TransactionService {
                     player_id: {
                         in: playerIds,
                     },
+                    roster_id:
+                    {
+                      in: rosterIds,
+                    },
                 },
             });
-
             // Complete the trade for the current week - not necessarily when the transaction was proposed
             const timeframe: Timeframe = await this.databaseService.getTimeframe();
-
             for(const rp of rosterPlayers)
             {
                 const transactionPlayer = tPlayers.find((tp) => tp.player_id === rp.player_id && tp.transaction_id === transactionId);
