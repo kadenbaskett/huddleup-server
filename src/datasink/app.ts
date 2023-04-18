@@ -78,18 +78,17 @@ class DataSinkApp {
     await this.db.client.news.deleteMany();
   }
 
+
   async initialUpdate() {
     await this.clearDB();
 
     console.log('Adding all NFL teams, schedules, and players to the db...');
     await this.updateTimeframes(1);
-
     await this.updateTeams();
     await this.updateSchedule();
-    console.log('Adding all NFL games to the db...');
     await this.updateCompletedGames();
     await this.updatePlayers();
-    console.log('Updaing game scores and player stats...');
+    console.log('Updating game scores and player stats...');
     await this.updateGameScoresAndPlayerStats();
     console.log('Updating general news...');
     await this.updateNews();
@@ -153,28 +152,30 @@ class DataSinkApp {
 
     try {
       const allPlayersResp: respObj = await this.stats.getPlayers();
-      const fantasyPlayersResp: respObj = await this.stats.getTopFantasyPlayersByADP();
+      const fantasyPlayersResp: respObj = await this.stats.getTopPlayers();
 
       if(allPlayersResp.data && fantasyPlayersResp.data)
       {
-          const allPlayerDetails = Object(allPlayersResp.data);
-          const fantasyPlayers = Object(fantasyPlayersResp.data);
+          // Filter out free agents (TODO in the future let free agents be in the app) and if they don't play a fantasy position 
+          let allPlayerDetails = Object(allPlayersResp.data);
+          let fantasyPlayers = Object(fantasyPlayersResp.data);
 
-          const filtered = allPlayerDetails.filter((p) => {
-            const hasTeam = p.GlobalTeamID > 0;
-            const fantasyPosition = config.allowedPositions.includes(p.Position);
-            return hasTeam && fantasyPosition;
-            // const isFantasyPlayer = fantasyPlayers.find((fantasyPlayer) => fantasyPlayer.PlayerID === p.PlayerID);
-            
-            // if(isFantasyPlayer)
-            // {
-            //   console.log(hasTeam, fantasyPosition);
-            // }
+          allPlayerDetails = allPlayerDetails.filter((player) => player.GlobalTeamID > 0 && config.allowedPositions.includes(player.Position));
+          fantasyPlayers = fantasyPlayers.filter((player) => player.GlobalTeamID > 0 && config.allowedPositions.includes(player.Position));
 
-            // return hasTeam && fantasyPosition && isFantasyPlayer;
-          });
+          fantasyPlayers = fantasyPlayers.filter((p) => p.FantasyPointsPPR > 40);
 
-          const players = filtered.map((p) => {
+          const finalPlayers = [];
+
+          for(const fantasyPlayer of fantasyPlayers)
+          {
+            const details = allPlayerDetails.find((p) => p.PlayerID === fantasyPlayer.PlayerID);
+
+            if(details)
+              finalPlayers.push(details);
+          }
+
+          const players = finalPlayers.map((p) => {
             return {
                 external_id: p.PlayerID,
                 first_name: p.FirstName,
@@ -186,19 +187,8 @@ class DataSinkApp {
             };
           });
 
-          console.log(players.length);
-
-          // const players: Player[] = allPlayers
-          //   .filter((p) => p.GlobalTeamID > 0 && config.allowedPositions.includes(p.Position))
-          //   .map((p) => {
-          //     return {
-          //     };
-          //   });
-
           await this.db.setPlayers(players);
-      }
-      else {
-        console.log('no data');
+
       }
     }
     catch(err) {

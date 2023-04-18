@@ -847,23 +847,7 @@ class Seed {
     const allowedPositions = [ 'RB', 'WR', 'TE', 'QB' ];
     const flexPositions = [ 'RB', 'WR', 'TE' ];
 
-    // const resp = await this.stats.getTopFantasyPlayersByADP();
-    let players = await this.client.player.findMany();
-    players = players.slice(0, 300);
-
-    // if(resp.data)
-    // {
-    //   const fantasyPlayers = Object(resp.data);
-    //   let ids = fantasyPlayers.map((p) => p.PlayerID);
-    //   ids = ids.slice(0, 300);
-    //   players = await this.client.player.findMany({ where : { external_id: { in: ids } } });
-    //   console.log('Player length: ' + players.length);
-    //   console.log('FP length: ' + fantasyPlayers.length);
-    // }
-    // else {
-    //   console.log('NO response data');
-    // }
-
+    const players = await this.client.player.findMany();
 
     this.shuffleArray(players);
 
@@ -917,8 +901,6 @@ class Seed {
         break;
       }
     }
-
-    console.log(constraints);
 
     const created = await this.client.roster.findFirstOrThrow({
       where: {
