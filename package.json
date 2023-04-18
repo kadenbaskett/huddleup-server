@@ -52,6 +52,7 @@
     "project-name-generator": "^2.1.9",
     "randomstring": "^1.2.3",
     "sockjs": "^0.3.24",
+    "sports-team-name-generator": "^1.0.1",
     "swagger-jsdoc": "^6.2.1",
     "swagger-ui-express": "^4.5.0",
     "winston": "^3.8.1",
