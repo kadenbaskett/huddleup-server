@@ -968,12 +968,12 @@ class Seed {
   }
 
   generateLeagueNames(numLeagues) {
-    const generate = require('project-name-generator');
+    const generate = require('sports-team-name-generator');
     const names = [];
     const rand = Math.round(Math.random() * 1000);
 
     for (let i = 0; i < numLeagues; i++) {
-      names.push(generate().spaced);
+      names.push(generate());
     }
 
     return names;
