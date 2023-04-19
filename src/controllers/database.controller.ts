@@ -101,6 +101,8 @@ class DatabaseController {
       await this.databaseService.setDraftDate(now, leagueId);
   }
 
+  
+
   public createUser = async (req: Request, res: Response): Promise<void> => {
       const username = req.body.username;
       const email = req.body.email;

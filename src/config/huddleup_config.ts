@@ -5,11 +5,12 @@ export const DRAFT = {
     // DRAFT_BUFFER_TIME_PAST_MS: 1000 * 60 * 0, // No drafts that have started
     DRAFT_INTERVAL_TIME: 1000 * 5,
     START_PORT: 49152,
-    TIME_BEFORE_DRAFT_START_MS: 1000 * 120,
+    TIME_BEFORE_DRAFT_START_MS: 1000 * 60,
     DRAFT_END_BUFFER_TIME_MS: 30 * 1000,
     PICK_DELAY_MS: 2 * 1000,
     AUTO_SECONDS_PER_PICK: 5,
     SECONDS_PER_PICK: 30,
+    DRAFT_RESCHEDULE_TIME: 1000 * 600,
     MSG_TYPES: {
         PING: 'ping',
         INITIAL_CONNECTION: 'initialConnectionGetDraftState',

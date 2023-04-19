@@ -213,7 +213,6 @@ class DraftSocketServer {
         ...this.draftState,
         currentPickTimeMS: new Date().getTime() + DRAFT_CONFIG.PICK_DELAY_MS,
       };
-
       this.sendDraftState();
     }
 
@@ -333,6 +332,11 @@ class DraftSocketServer {
         }
 
         console.log('starting the draft timer now');
+        this.draftState = {
+            ...this.draftState,
+            currentPickTimeMS: new Date().getTime() + DRAFT_CONFIG.PICK_DELAY_MS,
+        };
+        this.sendDraftState();
         await this.startTimer();
     }
 
@@ -359,19 +363,27 @@ class DraftSocketServer {
 
     public async start() {
         // Initialize the draft state before opening up websocket
-        this.draftState = await this.loadDraftStateFromDB();
+        try{
 
-        this.serverSocket = sockjs.createServer();
-
-        this.serverSocket.on('connection', (conn) => this.onConnection(conn));
-
-        const httpServer = http.createServer();
-
-        this.serverSocket.installHandlers(httpServer, { prefix: this.PREFIX });
-
-        httpServer.listen(this.PORT, this.HOST);
-
-        void this.startDraft();
+            this.draftState = await this.loadDraftStateFromDB();
+    
+            this.serverSocket = sockjs.createServer();
+    
+            this.serverSocket.on('connection', (conn) => this.onConnection(conn));
+    
+            const httpServer = http.createServer();
+    
+            this.serverSocket.installHandlers(httpServer, { prefix: this.PREFIX });
+    
+            httpServer.listen(this.PORT, this.HOST);
+    
+            void this.startDraft();
+        }
+        catch(e)
+        {
+            console.log('failed in the start');
+            console.log('e', e);
+        }
     }
 }
 

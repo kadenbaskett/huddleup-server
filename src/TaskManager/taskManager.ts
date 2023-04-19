@@ -1,4 +1,4 @@
-import { DRAFT as DRAFT_CONFIG } from '@/config/huddleup_config';
+import { DRAFT, DRAFT as DRAFT_CONFIG } from '@/config/huddleup_config';
 import DatabaseService from '@/services/database.service';
 import { getUniquePortForDraft, startDraftChildProcess } from '@/services/general.service';
 
@@ -27,21 +27,27 @@ export class TaskManager {
 
         for(const league of leagues)
         {
-            if(!this.draftPorts[league.id]) 
+            if(await this.db.leagueHasEnoughTeams(league.id))
             {
-                this.draftPorts[league.id] = getUniquePortForDraft(league.id);
-
-                // Make sure draft order is set before we launch the websocket
-                const hasCorrectDraftOrderLength = await this.db.hasCorrectDraftOrderLength(league.id);
-                if(!hasCorrectDraftOrderLength)
-                {
-                    await this.db.setRandomDraftOrder(league.id);
-                }
-
-                startDraftChildProcess(league.id, this.draftPorts[league.id]);
+              if(!this.draftPorts[league.id]) 
+              {
+                  this.draftPorts[league.id] = getUniquePortForDraft(league.id);
+  
+                  // Make sure draft order is set before we launch the websocket
+                  const hasCorrectDraftOrderLength = await this.db.hasCorrectDraftOrderLength(league.id);
+                  if(!hasCorrectDraftOrderLength)
+                  {
+                      await this.db.setRandomDraftOrder(league.id);
+                  }
+  
+                  startDraftChildProcess(league.id, this.draftPorts[league.id]);
+              }
             }
-            else {
-                // console.log('Draft already started for league', league.id);
+            else{
+              //reschedule draft
+              console.log('rescheduling');
+              
+              await this.rescheduleDraftDate(league.id);
             }
         }
     }
@@ -49,6 +55,13 @@ export class TaskManager {
     {
         console.log(err);
     }
+  }
+
+  public async rescheduleDraftDate(leagueId)
+  {
+      const now = new Date();
+      now.setMilliseconds(now.getMilliseconds() + DRAFT.DRAFT_RESCHEDULE_TIME);
+      await this.db.setDraftDate(now, leagueId);
   }
 
   checkForTrades()
