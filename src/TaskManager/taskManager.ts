@@ -46,6 +46,7 @@ export class TaskManager {
             else{
               //reschedule draft
               console.log('rescheduling');
+              
               await this.rescheduleDraftDate(league.id);
             }
         }

@@ -213,7 +213,6 @@ class DraftSocketServer {
         ...this.draftState,
         currentPickTimeMS: new Date().getTime() + DRAFT_CONFIG.PICK_DELAY_MS,
       };
-
       this.sendDraftState();
     }
 
@@ -332,8 +331,12 @@ class DraftSocketServer {
             await delay(diff);
         }
 
-        this.sendDraftState();
         console.log('starting the draft timer now');
+        this.draftState = {
+            ...this.draftState,
+            currentPickTimeMS: new Date().getTime() + DRAFT_CONFIG.PICK_DELAY_MS,
+        };
+        this.sendDraftState();
         await this.startTimer();
     }
 
