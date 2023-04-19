@@ -1,4 +1,4 @@
-import { TransactionWithPlayers, LeagueInfo } from '@/interfaces/prisma.interface';
+import { TransactionWithPlayers, LeagueInfo, LeagueWithTeamAndSettings } from '@/interfaces/prisma.interface';
 import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster, RosterPlayer, Timeframe, User, LeagueSettings, WaiverSettings, ScheduleSettings, ScoringSettings, RosterSettings, DraftSettings, TradeSettings, News, PlayerProjections, TransactionPlayer, Transaction, TransactionAction, TeamSettings, UserToTeam, DraftPlayer, DraftQueue, DraftOrder } from '@prisma/client';
 import { ROSTER_START_CONSTRAINTS } from '@/config/huddleup_config';
 
@@ -51,6 +51,37 @@ class DatabaseService {
         {
             console.log(err);
             return null;
+        }
+    }
+
+    public async leagueHasEnoughTeams(leagueID: number): Promise<boolean>
+    {
+        try{
+            const league: LeagueWithTeamAndSettings = await this.client.league.findFirst(
+                {
+                    where:
+                    {
+                        id: leagueID,
+                    },
+                    include:
+                    {
+                        settings: true,
+                        teams: true,
+                    },
+                },
+            );
+
+            if(league.settings.num_teams === league.teams.length)
+            {
+                return true;
+            }
+            
+            return false;
+
+        }
+        catch(e)
+        {
+            return false;
         }
     }
 
@@ -1430,7 +1461,6 @@ class DatabaseService {
                     },
                 },
             });
-
             const teams: Team[] = await this.getTeamsInLeague(leagueId);
 
             return draftOrder.length === teams.length;
