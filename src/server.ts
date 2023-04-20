@@ -3,10 +3,10 @@ import validateEnv from '@utils/validateEnv';
 import DataSinkApp from './datasink/app';
 import Seed from './datasink/seed';
 import DatabaseRoute from './routes/database.route';
-import DraftSocketServer from './draft/draftSocketServer';
 import { TaskManager } from './TaskManager/taskManager';
 import admin from 'firebase-admin';
 import { ENV, PROCESSES } from './config/huddleup_config';
+import DatabaseService from './services/database.service';
 
 validateEnv();
 
@@ -75,7 +75,8 @@ else if(process.env.SERVICE === PROCESSES.DATASINK)
       if (onlyClearDB) {
         // Clears the DB of fantasy related data - everything that we don't fetch from the SportsData.io API
         console.log('Clear DB of fantasy data only');
-        seed.clearLeagueStuff();
+        const dbService = new DatabaseService();
+        dbService.clearLeagueStuff();
       } else if (initAndSeed) {
         // Fills the DB will all NFL data from the SportsData.io API and seeds it with mock fantasy data (& some users)
         console.log('Init and seed');
