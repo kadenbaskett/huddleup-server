@@ -155,3 +155,15 @@ export const SCORING = {
     TWO_PNT_CONV_REC: 2,
     TWO_PNT_CONV_RUN: 2,
 };
+
+export const PROCESSES = {
+    BACKEND: 'backend',
+    WEBSOCKET: 'websocket',
+    TASK_MANAGER: 'taskManager',
+    DATASINK: 'datasink',
+};
+
+export const ENV = {
+    DEV: 'development',
+    PROD: 'production',
+};
