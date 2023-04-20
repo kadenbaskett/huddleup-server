@@ -1,93 +1,29 @@
-# Backend
-First edit
+- Clone the repository
 
+- Using npm version 8.19.2 run "npm install" to install neccessary node packages
 
+- Create a mysql database instance -> https://dev.mysql.com/doc/mysql-getting-started/en/
 
-## Getting started
+- Create a .env file in the root directory with the following contents
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+#mysql database connection
+#port should be 3306 for mysql
+DATABASE_URL =  mysql://username:password@host:port/database 
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+#sportsdata.io api key
+#using 2 keys for when requests limit is reached
+#API_KEY = fbe269d8e236420cbe406d50bfee3ea3
+API_KEY = 10cc693545fa4ca78fe5d7df99cfdc0d
 
-## Add your files
+#firebase service account configs
+FIREBASE_SERVICE_ACCOUNT = {"type": "service_account","project_id": "test-fanhuddle","private_key_id": "122bf1a05f3f6a07ff397bc27003094406272cb0","private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDpgj8p74MaOxnc\nCqRiT9KUQ7z+Q+UPEFEYXBs4r/4YcjO8vAUP7ZsisGgkmL90CwSAfQxbxfy2/o16\nxPs1gOlSvOk1J9rbwinJp1lijbsSoaEfMnCzEQVjGfSRFVAcxZNqo82dQuQlwIUt\nY0qn+LgzCbG/UJSUCGLjb2+QhAcBc/yMXx31TGgXGnPqBVZYBvNPybT4+UPFAqcm\nLjDDrL9ThaPfpFlWbsFVZl9qkWaot6OHV/Ok4+ecPSmj9O3+Y/oa222Sxx3L1/2C\n6qvorhlVmKLxJVyR/iEWys6m+dAVdpdBc4bfNqSngliHLxT8BdI7/y4m4BMGo2+r\nE4/Z0InfAgMBAAECggEAVqAnf46nk70WIE/gYMpdA/zHKYqVeMukUgWlYZfEi1we\nfmc/94M9mJZZ5C24ZLvLnUEGqysdT+PKJ5/Y06XxqOyFFV+mLP1wVCtdmRacLlLA\nu5qSPZPUbEnONV5zPGE9iYOf/TW5/plXrplVsk+uQdzYUHF71RjxWo9WE4YvNSWV\nOGfonTGiAjXn78tSIpHSWg3k4w8GxWirkJ3JVDDMbZ1qfcTCrZIqWd5L18YZYZl8\ncFctidsrFbhizJefCR8NksnKSDvkOKGLEnqzTtz/dU9gT9oIYY0OV8c7CUtTqkJ9\n2Fn5zc/d9dhTOwgjov/HYIJmzZ7ldwlvUjzimoyG0QKBgQD6MKZLelzYLTf+5pdk\ndJ56LEtC22zGJiCg2I/6PbHoy1puq4lswLVVkAotBwcdFCwxRuzirO1snEdv8Jzb\ndWMv9tsY8VuRGf68p91V4cU/DqW7W5rPA8SO83p+BhGLlOXOLzwEDZGda5a0MSP2\nPO+LshDHbQf2Ina1N7zrUIXsjwKBgQDu7m3TPhaOZ34ejDtrZTY0tVS/0vgD340D\ntGNbywFKmE08/lP6qic+wbciF/Wn3tJXaIjdwKC2aKfWh95JP957dHLWvn2Lip+M\nmDZ7iFn+o0Nlhp4A/YMzLyCLVfr5SeOgK7SdyuoZbUpkM7lESxwrCwap0fG6+kRM\n3L9rNsvVsQKBgQCC9e5GOhHZcqoJ+qgqhETkTMVEhNlGS3Tu3Q1Yfuzen3uBzLbN\nv33sAM7izPfzR7juPmMHMF/DZ3aZaMiis6qs07nSL5yvsny+QdxA9UIrhL5J+WRq\nkl1UOqzWxNRwTQuRxvXSZUvgrA2h2sspPLJjXF0eFruBIn8i0r9IKclAjwKBgFgw\nzXzRSAYcESM5Y51KaG2gGL4NItpbI3Ogm6QAFGPyP2AqB9lYANBbNDtzWIsz5bO5\ns/sV5LwvePPohpXG61nqK5E0Eqb07ds5O7LxKzagEHpi6+M1r72uwXZssAxfx5MR\nTsOHaE0mV/UQWmvoxWbl1PnNsknvolI0kLsEKMyhAoGBAIbwENks/Vvne8xqWYeO\nyvxqG5DzeB/gZ5hXTlnjsXco5o69RBzbMPStrnvpNUlxsGUEPew7sLng7JU2E/XJ\n3HLYzpmdfb9lSipUjLRann/2o40tZ6srAXdVAk4OAAp9RUDCsByeJSduLMz3v7Qe\nUUT2HCgy/nSnXOQGVEVF/fq0\n-----END PRIVATE KEY-----\n","client_email": "firebase-adminsdk-am6jm@test-fanhuddle.iam.gserviceaccount.com","client_id": "109671901946640524331","auth_uri": "https://accounts.google.com/o/oauth2/auth","token_uri": "https://oauth2.googleapis.com/token","auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs","client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-am6jm%40test-fanhuddle.iam.gserviceaccount.com"}
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+- Run "npx prisma migrate dev" to add migrations to database and generate prisma ORM client
 
-```
-cd existing_repo
-git remote add origin https://capstone-cs.eng.utah.edu/fan-huddle/backend.git
-git branch -M main
-git push -uf origin main
-```
+- Run "npm run initAndSeed" to seed database
 
-## Integrate with your tools
+- Run "npm run dev" to start the REST API service
 
-- [ ] [Set up project integrations](https://capstone-cs.eng.utah.edu/fan-huddle/backend/-/settings/integrations)
+- Run "npm run taskManager" to start the TaskManager service
 
-## Collaborate with your team
-
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Automatically merge when pipeline succeeds](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
-
-## Test and Deploy
-
-Use the built-in continuous integration in GitLab.
-
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing(SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
-
-***
-
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thank you to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+- Run "npm run dataSink" to start the DataSink service
