@@ -156,33 +156,32 @@ class Seed {
       }
       await this.client.timeframe.update({ where: { id: tf.id }, data: tf });
     }
+
+    const tf: Timeframe = await this.db.getTimeframe();
+
+    console.log('Timeframe after simulate timeframe called: ', tf);
   }
 
-  async simulateWeek(leagueId: number, week: number) {
-    console.log('simulate week');
+  async simulateWeek(week: number) {
     const previousTimeframe = await this.db.getTimeframe();
-    console.log('prev timeframe', previousTimeframe);
+
     const rosters = await this.client.roster.findMany({
       where: {
         week: previousTimeframe.week,
-        team: {
-          league_id: leagueId,
-        },
       },
       include: {
         players: true,
       },
     });
-    console.log(rosters);
 
     await this.simulateTimeframe(week);
-    console.log('after sim tf');
 
-    rosters.forEach(async (roster) => {
-      for (let i = previousTimeframe.week; i <= week; i++) {
-        await this.copyRoster(i, roster);
-      }
-    });
+    for(const r of rosters)
+    {
+        for (let i = previousTimeframe.week + 1; i <= week; i++) {
+          await this.copyRoster(i, r);
+        }
+    }
   }
 
   async seedDB() {
@@ -258,7 +257,7 @@ class Seed {
     numPlayoffTeams,
     numUsers,
   ) {
-    const tf = await this.simulateTimeframe(currentWeek);
+    await this.simulateTimeframe(currentWeek);
     const teamNames = this.generateTeamNames(numTeams);
     const description = `example description for ${name}`;
 

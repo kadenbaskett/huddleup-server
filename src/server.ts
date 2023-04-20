@@ -120,9 +120,8 @@ else if(process.env.SERVICE === 'datasink')
       seed.simulateMatchups(Number(args[1]));
     } else if (simulateWeek) {
       console.log('simulating week');
-      const leagueId = Number(args[1]);
-      const weekToSim = Number(args[2]);
-      seed.simulateWeek(leagueId, weekToSim); // leagueID, week number
+      const weekToSim = Number(args[1]);
+      seed.simulateWeek(weekToSim); // leagueID, week number
     } else if (seedUsers){
       console.log('seeding users');
       seed.createFirebaseUsers();
