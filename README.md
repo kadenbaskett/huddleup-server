@@ -2,7 +2,7 @@
 
 - Using npm version 8.19.2 run "npm install" to install neccessary node packages
 
-- Create a mysql database instance
+- Create a mysql database instance -> https://dev.mysql.com/doc/mysql-getting-started/en/
 
 - Create a .env file in the root directory with the following contents
 
