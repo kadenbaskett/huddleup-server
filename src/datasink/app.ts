@@ -1,23 +1,8 @@
-import { NFLGame, Player, Timeframe, News } from '@prisma/client';
+import { NFLGame, Timeframe, News } from '@prisma/client';
 import { respObj } from './interfaces/respobj.interface';
 import DatasinkDatabaseService from '@services/datasink_database.service';
 import StatsService from '@services/stats.service';
-
-const hoursToMilliseconds = (hours) => {
-  return hours * 60 * 60 * 1000;
-};
-
-// TODO create a config file
-const config = {
-  timeframe: hoursToMilliseconds(1),
-  teams: hoursToMilliseconds(1),
-  players: hoursToMilliseconds(1),
-  schedule: hoursToMilliseconds(1),
-  gamesInProgress: 60000, // Update once a minute
-  news: 180000, // Update every 3 minutes
-  projections: 300000, // Update every 5 minutes
-  allowedPositions: [ 'QB', 'RB', 'WR', 'TE' ],
-};
+import { DATA_SYNC, FANTASY_POSITIONS, MIN_FANTASY_POINTS } from '@/config/huddleup_config';
 
 class DataSinkApp {
   stats: StatsService;
@@ -29,34 +14,45 @@ class DataSinkApp {
   }
 
   startUpdateLoop() {
-    setInterval(this.updateTimeframes.bind(this), config.timeframe);
-    setInterval(this.updateTeams.bind(this), config.teams);
-    setInterval(this.updatePlayers.bind(this), config.players);
-    setInterval(this.updateSchedule.bind(this), config.schedule);
-    setInterval(this.updateGameScoresAndPlayerStats.bind(this), config.gamesInProgress);
-    setInterval(this.updateNews.bind(this), config.news);
-    setInterval(this.updatePlayerProjections.bind(this), config.projections);
+    setInterval(this.updateTimeframesFromAPI.bind(this), DATA_SYNC.TIMEFRAME);
+    setInterval(this.updateTeamsFromAPI.bind(this), DATA_SYNC.TEAMS);
+    setInterval(this.updatePlayersFromAPI.bind(this), DATA_SYNC.PLAYERS);
+    setInterval(this.updateScheduleFromAPI.bind(this), DATA_SYNC.SCHEDULE);
+    setInterval(this.updateGameScoresAndPlayerStats.bind(this), DATA_SYNC.GAMES_IN_PROGRESS);
+    setInterval(this.updateNewsFromAPI.bind(this), DATA_SYNC.NEWS);
+    setInterval(this.updatePlayerProjections.bind(this), DATA_SYNC.PROJECTIONS);
   }
 
   async printDatabase() {
-    const timeframes = await this.db.getTimeframe();
-    console.log('Timeframe: ', timeframes);
+
+    console.log('Printing database');
+
+    const timeframe = await this.db.getTimeframe();
+    console.log('Timeframe: ', timeframe);
+
     const teams = await this.db.getNFLTeams();
     console.log('Teams: ', teams[0]);
+
     const schedule = await this.db.getAllNFLGames();
     console.log('Schedule: ', schedule[0]);
+
     const players = await this.db.getPlayers();
     console.log('Players: ', players[0]);
+
     const stats = await this.db.getAllPlayerStats();
     console.log('Stats: ', stats[0]);
+
     const news = await this.db.getNews();
     console.log('News: ', news[0]);
+
     const projections = await this.db.getAllPlayerProjections();
     console.log('Projections: ', projections[0]);
   }
 
   async clearDB() {
     console.log('Clearing the database before initial update');
+
+    // TODO execute raw SQL to delete all data?
     await this.db.client.transactionPlayer.deleteMany();
     await this.db.client.transactionAction.deleteMany();
     await this.db.client.transaction.deleteMany();
@@ -82,48 +78,35 @@ class DataSinkApp {
     await this.clearDB();
 
     console.log('Adding all NFL teams, schedules, and players to the db...');
-    await this.updateTimeframes();
-    await this.updateTeams();
-    await this.updateSchedule();
+    await this.updateTimeframesFromAPI();
+    await this.updateTeamsFromAPI();
+    await this.updateScheduleFromAPI();
+    await this.updatePlayersFromAPI();
     await this.updateCompletedGames();
-    await this.updatePlayers();
+
     console.log('Updating game scores and player stats...');
     await this.updateGameScoresAndPlayerStats();
+
     console.log('Updating general news...');
-    await this.updateNews();
+    await this.updateNewsFromAPI();
+
     console.log('Updating player projections...');
     await this.updatePlayerProjections();
 
     await this.printDatabase();
   }
 
-  async updateTimeframes() {
+
+  async updateTimeframesFromAPI() {
     const resp = await this.stats.getTimeframes();
 
     if (resp.data) {
-      let timeframes = Object(resp.data);
-
-      timeframes = timeframes.map((tf) => {
-        // if (Number(tf.Season) > 2021 && Number(tf.Week) > week && Number(tf.SeasonType) === 1) {
-        //   tf.HasEnded = false;
-        //   tf.HasStarted = false;
-        // } else if (
-        //   Number(tf.Season) > 2021 &&
-        //   Number(tf.Week) === week &&
-        //   Number(tf.SeasonType) === 1
-        // ) {
-        //   tf.HasEnded = false;
-        //   tf.HasStarted = true;
-        // }
-
-        return tf;
-      });
-
+      const timeframes = Object(resp.data);
       await this.db.setTimeframes(timeframes);
     }
   }
 
-  async updateTeams() {
+  async updateTeamsFromAPI() {
     const timeframe: Timeframe = await this.db.getTimeframe();
 
     if (timeframe) {
@@ -147,7 +130,8 @@ class DataSinkApp {
     }
   }
 
-  async updatePlayers() {
+  // TODO add in all players but have a better way of sorting them
+  async updatePlayersFromAPI() {
 
     try {
       const allPlayersResp: respObj = await this.stats.getPlayers();
@@ -159,10 +143,10 @@ class DataSinkApp {
           let allPlayerDetails = Object(allPlayersResp.data);
           let fantasyPlayers = Object(fantasyPlayersResp.data);
 
-          allPlayerDetails = allPlayerDetails.filter((player) => player.GlobalTeamID > 0 && config.allowedPositions.includes(player.Position));
-          fantasyPlayers = fantasyPlayers.filter((player) => player.GlobalTeamID > 0 && config.allowedPositions.includes(player.Position));
+          allPlayerDetails = allPlayerDetails.filter((player) => player.GlobalTeamID > 0 && FANTASY_POSITIONS.includes(player.Position));
+          fantasyPlayers = fantasyPlayers.filter((player) => player.GlobalTeamID > 0 && FANTASY_POSITIONS.includes(player.Position));
 
-          fantasyPlayers = fantasyPlayers.filter((p) => p.FantasyPointsPPR > 40);
+          fantasyPlayers = fantasyPlayers.filter((p) => p.FantasyPointsPPR > MIN_FANTASY_POINTS);
 
           const finalPlayers = [];
 
@@ -195,7 +179,7 @@ class DataSinkApp {
     }
   }
 
-  async updateNews() {
+  async updateNewsFromAPI() {
     const resp: respObj = await this.stats.getNews();
 
     if (resp.data) {
@@ -221,7 +205,7 @@ class DataSinkApp {
     }
   }
 
-  async updateSchedule() {
+  async updateScheduleFromAPI() {
     const timeframe: Timeframe = await this.db.getTimeframe();
 
     if (timeframe) {

@@ -1,3 +1,4 @@
+import { hoursToMilliseconds } from '@/services/general.service';
 
 export const DRAFT = {
     DRAFT_BUFFER_TIME_FUTURE_MS: 1000 * 60 * 5, // nything five mins in future
@@ -22,6 +23,16 @@ export const DRAFT = {
         ERROR: 'error',
         END_DRAFT: 'endDraft',
     },
+};
+
+export const DATA_SYNC = {
+  TIMEFRAME: hoursToMilliseconds(1),
+  TEAMS: hoursToMilliseconds(1),
+  PLAYERS: hoursToMilliseconds(1),
+  SCHEDULE: hoursToMilliseconds(1),
+  GAMES_IN_PROGRESS: 60000, // Update once a minute
+  NEWS: 180000, // Update every 3 minutes
+  PROJECTIONS: 300000, // Update every 5 minutes
 };
 
 export const TRANSACTION_TYPES = {
@@ -65,6 +76,8 @@ export const ROSTER_START_CONSTRAINTS = {
 export const FANTASY_POSITIONS = [ 'RB', 'WR', 'TE', 'QB' ];
 
 export const FLEX_POSITIONS = [ 'RB', 'WR', 'TE' ];
+
+export const MIN_FANTASY_POINTS = 30;
 
 export const SEASON = {
     NUM_PLAYOFF_TEAMS: 4,

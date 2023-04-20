@@ -2,6 +2,10 @@
 import { DRAFT } from '@/config/huddleup_config';
 import { spawn } from 'child_process';
 
+export const hoursToMilliseconds = (hours) => {
+  return hours * 60 * 60 * 1000;
+};
+
 export function calculateFantasyPoints(s, pprValue = 1)
 {
     if (s) {
