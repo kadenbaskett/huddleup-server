@@ -12,7 +12,6 @@ import {
 } from '@prisma/client';
 import { calculateSeasonLength, createMatchups } from '@services/general.service';
 import randomstring from 'randomstring';
-import DatasinkDatabaseService from '@services/datasink_database.service';
 import StatsService from '@/services/stats.service';
 import DatabaseService from '@/services/database.service';
 import { UserRecord } from 'firebase-admin/lib/auth/user-record';
@@ -25,20 +24,18 @@ import { DRAFT, FANTASY_POSITIONS, FLEX_POSITIONS, ROSTER_START_CONSTRAINTS, SEA
  */
 class Seed {
   client: PrismaClient;
-  db: DatasinkDatabaseService;
   dbService: DatabaseService;
   stats: StatsService;
 
   constructor() {
     this.client = new PrismaClient();
-    this.db = new DatasinkDatabaseService();
     this.dbService = new DatabaseService();
     this.stats = new StatsService();
   }
 
   async createEmptyLeague() {
     const leagueSettings = await this.createLeagueSettings(8, true, 2, 2, 'PPR');
-    await this.createLeague('fake name', 'fake description', 1, leagueSettings.id);
+    await this.createLeague('Empty League', 'EMpty League description', 1, leagueSettings.id);
   }
 
   // TODO how is this different from the other fill league?
@@ -160,14 +157,14 @@ class Seed {
       await this.client.timeframe.update({ where: { id: tf.id }, data: tf });
     }
 
-    const tf: Timeframe = await this.db.getTimeframe();
+    const tf: Timeframe = await this.dbService.getTimeframe();
 
     console.log('Timeframe after simulate timeframe called: ', tf);
   }
 
   // Updates the timeframe and all rosters 
   async simulateWeek(week: number) {
-    const previousTimeframe = await this.db.getTimeframe();
+    const previousTimeframe = await this.dbService.getTimeframe();
 
     const rosters = await this.client.roster.findMany({
       where: {
@@ -283,7 +280,7 @@ class Seed {
       });
     }
 
-    const currentTF: Timeframe = await this.db.getTimeframe();
+    const currentTF: Timeframe = await this.dbService.getTimeframe();
 
     console.log('Timeframe after seeding: ', currentTF);
   }
