@@ -16,6 +16,7 @@ import DatabaseService from '@/services/database.service';
 import { UserRecord } from 'firebase-admin/lib/auth/user-record';
 import { firebaseAdminAuth } from '@/server';
 import { DRAFT, FANTASY_POSITIONS, FLEX_POSITIONS, ROSTER_START_CONSTRAINTS, SEASON, SEED, SETTINGS } from '@/config/huddleup_config';
+import { FLEX_POSITIONS, ROSTER_START_CONSTRAINTS, SEASON } from '@/config/huddleup_config';
 
 /*
  *  Seeds the database with mock data. The simulate league function will
@@ -174,6 +175,70 @@ class Seed {
     const teams = await this.dbService.getTeamsInLeague(leagueId);
     await this.simulateTimeframe(1);
     await this.buildRandomRostersSamePlayersEveryWeek(1, 2022, teams);
+  }
+
+  async finishDraft(leagueId: number) {
+    // get teams in the league
+    const teams = await this.client.team.findMany({ where: { league_id: leagueId }, include: {
+      rosters: { include: { players: true } },
+    } });
+    const draftedPlayerIDs = [];
+    // get players that have been drafted into the league
+    teams.forEach((t)=> {
+      if(t.rosters.length > 0) {
+        t.rosters[0].players.forEach((p)=> draftedPlayerIDs.push(p.player_id));
+      }
+    });
+    // get all NFL players
+    let players = await this.client.player.findMany();
+    players = players.filter((p)=> !draftedPlayerIDs.includes(p.id));
+
+    for(let i = 0; i < teams.length; i++) {
+      const team = teams[i];
+      if(team.rosters.length > 0) {
+        const teamRoster = team.rosters[0];
+        let numQB = teamRoster.players.filter((p) => p.position === 'QB').length;
+        let numWR = teamRoster.players.filter((p) => p.position === 'WR').length;
+        let numRB = teamRoster.players.filter((p) => p.position === 'RB').length;
+        let numTE = teamRoster.players.filter((p) => p.position === 'TE').length;
+        let numFLEX = teamRoster.players.filter((p) => p.position === 'FLEX').length;
+        let numPlayers = teamRoster.players.length;
+        while (numPlayers < ROSTER_START_CONSTRAINTS.TOTAL) {
+          const randomPlayerId = Math.floor(Math.random() * (players.length - 1));
+          let selectedPlayerId = players[randomPlayerId].id;
+          if(numQB < ROSTER_START_CONSTRAINTS.QB){
+            const QBs = players.filter((p)=> p.position === 'QB');
+            selectedPlayerId = QBs[0].id;
+            numQB++;
+          } else if (numWR < ROSTER_START_CONSTRAINTS.WR) {
+            const WRs = players.filter((p)=> p.position === 'WR');
+            selectedPlayerId = WRs[0].id;
+            numWR++;
+          } else if (numRB < ROSTER_START_CONSTRAINTS.RB) {
+            const RBs = players.filter((p)=> p.position === 'RB');
+            selectedPlayerId = RBs[0].id;
+            numRB++;
+          } else if (numTE < ROSTER_START_CONSTRAINTS.TE) {
+            const TEs = players.filter((p)=> p.position === 'TE');
+            selectedPlayerId = TEs[0].id;
+            numTE++;
+          } else if (numFLEX < ROSTER_START_CONSTRAINTS.FLEX) {
+            // add a player to the flex spot
+            const FLEXs = players.filter((p)=> (FLEX_POSITIONS.includes(p.position)));
+            selectedPlayerId = FLEXs[0].id;
+            numFLEX++;
+          }
+          players = players.filter((p) => p.id !== selectedPlayerId);
+          await this.dbService.draftPlayer(selectedPlayerId, team.id, leagueId);
+          await this.dbService.draftPlayerToRoster(selectedPlayerId, team.id, leagueId);
+          numPlayers++;
+        }
+        const finalTeam = await this.client.team.findFirst({ where: { id: team.id }, include: {
+          rosters: { include: { players: true } },
+        } });
+        console.log(finalTeam.rosters[0].players);
+      }
+    }
   }
 
   async simulateMatchups(leagueId: number) {

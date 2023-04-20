@@ -59,7 +59,7 @@ class DatabaseController {
   // public startDraft = async(req?: Request, res?: Response): Promise<void> => {
   //   const { leagueId } = req.body;
 
-  //   try 
+  //   try
   //   {
   //     startDraftChildProcess(leagueId, port);
   //     res.sendStatus(200);
@@ -70,7 +70,6 @@ class DatabaseController {
   //     res.sendStatus(400);
   //   }
   // };
-
 
   public getDraftPort = async(req?: Request, res?: Response): Promise<void> => {
     try {
@@ -101,7 +100,7 @@ class DatabaseController {
       await this.databaseService.setDraftDate(now, leagueId);
   }
 
-  
+
 
   public createUser = async (req: Request, res: Response): Promise<void> => {
       const username = req.body.username;

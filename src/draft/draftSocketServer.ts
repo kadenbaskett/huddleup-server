@@ -12,9 +12,9 @@ let timer: NodeJS.Timeout;
 
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
-
 class DraftSocketServer {
     db: DatabaseService;
+    seed: Seed;
     clients: any;
     PORT: number;
     HOST: string;
@@ -29,6 +29,8 @@ class DraftSocketServer {
         this.HOST = '0.0.0.0';
         this.PREFIX = '/websocket/draft';
         this.db = new DatabaseService();
+        this.seed = new Seed();
+
         this.draftState = {
             draftPlayers: [],
             draftQueue: [],
@@ -305,6 +307,10 @@ class DraftSocketServer {
                 };
                 this.sendDraftState();
                 break;
+            case DRAFT_CONFIG.MSG_TYPES.FILL_DRAFT:
+                console.log('Finishing and filling draft');
+                await this.forceEndDraft();
+                break;
             default:
                 console.log('Unexpected message type received from client: ', data.type);
                 console.log(data.content);
@@ -346,13 +352,31 @@ class DraftSocketServer {
 
         this.broadcast({}, DRAFT_CONFIG.MSG_TYPES.END_DRAFT);
 
-        const seed = new Seed();
-
-        await seed.simulateMatchups(this.leagueId);
+        await this.seed.simulateMatchups(this.leagueId);
 
         console.log('Closing server socket');
         this.serverSocket?.close();
 
+
+        await delay(DRAFT_CONFIG.DRAFT_END_BUFFER_TIME_MS);
+
+        const statusCode = 1;
+        console.log(`Exiting process with status code ${statusCode}`);
+        process.exit(statusCode);
+    }
+
+    private async forceEndDraft()
+    {
+        console.log(`Ending draft in ${DRAFT_CONFIG.DRAFT_END_BUFFER_TIME_MS}`);
+
+        this.broadcast({}, DRAFT_CONFIG.MSG_TYPES.END_DRAFT);
+
+        await this.seed.simulateMatchups(this.leagueId);
+
+        await this.seed.finishDraft(this.leagueId);
+
+        console.log('Closing server socket');
+        this.serverSocket?.close();
 
         await delay(DRAFT_CONFIG.DRAFT_END_BUFFER_TIME_MS);
 
@@ -366,17 +390,17 @@ class DraftSocketServer {
         try{
 
             this.draftState = await this.loadDraftStateFromDB();
-    
+
             this.serverSocket = sockjs.createServer();
-    
+
             this.serverSocket.on('connection', (conn) => this.onConnection(conn));
-    
+
             const httpServer = http.createServer();
-    
+
             this.serverSocket.installHandlers(httpServer, { prefix: this.PREFIX });
-    
+
             httpServer.listen(this.PORT, this.HOST);
-    
+
             void this.startDraft();
         }
         catch(e)

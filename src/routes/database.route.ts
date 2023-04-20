@@ -46,7 +46,7 @@
  *           description: user id of the league commissioner
  *         settings_id:
  *           type: number
- *           desciption: Id of league settings   
+ *           desciption: Id of league settings
  *       example:
  *         id: 4
  *         name: Utah Grad's League
@@ -113,7 +113,7 @@
  *         draftTime: 12:30:00.000
  *     CreateTeamData:
  *       type: object
- *       required: 
+ *       required:
  *         - leagueId
  *         - teamOwnerId
  *         - teamName
@@ -133,7 +133,7 @@
  *         teamName: Skull Crushers
  *     Team:
  *       type: object
- *       required: 
+ *       required:
  *         - id
  *         - name
  *         - league_id
@@ -152,7 +152,7 @@
  *         team_settings_id:
  *           type: number
  *           description: Unique identifier of the team settings
- *         token: 
+ *         token:
  *           type: number
  *           description: Unique team token
  *       example:
@@ -170,28 +170,28 @@
  *         - team_id
  *         - players
  *       properties:
- *         id: 
+ *         id:
  *           type: number
- *         week: 
+ *         week:
  *           type: number
- *         season: 
+ *         season:
  *           type: number
- *         team_id: 
+ *         team_id:
  *           type: number
- *         players: 
+ *         players:
  *           type: array
- *           items: 
+ *           items:
  *             type: object
- *             properties: 
- *               id: 
+ *             properties:
+ *               id:
  *                 type: number
- *               external_id: 
+ *               external_id:
  *                 type: number
- *               player_id: 
+ *               player_id:
  *                 type: number
- *               position: 
+ *               position:
  *                 type: number
- *               roster_id: 
+ *               roster_id:
  *                 type: number
  *       example:
  *         id: 1
@@ -228,26 +228,26 @@
  *         - source
  *         - source_url
  *       properties:
- *         id: 
+ *         id:
  *           type: number
- *         external_id: 
+ *         external_id:
  *           type: number
- *         updated_date: 
+ *         updated_date:
  *           type: string
  *           format: date-time
- *         time_posted: 
+ *         time_posted:
  *           type: string
- *         title: 
+ *         title:
  *           type: string
- *         content: 
+ *         content:
  *           type: string
- *         external_player_id: 
+ *         external_player_id:
  *           type: number
- *         external_team_id: 
+ *         external_team_id:
  *           type: number
- *         source: 
+ *         source:
  *           type: string
- *         source_url: 
+ *         source_url:
  *           type: string
  *       example:
  *         - id: 1
@@ -274,10 +274,10 @@
  *       type: object
  *       required:
  *         - id
- *         - week 
+ *         - week
  *         - season
- *         - type 
- *         - has_started  
+ *         - type
+ *         - has_started
  *         - has_ended
  *       properties:
  *         id:
@@ -515,8 +515,8 @@ class DatabaseRoute implements Routes {
      *                     type: object
      *                     properties:
      *                       id:
-     *                          type: number  
-     *                          example: 16                    
+     *                          type: number
+     *                          example: 16
      *               team:
      *                 type: object
      *                 properties:
@@ -536,7 +536,7 @@ class DatabaseRoute implements Routes {
      *         description: Internal server error
      */
     this.router.post(`${this.path}/userToTeam`, this.controller.userToTeam);
-    
+
     /**
      * @swagger
      * /database/removeUserFromTeam:
@@ -555,7 +555,7 @@ class DatabaseRoute implements Routes {
      *                 properties:
      *                   user_id:
      *                     type: number
-     *                     example: 16                  
+     *                     example: 16
      *               userTeam:
      *                 type: object
      *                 properties:
@@ -571,7 +571,7 @@ class DatabaseRoute implements Routes {
      *         description: Internal server error
      */
     this.router.post(`${this.path}/removeUserFromTeam`, this.controller.removeUserFromTeam);
-    
+
     /**
      * @swagger
      * tags:
@@ -590,8 +590,8 @@ class DatabaseRoute implements Routes {
      *             properties:
      *               addPlayerId:
      *                 type: number
-     *                 description: Unique identifier of the player to add   
-     *                 example: 6               
+     *                 description: Unique identifier of the player to add
+     *                 example: 6
      *               addPlayerExternalId:
      *                 type: number
      *                 description: External unique identifier of the player to add
@@ -614,12 +614,12 @@ class DatabaseRoute implements Routes {
      *                 example: 2
      *               week:
      *                 type: number
-     *                 description: Current week number to be recorded   
+     *                 description: Current week number to be recorded
      *                 example: 6
      *     responses:
      *       200:
      *         description: User successfully removed from team.
-     *       400:     
+     *       400:
      *         description: Bad request. Unable to add and drop players.
      *       500:
      *         description: Internal server error
@@ -641,8 +641,8 @@ class DatabaseRoute implements Routes {
      *             properties:
      *               addPlayerId:
      *                 type: number
-     *                 description: Unique identifier of the player to add    
-     *                 example: 4              
+     *                 description: Unique identifier of the player to add
+     *                 example: 4
      *               addPlayerExternalId:
      *                 type: number
      *                 description: External unique identifier of the player to add
@@ -661,7 +661,7 @@ class DatabaseRoute implements Routes {
      *                 example: 6
      *               week:
      *                 type: number
-     *                 description: Current week number to be recorded 
+     *                 description: Current week number to be recorded
      *                 example: 5
      *     responses:
      *       200:
@@ -688,8 +688,8 @@ class DatabaseRoute implements Routes {
      *             properties:
      *               playerId:
      *                 type: number
-     *                 description: Unique identifier of the player to drop    
-     *                 example: 4              
+     *                 description: Unique identifier of the player to drop
+     *                 example: 4
      *               rosterId:
      *                 type: number
      *                 description: Unique identifier of the roster to perform the drop on
@@ -704,7 +704,7 @@ class DatabaseRoute implements Routes {
      *                 example: 6
      *               week:
      *                 type: number
-     *                 description: Current week number to be recorded 
+     *                 description: Current week number to be recorded
      *                 example: 5
      *     responses:
      *       200:
@@ -731,8 +731,8 @@ class DatabaseRoute implements Routes {
      *             properties:
      *               sendPlayerIds:
      *                 type: number
-     *                 description: Unique identifier of the player being released   
-     *                 example: 4              
+     *                 description: Unique identifier of the player being released
+     *                 example: 4
      *               recPlayerIds:
      *                 type: number
      *                 description: Unique identifier of the player being received
@@ -747,7 +747,7 @@ class DatabaseRoute implements Routes {
      *                 example: 6
      *               proposeTeamId:
      *                 type: number
-     *                 description: Unique identifier of the proposing team 
+     *                 description: Unique identifier of the proposing team
      *                 example: 5
      *               relatedTeamId:
      *                 type: number
@@ -770,7 +770,7 @@ class DatabaseRoute implements Routes {
      *         description: Internal server error
      */
     this.router.post(`${this.path}/roster/proposeTrade`, this.controller.proposeTrade);
-    
+
     /**
      * @swagger
      * /database/roster/editLineup:
@@ -786,8 +786,8 @@ class DatabaseRoute implements Routes {
      *             properties:
      *               rosterPlayerId:
      *                 type: number
-     *                 description: Unique identifier of the player being released   
-     *                 example: 4              
+     *                 description: Unique identifier of the player being released
+     *                 example: 4
      *               newPosition:
      *                 type: string
      *                 description: Unique identifier of the player being received
@@ -805,7 +805,7 @@ class DatabaseRoute implements Routes {
      *         description: Internal server error
      */
     this.router.post(`${this.path}/roster/editLineup`, this.controller.editLineup);
-    
+
         /**
      * @swagger
      * tags:
@@ -824,8 +824,8 @@ class DatabaseRoute implements Routes {
      *             properties:
      *               action:
      *                 type: string
-     *                 description: Action to be executed 
-     *                 example: Approve               
+     *                 description: Action to be executed
+     *                 example: Approve
      *               transactionId:
      *                 type: number
      *                 description: Unique identifier of the transaction being executed
@@ -878,7 +878,6 @@ class DatabaseRoute implements Routes {
 
     // TODO: add swagger docs
     this.router.get(`${this.path}/players`, this.controller.getAllPlayersDetails);
-
     // TODO: add swagger docs
     this.router.get(
       `${this.path}/players/:playerId(\\d+)`,
@@ -893,7 +892,7 @@ class DatabaseRoute implements Routes {
 
     // TODO: add swagger docs
     this.router.get(`${this.path}/players/stats`, this.controller.getAllPlayersStats);
-    
+
     /**
      * @swagger
      * /database/user/{email}:
@@ -958,7 +957,7 @@ class DatabaseRoute implements Routes {
      *   get:
      *     summary: Gets timeframe
      *     tags: [Timeframe]
-     *     responses: 
+     *     responses:
      *       200:
      *          description: Timeframe
      *          content:
@@ -988,7 +987,7 @@ class DatabaseRoute implements Routes {
      *           type: number
      *           required: true
      *           description: Amount of news to get
-     *     responses: 
+     *     responses:
      *       200:
      *          description: The amount of news specified
      *          content:
@@ -1024,7 +1023,7 @@ class DatabaseRoute implements Routes {
      *         description: Internal server error
      */
     this.router.get(`${this.path}/leagues/user/:userId(\\d+)`, this.controller.getUserLeagues);
-    
+
     /**
      * @swagger
      * /database/leagues/public:
@@ -1040,7 +1039,7 @@ class DatabaseRoute implements Routes {
      *         description: Internal server error
      */
     this.router.get(`${this.path}/leagues/public`, this.controller.getPublicLeagues);
-    
+
     /**
      * @swagger
      * /database/leagues/private:
@@ -1056,7 +1055,7 @@ class DatabaseRoute implements Routes {
      *         description: Internal server error
      */
     this.router.get(`${this.path}/leagues/private`, this.controller.getPrivateLeagues);
-    
+
     /**
      * @swagger
      * /database/league/{leagueId}:
@@ -1102,7 +1101,7 @@ class DatabaseRoute implements Routes {
      *         description: Internal server error
      */
     this.router.get(`${this.path}/teams/user/:userId(\\d+)`, this.controller.getUserTeams);
-    
+
        /**
      * @swagger
      * /database/teams/roster/{teamId}:
@@ -1116,7 +1115,7 @@ class DatabaseRoute implements Routes {
      *           type: number
      *           required: true
      *           description: Unique identifier of the team to get the current roster for
-     *     responses: 
+     *     responses:
      *       200:
      *          description: The team's current roster
      *          content:
@@ -1152,7 +1151,7 @@ class DatabaseRoute implements Routes {
      *            type: number
      *            required: true
      *            description: The week number for which to get the roster
-     *     responses: 
+     *     responses:
      *       200:
      *          description: The team's roster from specified week
      *          content:

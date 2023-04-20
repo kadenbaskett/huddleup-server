@@ -107,7 +107,7 @@ class DatabaseService {
             {
                 return true;
             }
-            
+
             return false;
 
         }
