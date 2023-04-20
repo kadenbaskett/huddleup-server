@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import { DRAFT, SCORING, SEASON } from '@/config/huddleup_config';
+=======
+import { DRAFT, SCORING } from '@/config/huddleup_config';
+>>>>>>> 7d9af2e791c73aea384d5395e1d3de76f28cdbfe
 import { spawn } from 'child_process';
 
 
