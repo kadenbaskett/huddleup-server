@@ -3,7 +3,9 @@ import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, 
 import { ROSTER_START_CONSTRAINTS } from '@/config/huddleup_config';
 
 
-
+/*
+ *  In theory this is supposed to be one of two places we have a prisma client and interact with the DB
+ */
 class DatabaseService {
 
     client: PrismaClient;

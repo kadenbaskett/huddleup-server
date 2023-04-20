@@ -12,7 +12,6 @@ import {
 } from '@prisma/client';
 import { calculateSeasonLength, createMatchups } from '@services/general.service';
 import randomstring from 'randomstring';
-import StatsService from '@/services/stats.service';
 import DatabaseService from '@/services/database.service';
 import { UserRecord } from 'firebase-admin/lib/auth/user-record';
 import { firebaseAdminAuth } from '@/server';
@@ -25,12 +24,10 @@ import { DRAFT, FANTASY_POSITIONS, FLEX_POSITIONS, ROSTER_START_CONSTRAINTS, SEA
 class Seed {
   client: PrismaClient;
   dbService: DatabaseService;
-  stats: StatsService;
 
   constructor() {
     this.client = new PrismaClient();
     this.dbService = new DatabaseService();
-    this.stats = new StatsService();
   }
 
   async createEmptyLeague() {
