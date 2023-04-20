@@ -68,7 +68,6 @@ class DataSinkApp {
     await this.db.client.teamSettings.deleteMany();
     await this.db.client.league.deleteMany();
     await this.db.client.user.deleteMany();
-
     await this.db.client.timeframe.deleteMany();
     await this.db.client.playerGameStats.deleteMany();
     await this.db.client.playerProjections.deleteMany();
@@ -83,7 +82,7 @@ class DataSinkApp {
     await this.clearDB();
 
     console.log('Adding all NFL teams, schedules, and players to the db...');
-    await this.updateTimeframes(1);
+    await this.updateTimeframes();
     await this.updateTeams();
     await this.updateSchedule();
     await this.updateCompletedGames();
@@ -98,24 +97,24 @@ class DataSinkApp {
     await this.printDatabase();
   }
 
-  async updateTimeframes(week) {
+  async updateTimeframes() {
     const resp = await this.stats.getTimeframes();
 
     if (resp.data) {
       let timeframes = Object(resp.data);
 
       timeframes = timeframes.map((tf) => {
-        if (Number(tf.Season) > 2021 && Number(tf.Week) > week && Number(tf.SeasonType) === 1) {
-          tf.HasEnded = false;
-          tf.HasStarted = false;
-        } else if (
-          Number(tf.Season) > 2021 &&
-          Number(tf.Week) === week &&
-          Number(tf.SeasonType) === 1
-        ) {
-          tf.HasEnded = false;
-          tf.HasStarted = true;
-        }
+        // if (Number(tf.Season) > 2021 && Number(tf.Week) > week && Number(tf.SeasonType) === 1) {
+        //   tf.HasEnded = false;
+        //   tf.HasStarted = false;
+        // } else if (
+        //   Number(tf.Season) > 2021 &&
+        //   Number(tf.Week) === week &&
+        //   Number(tf.SeasonType) === 1
+        // ) {
+        //   tf.HasEnded = false;
+        //   tf.HasStarted = true;
+        // }
 
         return tf;
       });
