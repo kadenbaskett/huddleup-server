@@ -1,130 +1,122 @@
-import { NFLGame, Player, Timeframe, News } from '@prisma/client';
+import { NFLGame, Timeframe, News } from '@prisma/client';
 import { respObj } from './interfaces/respobj.interface';
-import DatabaseService from '@services/datasink_database.service';
+import DatasinkDatabaseSetterService from '@/services/datasinkDatabaseSetter.service';
 import StatsService from '@services/stats.service';
+import { DATA_SYNC, FANTASY_POSITIONS, MIN_FANTASY_POINTS } from '@/config/huddleup_config';
+import DatabaseGetterService from '@/services/databaseGetter.service';
 
-const hoursToMilliseconds = (hours) => {
-  return hours * 60 * 60 * 1000;
-};
-
-// TODO create a config file
-const config = {
-  timeframe: hoursToMilliseconds(1),
-  teams: hoursToMilliseconds(1),
-  players: hoursToMilliseconds(1),
-  schedule: hoursToMilliseconds(1),
-  gamesInProgress: 60000, // Update once a minute
-  news: 180000, // Update every 3 minutes
-  projections: 300000, // Update every 5 minutes
-  allowedPositions: [ 'QB', 'RB', 'WR', 'TE' ],
-};
-
+/*
+ *  The Data Sink is responsible for querying the SportsData.io API according to its implementation guide, and updating our DB with NFL stats, schedules, players, games, etc
+ *  https://sportsdata.io/developers/implementation-guide
+ */
 class DataSinkApp {
-  stats: StatsService;
-  db: DatabaseService;
+  private stats: StatsService;
+  private datasinkSetterService: DatasinkDatabaseSetterService;
+  private databaseGetterService: DatabaseGetterService;
 
   constructor() {
     this.stats = new StatsService();
-    this.db = new DatabaseService();
+    this.datasinkSetterService = new DatasinkDatabaseSetterService();
+    this.databaseGetterService = new DatabaseGetterService();
   }
 
   startUpdateLoop() {
-    setInterval(this.updateTimeframes.bind(this), config.timeframe);
-    setInterval(this.updateTeams.bind(this), config.teams);
-    setInterval(this.updatePlayers.bind(this), config.players);
-    setInterval(this.updateSchedule.bind(this), config.schedule);
-    setInterval(this.updateGameScoresAndPlayerStats.bind(this), config.gamesInProgress);
-    setInterval(this.updateNews.bind(this), config.news);
-    setInterval(this.updatePlayerProjections.bind(this), config.projections);
+    setInterval(this.updateTimeframesFromAPI.bind(this), DATA_SYNC.TIMEFRAME);
+    setInterval(this.updateTeamsFromAPI.bind(this), DATA_SYNC.TEAMS);
+    setInterval(this.updatePlayersFromAPI.bind(this), DATA_SYNC.PLAYERS);
+    setInterval(this.updateScheduleFromAPI.bind(this), DATA_SYNC.SCHEDULE);
+    setInterval(this.updateGameScoresAndPlayerStats.bind(this), DATA_SYNC.GAMES_IN_PROGRESS);
+    setInterval(this.updateNewsFromAPI.bind(this), DATA_SYNC.NEWS);
+    setInterval(this.updatePlayerProjections.bind(this), DATA_SYNC.PROJECTIONS);
   }
 
   async printDatabase() {
-    const timeframes = await this.db.getTimeframe();
-    console.log('Timeframe: ', timeframes);
-    const teams = await this.db.getNFLTeams();
+
+    console.log('Printing database');
+
+    const timeframe = await this.databaseGetterService.getTimeframe();
+    console.log('Timeframe: ', timeframe);
+
+    const teams = await this.databaseGetterService.getNFLTeams();
     console.log('Teams: ', teams[0]);
-    const schedule = await this.db.getAllNFLGames();
+
+    const schedule = await this.databaseGetterService.getAllNFLGames();
     console.log('Schedule: ', schedule[0]);
-    const players = await this.db.getPlayers();
+
+    const players = await this.databaseGetterService.getPlayers();
     console.log('Players: ', players[0]);
-    const stats = await this.db.getAllPlayerStats();
+
+    const stats = await this.databaseGetterService.getAllPlayerStats();
     console.log('Stats: ', stats[0]);
-    const news = await this.db.getNews();
+
+    const news = await this.databaseGetterService.getNews();
     console.log('News: ', news[0]);
-    const projections = await this.db.getAllPlayerProjections();
+
+    const projections = await this.databaseGetterService.getAllPlayerProjections();
     console.log('Projections: ', projections[0]);
   }
 
+  // Clears the DB of all fantasy related data 
+  // TODO is this even necessary
   async clearDB() {
     console.log('Clearing the database before initial update');
-    await this.db.client.transactionPlayer.deleteMany();
-    await this.db.client.transactionAction.deleteMany();
-    await this.db.client.transaction.deleteMany();
-    await this.db.client.rosterPlayer.deleteMany();
-    await this.db.client.roster.deleteMany();
-    await this.db.client.userToTeam.deleteMany();
-    await this.db.client.matchup.deleteMany();
-    await this.db.client.team.deleteMany();
-    await this.db.client.teamSettings.deleteMany();
-    await this.db.client.league.deleteMany();
-    await this.db.client.user.deleteMany();
-    await this.db.client.timeframe.deleteMany();
-    await this.db.client.playerGameStats.deleteMany();
-    await this.db.client.playerProjections.deleteMany();
-    await this.db.client.nFLGame.deleteMany();
-    await this.db.client.player.deleteMany();
-    await this.db.client.nFLTeam.deleteMany();
-    await this.db.client.news.deleteMany();
+
+    // TODO dont access the client from another file
+    await this.datasinkSetterService.client.transactionPlayer.deleteMany();
+    await this.datasinkSetterService.client.transactionAction.deleteMany();
+    await this.datasinkSetterService.client.transaction.deleteMany();
+    await this.datasinkSetterService.client.rosterPlayer.deleteMany();
+    await this.datasinkSetterService.client.roster.deleteMany();
+    await this.datasinkSetterService.client.userToTeam.deleteMany();
+    await this.datasinkSetterService.client.matchup.deleteMany();
+    await this.datasinkSetterService.client.team.deleteMany();
+    await this.datasinkSetterService.client.teamSettings.deleteMany();
+    await this.datasinkSetterService.client.league.deleteMany();
+    await this.datasinkSetterService.client.user.deleteMany();
+    await this.datasinkSetterService.client.timeframe.deleteMany();
+    await this.datasinkSetterService.client.playerGameStats.deleteMany();
+    await this.datasinkSetterService.client.playerProjections.deleteMany();
+    await this.datasinkSetterService.client.nFLGame.deleteMany();
+    await this.datasinkSetterService.client.player.deleteMany();
+    await this.datasinkSetterService.client.nFLTeam.deleteMany();
+    await this.datasinkSetterService.client.news.deleteMany();
   }
 
+  // Makes an initial update to the DB with all NFL data & stats before we start to query the API intermittently
   async initialUpdate() {
     await this.clearDB();
 
     console.log('Adding all NFL teams, schedules, and players to the db...');
-    await this.updateTimeframes();
-    await this.updateTeams();
-    await this.updateSchedule();
-    await this.updatePlayers();
-    console.log('Adding all NFL games to the db...');
+    await this.updateTimeframesFromAPI();
+    await this.updateTeamsFromAPI();
+    await this.updateScheduleFromAPI();
+    await this.updatePlayersFromAPI();
     await this.updateCompletedGames();
-    console.log('Updaing game scores and player stats...');
+
+    console.log('Updating game scores and player stats...');
     await this.updateGameScoresAndPlayerStats();
+
     console.log('Updating general news...');
-    await this.updateNews();
+    await this.updateNewsFromAPI();
+
     console.log('Updating player projections...');
     await this.updatePlayerProjections();
 
     await this.printDatabase();
   }
 
-  async updateTimeframes() {
+
+  async updateTimeframesFromAPI() {
     const resp = await this.stats.getTimeframes();
 
     if (resp.data) {
-      let timeframes = Object(resp.data);
-
-      timeframes = timeframes.map((tf) => {
-        if (Number(tf.Season) > 2021 && Number(tf.Week) > 6 && Number(tf.SeasonType) === 1) {
-          tf.HasEnded = false;
-          tf.HasStarted = false;
-        } else if (
-          Number(tf.Season) > 2021 &&
-          Number(tf.Week) === 6 &&
-          Number(tf.SeasonType) === 1
-        ) {
-          tf.HasEnded = false;
-          tf.HasStarted = true;
-        }
-
-        return tf;
-      });
-
-      await this.db.setTimeframes(timeframes);
+      const timeframes = Object(resp.data);
+      await this.datasinkSetterService.setTimeframes(timeframes);
     }
   }
 
-  async updateTeams() {
-    const timeframe: Timeframe = await this.db.getTimeframe();
+  async updateTeamsFromAPI() {
+    const timeframe: Timeframe = await this.databaseGetterService.getTimeframe();
 
     if (timeframe) {
       const resp: respObj = await this.stats.getNFLTeams(timeframe.season);
@@ -142,36 +134,62 @@ class DataSinkApp {
           };
         });
 
-        await this.db.setNFLTeams(teams);
+        await this.datasinkSetterService.setNFLTeams(teams);
       }
     }
   }
 
-  async updatePlayers() {
-    const resp: respObj = await this.stats.getPlayers();
+  // TODO add in all players but have a better way of sorting them
+  // This function is reponsible for updating the players in our DB by filtering out players who are fantasy football irrelevent (wrong positions or don't play much)
+  async updatePlayersFromAPI() {
 
-    if (resp.data) {
-      const data = Object(resp.data);
+    try {
+      const allPlayersResp: respObj = await this.stats.getPlayers();
+      const fantasyPlayersResp: respObj = await this.stats.getTopPlayers();
 
-      const players: Player[] = data
-        .filter((p) => p.GlobalTeamID > 0 && config.allowedPositions.includes(p.Position))
-        .map((p) => {
-          return {
-            external_id: p.PlayerID,
-            first_name: p.FirstName,
-            last_name: p.LastName,
-            status: p.Status,
-            position: p.Position,
-            photo_url: p.PhotoUrl,
-            nfl_team_external_id: p.GlobalTeamID,
-          };
-        });
+      if(allPlayersResp.data && fantasyPlayersResp.data)
+      {
+          // Filter out free agents (TODO in the future let free agents be in the app) and if they don't play a fantasy position 
+          let allPlayerDetails = Object(allPlayersResp.data);
+          let fantasyPlayers = Object(fantasyPlayersResp.data);
 
-      await this.db.setPlayers(players);
+          allPlayerDetails = allPlayerDetails.filter((player) => player.GlobalTeamID > 0 && FANTASY_POSITIONS.includes(player.Position));
+          fantasyPlayers = fantasyPlayers.filter((player) => player.GlobalTeamID > 0 && FANTASY_POSITIONS.includes(player.Position));
+
+          fantasyPlayers = fantasyPlayers.filter((p) => p.FantasyPointsPPR > MIN_FANTASY_POINTS);
+
+          const finalPlayers = [];
+
+          for(const fantasyPlayer of fantasyPlayers)
+          {
+            const details = allPlayerDetails.find((p) => p.PlayerID === fantasyPlayer.PlayerID);
+
+            if(details)
+              finalPlayers.push(details);
+          }
+
+          const players = finalPlayers.map((p) => {
+            return {
+                external_id: p.PlayerID,
+                first_name: p.FirstName,
+                last_name: p.LastName,
+                status: p.Status,
+                position: p.Position,
+                photo_url: p.PhotoUrl,
+                nfl_team_external_id: p.GlobalTeamID,
+            };
+          });
+
+          await this.datasinkSetterService.setPlayers(players);
+
+      }
+    }
+    catch(err) {
+      console.log(err);
     }
   }
 
-  async updateNews() {
+  async updateNewsFromAPI() {
     const resp: respObj = await this.stats.getNews();
 
     if (resp.data) {
@@ -193,12 +211,12 @@ class DataSinkApp {
         };
       });
 
-      await this.db.setNews(news);
+      await this.datasinkSetterService.setNews(news);
     }
   }
 
-  async updateSchedule() {
-    const timeframe: Timeframe = await this.db.getTimeframe();
+  async updateScheduleFromAPI() {
+    const timeframe: Timeframe = await this.databaseGetterService.getTimeframe();
 
     if (timeframe) {
       const resp: respObj = await this.stats.getSchedules(timeframe.season);
@@ -221,13 +239,13 @@ class DataSinkApp {
             };
           });
 
-        await this.db.setNFLSchedule(games);
+        await this.datasinkSetterService.setNFLSchedule(games);
       }
     }
   }
 
   async updateCompletedGames() {
-    const gamesCompleted = await this.db.getCompletedGames();
+    const gamesCompleted = await this.databaseGetterService.getCompletedGames();
 
     if (gamesCompleted.length) {
       for (const game of gamesCompleted) {
@@ -236,15 +254,15 @@ class DataSinkApp {
         if (resp.data) {
           const boxScore = Object(resp.data);
 
-          const game = await this.db.updateScore(
+          const game = await this.datasinkSetterService.updateScore(
             Number(boxScore.Score.GameKey),
             boxScore.Score.homeScore,
             boxScore.Score.AwayScore,
           );
 
           for (const pg of boxScore.PlayerGames) {
-            const playerId = await this.db.externalToInternalPlayer(pg.PlayerID);
-            const teamId = await this.db.externalToInternalNFLTeam(Number(pg.GlobalTeamID));
+            const playerId = await this.databaseGetterService.externalToInternalPlayer(pg.PlayerID);
+            const teamId = await this.databaseGetterService.externalToInternalNFLTeam(Number(pg.GlobalTeamID));
 
             if (playerId) {
               // Have to use Math.floor to convert floats to Int becuase the data is scrambled
@@ -272,7 +290,7 @@ class DataSinkApp {
                 two_point_conversion_receptions: Math.floor(pg.TwoPointConversionReceptions),
               };
 
-              await this.db.updatePlayerGameStats(gameStats);
+              await this.datasinkSetterService.updatePlayerGameStats(gameStats);
             }
           }
         }
@@ -281,20 +299,21 @@ class DataSinkApp {
   }
 
   async updatePlayerProjections() {
-    const timeframe: Timeframe = await this.db.getTimeframe();
-    // get player projections for weeks 1-7
-    for (let i = 1; i <= timeframe.week; i++) {
-      const resp: respObj = await this.stats.getAllPlayersProjectedGameStats(2022, i);
+    const timeframe: Timeframe = await this.databaseGetterService.getTimeframe();
+
+    for (let week = 1; week <= timeframe.week; week++) {
+      // TODO don't hard code 2022
+      const resp: respObj = await this.stats.getAllPlayersProjectedGameStats(2022, week);
 
       if (resp.data) {
         const data = Object(resp.data);
 
         for (const proj of data) {
-          const playerId = await this.db.externalToInternalPlayer(proj.PlayerID);
-          const teamId = await this.db.externalToInternalNFLTeam(proj.TeamID);
-          const gameId = await this.db.externalToInternalNFLGame(Number(proj.GameKey));
+          const playerId = await this.databaseGetterService.externalToInternalPlayer(proj.PlayerID);
+          const teamId = await this.databaseGetterService.externalToInternalNFLTeam(proj.TeamID);
+          const gameId = await this.databaseGetterService.externalToInternalNFLGame(Number(proj.GameKey));
 
-          if (playerId) {
+          if (playerId && teamId && gameId) {
             const gameProjection = {
               external_player_id: proj.PlayerID,
               external_game_id: Number(proj.GameKey),
@@ -319,7 +338,7 @@ class DataSinkApp {
               two_point_conversion_receptions: Math.floor(proj.TwoPointConversionReceptions),
             };
 
-            await this.db.updatePlayerProjections(gameProjection);
+            await this.datasinkSetterService.updatePlayerProjections(gameProjection);
           }
         }
       }
@@ -327,7 +346,7 @@ class DataSinkApp {
   }
 
   async updateGameScoresAndPlayerStats() {
-    const gamesInProgress = await this.db.getGamesInProgress();
+    const gamesInProgress = await this.databaseGetterService.getGamesInProgress();
 
     if (gamesInProgress.length) {
       for (const game of gamesInProgress) {
@@ -336,15 +355,15 @@ class DataSinkApp {
         if (resp.data) {
           const boxScore = Object(resp.data);
 
-          const game = await this.db.updateScore(
+          const game = await this.datasinkSetterService.updateScore(
             Number(boxScore.Score.GameKey),
             boxScore.Score.homeScore,
             boxScore.Score.AwayScore,
           );
 
           for (const pg of boxScore.PlayerGames) {
-            const playerId = await this.db.externalToInternalPlayer(pg.PlayerID);
-            const teamId = await this.db.externalToInternalNFLTeam(Number(pg.TeamID));
+            const playerId = await this.databaseGetterService.externalToInternalPlayer(pg.PlayerID);
+            const teamId = await this.databaseGetterService.externalToInternalNFLTeam(Number(pg.TeamID));
 
             if (playerId) {
               // Have to use Math.floor to convert floats to Int becuase the data is scrambled
@@ -370,7 +389,7 @@ class DataSinkApp {
                 two_point_conversion_receptions: Math.floor(pg.TwoPointConversionReceptions),
               };
 
-              await this.db.updatePlayerGameStats(gameStats);
+              await this.datasinkSetterService.updatePlayerGameStats(gameStats);
             }
           }
         }

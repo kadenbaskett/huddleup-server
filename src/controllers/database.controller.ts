@@ -1,24 +1,25 @@
 import DatabaseService from '@services/database.service';
 import TransactionService from '@services/transaction.service';
-import { calculateFantasyPoints } from '@/services/general.service';
+import { calculateFantasyPoints, getUniquePortForDraft } from '@/services/general.service';
 import { Request, Response } from 'express';
 import { Roster, RosterPlayer, Team, Transaction } from '@prisma/client';
-import { bool, json } from 'envalid';
 import randomstring from 'randomstring';
-import { add, remove } from 'winston';
-import { Console } from 'console';
 import { TransactionWithPlayers } from '@/interfaces/prisma.interface';
+import Seed from '@/datasink/seed';
+import { DRAFT } from '@/config/huddleup_config';
 
 
 class DatabaseController {
 
   public databaseService: DatabaseService;
   public transactionService: TransactionService;
+  public seed: Seed;
 
   constructor()
   {
       this.databaseService = new DatabaseService();
       this.transactionService = new TransactionService();
+      this.seed = new Seed();
   }
 
   public empty = async (req: Request, res: Response): Promise<void> => {
@@ -29,15 +30,77 @@ class DatabaseController {
 
   public createLeague = async (req: Request, res: Response): Promise<void> => {
 
-    const{ leagueName, numTeams, minPlayers, maxPlayers, leagueDescription, publicJoin, scoring, commissionerId } = req.body;
+    const{ leagueName, numTeams, minPlayers, maxPlayers, leagueDescription, publicJoin, scoring, commissionerId, date, draftTime } = req.body;
 
     // create league settings
-    const settings = await this.databaseService.createLeagueSettings(numTeams, publicJoin, minPlayers, maxPlayers, scoring);
+    const draftDate: Date = new Date(date + ' ' + draftTime);
+    const settings = await this.databaseService.createLeagueSettings(numTeams, publicJoin, minPlayers, maxPlayers, scoring, draftDate);
     const token = await randomstring.generate(7);
     const league = await this.databaseService.createLeague(commissionerId, leagueName, leagueDescription, settings, token);
 
-    league ? res.status(200).json(league) : res.sendStatus(400);
+    league ? res.status(201).json(league) : res.sendStatus(400);
   };
+
+  public fillLeague = async(req: Request, res: Response): Promise<void> => {
+    const { leagueId } = req.body;
+    try {
+      await this.seed.fillLeagueRandomUsers(leagueId);
+      await this.setDraftDate(leagueId);
+      res.sendStatus(200);
+    }
+    catch(e)
+    {
+      console.log(e);
+      res.sendStatus(400);
+    }
+  };
+
+  // We should not need this anymore
+  // public startDraft = async(req?: Request, res?: Response): Promise<void> => {
+  //   const { leagueId } = req.body;
+
+  //   try
+  //   {
+  //     startDraftChildProcess(leagueId, port);
+  //     res.sendStatus(200);
+  //   }
+  //   catch(e)
+  //   {
+  //     console.log(e);
+  //     res.sendStatus(400);
+  //   }
+  // };
+
+  public getDraftPort = async(req?: Request, res?: Response): Promise<void> => {
+    try {
+      const { leagueId } = req.params;
+      const port = getUniquePortForDraft(Number(leagueId));
+      res.status(200).json(port);
+    } catch (e) {
+      res.sendStatus(400);
+    }
+  };
+
+
+  // THIS SHOULD EVENTUALLY BE DONE BY THE UI
+  // COMISH SHOULD SET DRAFT ORDER AND DRAFT TIME BEFORE DRAFT IS LAUNCHED
+  // async setDraftDateAndOrder(leagueId)
+  // {
+  //     const secondsBeforeStart = 120;
+  //     const now = new Date();
+  //     now.setSeconds(now.getSeconds() + secondsBeforeStart);
+  //     await this.databaseService.setDraftDate(now, leagueId);
+  //     await this.databaseService.setRandomDraftOrder(leagueId);
+  // }
+
+  public async setDraftDate(leagueId)
+  {
+      const now = new Date();
+      now.setMilliseconds(now.getMilliseconds() + DRAFT.TIME_BEFORE_DRAFT_START_MS);
+      await this.databaseService.setDraftDate(now, leagueId);
+  }
+
+
 
   public createUser = async (req: Request, res: Response): Promise<void> => {
       const username = req.body.username;
@@ -48,7 +111,7 @@ class DatabaseController {
       if(validationMessage == null){
         const user = await this.databaseService.createUser(username, email);
 
-        user ? res.status(200).json(user) : res.sendStatus(500);
+        user ? res.status(201).json(user) : res.sendStatus(500);
       }
       else{
         res.status(400).send(validationMessage);
@@ -68,7 +131,7 @@ class DatabaseController {
     // passing 1 here because when a user creates a team this user is the owner/captain
     const userToTeam = await this.databaseService.userToTeam(team.id, teamOwnerId, 1);
 
-    team && userToTeam ? res.status(200).json(team) : res.sendStatus(400);
+    team && userToTeam ? res.status(201).json(team) : res.sendStatus(400);
   };
 
   public deleteTeam = async (req: Request, res: Response): Promise<void> => {
@@ -131,20 +194,20 @@ class DatabaseController {
       let transactions: TransactionWithPlayers[] = await this.databaseService.getTeamPendingTransactions(proposeTeamId);
       transactions = transactions.filter((transaction) => transaction.type === 'Trade');
 
-      transactions.forEach((transaction) => 
+      transactions.forEach((transaction) =>
       {
 
-        const addPlayers = transaction.players.filter((player) => 
+        const addPlayers = transaction.players.filter((player) =>
             player.joins_proposing_team === true,
           ).map((transaction) => transaction.player_id);
 
 
-          const droppingPlayers = transaction.players.filter((player) => 
+          const droppingPlayers = transaction.players.filter((player) =>
           player.joins_proposing_team === false,
         ).map((transaction) => transaction.player_id);
 
 
-        sendPlayerIds.forEach((sendPlayerId) => 
+        sendPlayerIds.forEach((sendPlayerId) =>
         {
           if(droppingPlayers.includes(sendPlayerId))
           {
@@ -152,12 +215,12 @@ class DatabaseController {
             if(index > -1)
             {
               droppingPlayers.splice(index, 1);
-            }          
+            }
           }
         });
 
 
-        recPlayerIds.forEach((recPlayerId) => 
+        recPlayerIds.forEach((recPlayerId) =>
         {
           if(addPlayers.includes(recPlayerId))
           {
@@ -165,7 +228,7 @@ class DatabaseController {
             if(index > -1)
             {
               addPlayers.splice(index, 1);
-            } 
+            }
           }
         });
 
@@ -174,10 +237,10 @@ class DatabaseController {
         {
           duplicate = true;
         }
-        
+
       });
-      
-      
+
+
       if(!duplicate)
       {
         const transaction: Transaction = await this.databaseService.proposeTrade(sendPlayerIds, recPlayerIds, proposeRosterId, relatedRosterId, proposeTeamId, relatedTeamId, userId, week);
@@ -197,15 +260,15 @@ class DatabaseController {
     const userId = req.body.userId;
     const week = req.body.week;
     let duplicate = false;
-    
-    
+
+
     let transactions: TransactionWithPlayers[] = await this.databaseService.getTeamPendingTransactions(teamId);
     transactions = transactions.filter((transaction) => transaction.type === 'Add');
-    
-    
-    transactions.forEach((transaction) => 
+
+
+    transactions.forEach((transaction) =>
     {
-      const addPlayer = transaction.players.find((player) => 
+      const addPlayer = transaction.players.find((player) =>
       player.joins_proposing_team === true,
       ).player_id;
 
@@ -215,8 +278,8 @@ class DatabaseController {
       }
 
     });
-    
-    
+
+
     if(!duplicate)
     {
       const rp: RosterPlayer = await this.databaseService.proposeAddPlayer(addPlayerId, addPlayerExternalId, rosterId, teamId, userId, week);
@@ -246,12 +309,12 @@ class DatabaseController {
 
       transactions.forEach((transaction)=> {
 
-        const addPlayer = transaction.players.find((player) => 
+        const addPlayer = transaction.players.find((player) =>
           player.joins_proposing_team === true,
         ).player_id;
 
 
-        const droppingPlayers = transaction.players.filter((player) => 
+        const droppingPlayers = transaction.players.filter((player) =>
           player.joins_proposing_team === false,
         ).map((transaction) => transaction.player_id);
 
@@ -277,7 +340,7 @@ class DatabaseController {
           }
         }
       });
-      
+
       if(!duplicate)
       {
         const roster: Roster = await this.databaseService.proposeAddDropPlayer(addPlayerId, addPlayerExternalId, dropPlayerIds, rosterId, teamId, userId, week);
@@ -288,7 +351,7 @@ class DatabaseController {
         res.sendStatus(400);
       }
 
-      
+
   };
 
   public dropPlayer = async (req: Request, res: Response): Promise<void> => {
@@ -305,8 +368,8 @@ class DatabaseController {
       transactions = transactions.filter((transaction) => transaction.type === 'Drop');
 
       transactions.forEach((transaction)=> {
-        
-        const dropPlayer = transaction.players.find((player) => 
+
+        const dropPlayer = transaction.players.find((player) =>
           player.joins_proposing_team === false,
         ).player_id;
 

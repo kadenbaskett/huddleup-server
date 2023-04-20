@@ -63,6 +63,11 @@ class StatsService {
     return await this.getRequest(url);
   }
 
+  public async getTopPlayers(): Promise<respObj> {
+    const url = this.baseStatsURL + 'PlayerSeasonStats/2022';
+    return await this.getRequest(url);
+  }
+
   public async getTopFantasyPlayersByADP(): Promise<respObj> {
     const url = this.baseStatsURL + 'FantasyPlayers';
     return await this.getRequest(url);
