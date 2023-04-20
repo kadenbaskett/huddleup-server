@@ -14,9 +14,7 @@ export class TaskManager {
 
   start()
   {
-    console.log('Starting the task manager');
     setInterval(this.checkForDrafts.bind(this), DRAFT_CONFIG.DRAFT_INTERVAL_TIME);
-    console.log('after start');
   }
 
   async checkForDrafts()
@@ -28,28 +26,27 @@ export class TaskManager {
 
         for(const league of leagues)
         {
-            const ready = await this.db.leagueHasEnoughTeams(league.id);
-            if(ready)
+            const hasEnoughTeams = await this.db.leagueHasEnoughTeams(league.id);
+
+            if(hasEnoughTeams)
             {
-              console.log('ready', ready);
               if(!this.draftPorts[league.id]) 
               {
                   this.draftPorts[league.id] = getUniquePortForDraft(league.id);
   
                   // Make sure draft order is set before we launch the websocket
                   const hasCorrectDraftOrderLength = await this.db.hasCorrectDraftOrderLength(league.id);
+
                   if(!hasCorrectDraftOrderLength)
                   {
-                    console.log('setting draft order');
                       await this.db.setRandomDraftOrder(league.id);
                   }
-  
                   
                   startDraftChildProcess(league.id, this.draftPorts[league.id]);
               }
             }
-            else{
-              //reschedule draft
+            else
+            {
               console.log('rescheduling');
               
               await this.rescheduleDraftDate(league.id);
