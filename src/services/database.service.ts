@@ -13,7 +13,6 @@ class DatabaseService {
         this.client = new PrismaClient();
     }
 
-    // SHARED //
     public async createTeamWithRoster(data): Promise<Team> {
         const client = new PrismaClient();
         const team: Team = await client.team.create({ data });
@@ -75,7 +74,7 @@ class DatabaseService {
             {
                 return true;
             }
-            
+
             return false;
 
         }

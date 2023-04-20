@@ -21,6 +21,7 @@ export const DRAFT = {
         DRAFT_PLAYER: 'draftPlayer',
         ERROR: 'error',
         END_DRAFT: 'endDraft',
+        FILL_DRAFT: 'fillDraft', //this is when the user click "Fill Draft" from the front end
     },
 };
 
