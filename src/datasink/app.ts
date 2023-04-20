@@ -4,6 +4,10 @@ import DatasinkDatabaseService from '@services/datasink_database.service';
 import StatsService from '@services/stats.service';
 import { DATA_SYNC, FANTASY_POSITIONS, MIN_FANTASY_POINTS } from '@/config/huddleup_config';
 
+/*
+ *  The Data Sink is responsible for querying the SportsData.io API according to its implementation guide, and updating our DB with NFL stats, schedules, players, games, etc
+ *  https://sportsdata.io/developers/implementation-guide
+ */
 class DataSinkApp {
   stats: StatsService;
   db: DatasinkDatabaseService;
@@ -49,6 +53,7 @@ class DataSinkApp {
     console.log('Projections: ', projections[0]);
   }
 
+  // Clears the DB of all fantasy related data 
   async clearDB() {
     console.log('Clearing the database before initial update');
 
@@ -73,7 +78,7 @@ class DataSinkApp {
     await this.db.client.news.deleteMany();
   }
 
-
+  // Makes an initial update to the DB with all NFL data & stats before we start to query the API intermittently
   async initialUpdate() {
     await this.clearDB();
 
@@ -131,6 +136,7 @@ class DataSinkApp {
   }
 
   // TODO add in all players but have a better way of sorting them
+  // This function is reponsible for updating the players in our DB by filtering out players who are fantasy football irrelevent (wrong positions or don't play much)
   async updatePlayersFromAPI() {
 
     try {
@@ -290,9 +296,10 @@ class DataSinkApp {
 
   async updatePlayerProjections() {
     const timeframe: Timeframe = await this.db.getTimeframe();
-    // get player projections for weeks 1-7
-    for (let i = 1; i <= timeframe.week; i++) {
-      const resp: respObj = await this.stats.getAllPlayersProjectedGameStats(2022, i);
+
+    for (let week = 1; week <= timeframe.week; week++) {
+      // TODO don't hard code 2022
+      const resp: respObj = await this.stats.getAllPlayersProjectedGameStats(2022, week);
 
       if (resp.data) {
         const data = Object(resp.data);
