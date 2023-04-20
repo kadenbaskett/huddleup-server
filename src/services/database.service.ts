@@ -1,6 +1,6 @@
 import { TransactionWithPlayers, LeagueInfo, LeagueWithTeamAndSettings } from '@/interfaces/prisma.interface';
 import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster, RosterPlayer, Timeframe, User, LeagueSettings, WaiverSettings, ScheduleSettings, ScoringSettings, RosterSettings, DraftSettings, TradeSettings, News, PlayerProjections, TransactionPlayer, Transaction, TransactionAction, TeamSettings, UserToTeam, DraftPlayer, DraftQueue, DraftOrder, Matchup } from '@prisma/client';
-import { DRAFT, ROSTER_START_CONSTRAINTS, SEASON, SETTINGS } from '@/config/huddleup_config';
+import { ROSTER_START_CONSTRAINTS } from '@/config/huddleup_config';
 
 
 /*
@@ -921,6 +921,9 @@ class DatabaseService {
     public async getLeagueInfo(leagueId: number): Promise<LeagueInfo>
     {
         try {
+
+            const timeframe = await this.getTimeframe();
+
             return await this.client.league.findFirstOrThrow({
                 where: {
                     id: leagueId,
@@ -971,6 +974,13 @@ class DatabaseService {
                                             player: {
                                                 include: {
                                                     player_game_stats: {
+                                                        where: {
+                                                            game: {
+                                                                week: {
+                                                                    lte: timeframe.week,
+                                                                },
+                                                            },
+                                                        } ,
                                                         include: {
                                                             game: true,
                                                         },
@@ -985,6 +995,13 @@ class DatabaseService {
                                                         },
                                                     },
                                                     player_projections: {
+                                                        where: {
+                                                            game: {
+                                                                week: {
+                                                                    lte: timeframe.week,
+                                                                },
+                                                            },
+                                                        } ,
                                                         include: {
                                                             game: true,
                                                         },
