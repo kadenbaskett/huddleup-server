@@ -15,7 +15,7 @@ import randomstring from 'randomstring';
 import DatabaseService from '@/services/database.service';
 import { UserRecord } from 'firebase-admin/lib/auth/user-record';
 import { firebaseAdminAuth } from '@/server';
-import { DRAFT, FANTASY_POSITIONS, FLEX_POSITIONS, ROSTER_START_CONSTRAINTS, SEASON, SEED, SETTINGS } from '@/config/huddleup_config';
+import { DRAFT, FANTASY_POSITIONS, FLEX_POSITIONS, ROSTER_START_CONSTRAINTS, SEASON, SEED, SETTINGS } from '@/config/huddleup_config'; 
 
 /*
  *  Seeds the database with mock data. The simulate league function will
