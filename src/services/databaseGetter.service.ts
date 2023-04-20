@@ -16,7 +16,7 @@ import {
  */
 class DatabaseGetterService {
 
-  client: PrismaClient;
+  private client: PrismaClient;
 
   constructor() {
     this.client = new PrismaClient();

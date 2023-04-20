@@ -22,8 +22,9 @@ import { DRAFT, FANTASY_POSITIONS, FLEX_POSITIONS, ROSTER_START_CONSTRAINTS, SEA
  *  create new users, leagues, teams, rosters, and roster players
  */
 class Seed {
-  client: PrismaClient;
-  dbService: DatabaseService;
+  // TODO delete the prisma client from this file
+  private client: PrismaClient;
+  private dbService: DatabaseService;
 
   constructor() {
     this.client = new PrismaClient();
@@ -37,17 +38,9 @@ class Seed {
 
   // TODO how is this different from the other fill league?
   async fillLeagueRandomUsers(leagueId: number) {
-    const league = await this.client.league.findFirst({
-      where: { id: leagueId },
-      include: {
-        settings: true,
-        teams: {
-          include: {
-            managers: true,
-          },
-        },
-      },
-    });
+
+    const league: any = await this.dbService.getLeagueWithSettingsAndManagers(leagueId);
+
     let users = await this.dbService.getUsers();
 
     // remove users who are on teams from users to be added to league
@@ -63,10 +56,9 @@ class Seed {
       let numManagers = team.managers.length;
       while (numManagers < league.settings.min_players) {
         const newUser = users[0];
-        // add user to team
-        await this.client.userToTeam.create({
-          data: { team_id: team.id, user_id: newUser.id, is_captain: false },
-        });
+
+        await this.dbService.userToTeam(team.id, newUser.id, 0);
+
         users = users.filter((user) => user.id !== newUser.id);
         numManagers++;
       }
@@ -78,18 +70,82 @@ class Seed {
     await this.createTeams(league, users, teamNames);
   }
 
-  async fillLeague(leagueId: number) {
-    const league = await this.client.league.findFirst({
-      where: { id: leagueId },
-      include: {
-        settings: true,
-        teams: {
-          include: {
-            managers: true,
-          },
+    public async createLeagueSettings(
+        numTeams: number,
+        publicJoin: boolean,
+        minPlayers: number,
+        maxPlayers: number,
+        scoring: string,
+    ) {
+        const waiverSettings: WaiverSettings = await this.client.waiverSettings.create({
+        data: {
+            waiver_period_hours: 24,
+            waiver_order_type: 0,
         },
-      },
-    });
+        });
+        const scheduleSettings: ScheduleSettings = await this.client.scheduleSettings.create({
+        data: {
+            start_week: SEASON.START_WEEK,
+            end_week: SEASON.FINAL_SEASON_WEEK,
+            playoff_start_week: SEASON.FINAL_SEASON_WEEK + 1,
+            playoff_end_week: SEASON.FINAL_PLAYOFF_WEEK,
+            num_playoff_teams: SEASON.NUM_PLAYOFF_TEAMS,
+            weeks_per_playoff_matchup: SEASON.WEEKS_PER_PLAYOFF_MATCHUP,
+        },
+        });
+        const scoringSettings: ScoringSettings = await this.client.scoringSettings.create({
+        data: {
+            points_per_reception: scoring === 'PPR' ? 1 : 0,
+        },
+        });
+        const tradeSettings: TradeSettings = await this.client.tradeSettings.create({
+        data: {
+            review_period_hours: SETTINGS.TRADE.REVIEW_PERIOD_HOURS,
+            votes_to_veto_trade: SETTINGS.TRADE.VOTES_TO_VETO,
+        },
+        });
+        const rosterSettings: RosterSettings = await this.client.rosterSettings.create({
+        data: {
+            num_qb: ROSTER_START_CONSTRAINTS.QB,
+            num_rb: ROSTER_START_CONSTRAINTS.RB,
+            num_wr: ROSTER_START_CONSTRAINTS.WR,
+            num_te: ROSTER_START_CONSTRAINTS.TE,
+            num_flex: ROSTER_START_CONSTRAINTS.FLEX,
+            roster_size_limit: ROSTER_START_CONSTRAINTS.TOTAL,
+        },
+        });
+        const draftDate = new Date();
+        draftDate.setDate(draftDate.getDate() + DRAFT.TIME_FROM_CREATION_TO_START_DEFAULT_DAYS);
+        const draftSettings: DraftSettings = await this.client.draftSettings.create({
+        data: {
+            date: draftDate,
+            seconds_per_pick: DRAFT.SECONDS_PER_PICK,
+            order_generation_type: 0,
+        },
+        });
+        const leagueSettings: LeagueSettings = await this.client.leagueSettings.create({
+        data: {
+            num_teams: numTeams,
+            public_join: publicJoin,
+            min_players: minPlayers,
+            max_players: maxPlayers,
+            draft_settings_id: draftSettings.id,
+            roster_settings_id: rosterSettings.id,
+            scoring_settings_id: scoringSettings.id,
+            waiver_settings_id: waiverSettings.id,
+            trade_settings_id: tradeSettings.id,
+            schedule_settings_id: scheduleSettings.id,
+        },
+        });
+
+        return leagueSettings;
+    }
+
+
+  // TODO do we still need this or can we use the random users script
+  async fillLeague(leagueId: number) {
+    const league: any = await this.dbService.getLeagueWithSettingsAndManagers(leagueId);
+
     let users = await this.createFirebaseUsers();
 
     // remove users who are on teams from users to be added to league
@@ -102,10 +158,8 @@ class Seed {
     league.teams.map(async (team) => {
       let numManagers = team.managers.length;
       while (numManagers < league.settings.min_players) {
-        // add user to team
-        await this.client.userToTeam.create({
-          data: { team_id: team.id, user_id: users[0].id, is_captain: false },
-        });
+        const newUser = users[0];
+        await this.dbService.userToTeam(team.id, newUser.id, 0);
         numManagers++;
         users.shift();
       }
@@ -117,27 +171,25 @@ class Seed {
   }
 
   async simulateDraft(leagueId: number) {
-    const teams = await this.client.team.findMany({ where: { league_id: leagueId } });
+    const teams = await this.dbService.getTeamsInLeague(leagueId);
     await this.simulateTimeframe(1);
     await this.buildRandomRostersSamePlayersEveryWeek(1, 2022, teams);
   }
 
   async simulateMatchups(leagueId: number) {
-    const teams = await this.client.team.findMany({ where: { league_id: leagueId } });
-    const seasonLength = calculateSeasonLength(4);
+    const teams = await this.dbService.getTeamsInLeague(leagueId);
+    const seasonLength = calculateSeasonLength();
     const matchups = await createMatchups(teams, seasonLength);
+
     for (const matchup of matchups) {
-      await this.client.matchup.create({
-        data: {
-          ...matchup,
-          league_id: leagueId,
-        },
-      });
+
+      await this.dbService.createMatchup(matchup, leagueId);
+
     }
   }
 
   async simulateTimeframe(week: number) {
-    const timeframes = await this.client.timeframe.findMany();
+    const timeframes = await this.dbService.getAllTimeframes();
 
     for(const tf of timeframes)
     {
@@ -151,7 +203,7 @@ class Seed {
         tf.has_ended = true;
         tf.has_started = true;
       }
-      await this.client.timeframe.update({ where: { id: tf.id }, data: tf });
+      await this.dbService.updateTimeframe(tf.id, tf);
     }
 
     const tf: Timeframe = await this.dbService.getTimeframe();
@@ -163,14 +215,7 @@ class Seed {
   async simulateWeek(week: number) {
     const previousTimeframe = await this.dbService.getTimeframe();
 
-    const rosters = await this.client.roster.findMany({
-      where: {
-        week: previousTimeframe.week,
-      },
-      include: {
-        players: true,
-      },
-    });
+    const rosters = await this.dbService.getAllRostersOfWeek(previousTimeframe.week);
 
     await this.simulateTimeframe(week);
 
@@ -183,10 +228,9 @@ class Seed {
   }
 
   async seedDB() {
-    await this.clearLeagueStuff();
+    await this.dbService.clearLeagueStuff();
 
     const season = SEED.SEASON;
-    const numPlayoffTeams = SEED.NUM_PLAYOFF_TEAMS;
     const currentWeek = SEED.CURRENT_WEEK;
     const numLeagues = SEED.NUM_LEAGUES;
     const numTeams = SEED.NUM_TEAMS;
@@ -206,7 +250,6 @@ class Seed {
           numTeams,
           season,
           currentWeek,
-          numPlayoffTeams,
           numUsers,
         );
       }
@@ -217,33 +260,6 @@ class Seed {
     }
   }
 
-  async clearLeagueStuff() {
-    // The order that the tables are cleared in is important
-    // We can't clear a table that is referenced by another table using a foreign key without first clearing
-    // the table that references it
-    await this.client.draftPlayer.deleteMany();
-    await this.client.draftOrder.deleteMany();
-    await this.client.transactionPlayer.deleteMany();
-    await this.client.transactionAction.deleteMany();
-    await this.client.transaction.deleteMany();
-    await this.client.rosterPlayer.deleteMany();
-    await this.client.roster.deleteMany();
-    await this.client.userToTeam.deleteMany();
-    await this.client.matchup.deleteMany();
-    await this.client.team.deleteMany();
-    await this.client.teamSettings.deleteMany();
-    await this.client.league.deleteMany();
-    await this.client.leagueSettings.deleteMany();
-    await this.client.draftSettings.deleteMany();
-    await this.client.rosterSettings.deleteMany();
-    await this.client.tradeSettings.deleteMany();
-    await this.client.scoringSettings.deleteMany();
-    await this.client.scheduleSettings.deleteMany();
-    await this.client.waiverSettings.deleteMany();
-    await this.client.user.deleteMany();
-
-    console.log('Cleared db successfully of old league data');
-  }
 
   async simulateLeague(
     users,
@@ -252,7 +268,6 @@ class Seed {
     numTeams,
     season,
     currentWeek,
-    numPlayoffTeams,
     numUsers,
   ) {
     await this.simulateTimeframe(currentWeek);
@@ -265,16 +280,11 @@ class Seed {
 
     await this.buildRandomRostersSamePlayersEveryWeek(currentWeek, season, teams);
 
-    const regSeasonLen = calculateSeasonLength(numPlayoffTeams);
+    const regSeasonLen = calculateSeasonLength();
     const matchups = createMatchups(teams, regSeasonLen);
 
     for (const matchup of matchups) {
-      await this.client.matchup.create({
-        data: {
-          ...matchup,
-          league_id: league.id,
-        },
-      });
+      await this.dbService.createMatchup(matchup, league.id);
     }
 
     const currentTF: Timeframe = await this.dbService.getTimeframe();
@@ -307,25 +317,9 @@ class Seed {
     const firebaseUsers = await this.getFirebaseUsers();
 
     for (const firebaseUser of firebaseUsers) {
-      try{
-        await this.client.user.create({
-          data: {
-            username: firebaseUser.displayName ?? firebaseUser.email.split('@')[0],
-            email: firebaseUser.email,
-          },
-        });
-      }
-      catch(e){
-          if(e.message.includes('Unique constraint failed on the constraint: `User_username_key`')){
-            console.log('Failed to add user from firebase: Username already exists.');
-          }
-          else if(e.message.includes('Unique constraint failed on the constraint: `User_email_key')){
-            console.log('Failed to add user from firebase: Email already exists.');
-          }
-          else{
-            console.log('Failed to add user from firebase: ', e);
-          }
-      }
+          const username = firebaseUser.displayName ?? firebaseUser.email.split('@')[0];
+          const email = firebaseUser.email;
+          await this.dbService.createUser(username, email);
     }
   }
 
@@ -367,7 +361,7 @@ class Seed {
 
       try{
         // add to database
-        const resp = await this.client.user.create({ data: user });
+        const resp = await this.dbService.createUser(user.username, user.email);
 
         dbUserCount ++;
         createdUsers.push(resp);
@@ -388,76 +382,6 @@ class Seed {
     return createdUsers;
   }
 
-  async createLeagueSettings(
-    numTeams: number,
-    publicJoin: boolean,
-    minPlayers: number,
-    maxPlayers: number,
-    scoring: string,
-  ) {
-    const waiverSettings: WaiverSettings = await this.client.waiverSettings.create({
-      data: {
-        waiver_period_hours: 24,
-        waiver_order_type: 0,
-      },
-    });
-    const scheduleSettings: ScheduleSettings = await this.client.scheduleSettings.create({
-      data: {
-        start_week: SEASON.START_WEEK,
-        end_week: SEASON.FINAL_SEASON_WEEK,
-        playoff_start_week: SEASON.FINAL_SEASON_WEEK + 1,
-        playoff_end_week: SEASON.FINAL_PLAYOFF_WEEK,
-        num_playoff_teams: SEASON.NUM_PLAYOFF_TEAMS,
-        weeks_per_playoff_matchup: SEASON.WEEKS_PER_PLAYOFF_MATCHUP,
-      },
-    });
-    const scoringSettings: ScoringSettings = await this.client.scoringSettings.create({
-      data: {
-        points_per_reception: scoring === 'PPR' ? 1 : 0,
-      },
-    });
-    const tradeSettings: TradeSettings = await this.client.tradeSettings.create({
-      data: {
-        review_period_hours: SETTINGS.TRADE.REVIEW_PERIOD_HOURS,
-        votes_to_veto_trade: SETTINGS.TRADE.VOTES_TO_VETO,
-      },
-    });
-    const rosterSettings: RosterSettings = await this.client.rosterSettings.create({
-      data: {
-        num_qb: ROSTER_START_CONSTRAINTS.QB,
-        num_rb: ROSTER_START_CONSTRAINTS.RB,
-        num_wr: ROSTER_START_CONSTRAINTS.WR,
-        num_te: ROSTER_START_CONSTRAINTS.TE,
-        num_flex: ROSTER_START_CONSTRAINTS.FLEX,
-        roster_size_limit: ROSTER_START_CONSTRAINTS.TOTAL,
-      },
-    });
-    const draftDate = new Date();
-    draftDate.setDate(draftDate.getDate() + DRAFT.TIME_FROM_CREATION_TO_START_DEFAULT_DAYS);
-    const draftSettings: DraftSettings = await this.client.draftSettings.create({
-      data: {
-        date: draftDate,
-        seconds_per_pick: DRAFT.SECONDS_PER_PICK,
-        order_generation_type: 0,
-      },
-    });
-    const leagueSettings: LeagueSettings = await this.client.leagueSettings.create({
-      data: {
-        num_teams: numTeams,
-        public_join: publicJoin,
-        min_players: minPlayers,
-        max_players: maxPlayers,
-        draft_settings_id: draftSettings.id,
-        roster_settings_id: rosterSettings.id,
-        scoring_settings_id: scoringSettings.id,
-        waiver_settings_id: waiverSettings.id,
-        trade_settings_id: tradeSettings.id,
-        schedule_settings_id: scheduleSettings.id,
-      },
-    });
-
-    return leagueSettings;
-  }
 
   async createLeague(name, description, commissioner_id, settings_id) {
     const token = randomstring.generate(7);

@@ -1,9 +1,9 @@
-import { DRAFT } from '@/config/huddleup_config';
+import { DRAFT, SEASON } from '@/config/huddleup_config';
 import { spawn } from 'child_process';
 
 
 /* 
- *  This file is supposed to be for re useable functions that DO NOT interact with the database
+ *  This file is supposed to be for static, re useable functions that DO NOT interact with the database
  */
 
 export const hoursToMilliseconds = (hours) => {
@@ -11,13 +11,11 @@ export const hoursToMilliseconds = (hours) => {
 };
 
 
-export function calculateSeasonLength(numPlayoffTeams)
+export function calculateSeasonLength()
 {
-    const totalWeeks = 18;
-    const fantasyWeeks = totalWeeks - 1; // Skip the last week of regular season because sometimes teams rest starters
-    const playoffWeeks = Math.floor(Math.log2(numPlayoffTeams));
+    const playoffWeeks = Math.floor(Math.log2(SEASON.NUM_PLAYOFF_TEAMS));
 
-    return fantasyWeeks - playoffWeeks;
+    return SEASON.FINAL_PLAYOFF_WEEK - playoffWeeks;
 }
 
 // Requires an even number of teams

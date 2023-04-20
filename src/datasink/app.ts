@@ -1,6 +1,6 @@
 import { NFLGame, Timeframe, News } from '@prisma/client';
 import { respObj } from './interfaces/respobj.interface';
-import DatasinkDatabaseService from '@/services/datasinkDatabase.service';
+import DatasinkDatabaseSetterService from '@/services/datasinkDatabaseSetter.service';
 import StatsService from '@services/stats.service';
 import { DATA_SYNC, FANTASY_POSITIONS, MIN_FANTASY_POINTS } from '@/config/huddleup_config';
 import DatabaseGetterService from '@/services/databaseGetter.service';
@@ -10,13 +10,13 @@ import DatabaseGetterService from '@/services/databaseGetter.service';
  *  https://sportsdata.io/developers/implementation-guide
  */
 class DataSinkApp {
-  stats: StatsService;
-  datasinkDBService: DatasinkDatabaseService;
-  databaseGetterService: DatabaseGetterService;
+  private stats: StatsService;
+  private datasinkSetterService: DatasinkDatabaseSetterService;
+  private databaseGetterService: DatabaseGetterService;
 
   constructor() {
     this.stats = new StatsService();
-    this.datasinkDBService = new DatasinkDatabaseService();
+    this.datasinkSetterService = new DatasinkDatabaseSetterService();
     this.databaseGetterService = new DatabaseGetterService();
   }
 
@@ -57,28 +57,29 @@ class DataSinkApp {
   }
 
   // Clears the DB of all fantasy related data 
+  // TODO is this even necessary
   async clearDB() {
     console.log('Clearing the database before initial update');
 
-    // TODO execute raw SQL to delete all data?
-    await this.datasinkDBService.client.transactionPlayer.deleteMany();
-    await this.datasinkDBService.client.transactionAction.deleteMany();
-    await this.datasinkDBService.client.transaction.deleteMany();
-    await this.datasinkDBService.client.rosterPlayer.deleteMany();
-    await this.datasinkDBService.client.roster.deleteMany();
-    await this.datasinkDBService.client.userToTeam.deleteMany();
-    await this.datasinkDBService.client.matchup.deleteMany();
-    await this.datasinkDBService.client.team.deleteMany();
-    await this.datasinkDBService.client.teamSettings.deleteMany();
-    await this.datasinkDBService.client.league.deleteMany();
-    await this.datasinkDBService.client.user.deleteMany();
-    await this.datasinkDBService.client.timeframe.deleteMany();
-    await this.datasinkDBService.client.playerGameStats.deleteMany();
-    await this.datasinkDBService.client.playerProjections.deleteMany();
-    await this.datasinkDBService.client.nFLGame.deleteMany();
-    await this.datasinkDBService.client.player.deleteMany();
-    await this.datasinkDBService.client.nFLTeam.deleteMany();
-    await this.datasinkDBService.client.news.deleteMany();
+    // TODO dont access the client from another file
+    await this.datasinkSetterService.client.transactionPlayer.deleteMany();
+    await this.datasinkSetterService.client.transactionAction.deleteMany();
+    await this.datasinkSetterService.client.transaction.deleteMany();
+    await this.datasinkSetterService.client.rosterPlayer.deleteMany();
+    await this.datasinkSetterService.client.roster.deleteMany();
+    await this.datasinkSetterService.client.userToTeam.deleteMany();
+    await this.datasinkSetterService.client.matchup.deleteMany();
+    await this.datasinkSetterService.client.team.deleteMany();
+    await this.datasinkSetterService.client.teamSettings.deleteMany();
+    await this.datasinkSetterService.client.league.deleteMany();
+    await this.datasinkSetterService.client.user.deleteMany();
+    await this.datasinkSetterService.client.timeframe.deleteMany();
+    await this.datasinkSetterService.client.playerGameStats.deleteMany();
+    await this.datasinkSetterService.client.playerProjections.deleteMany();
+    await this.datasinkSetterService.client.nFLGame.deleteMany();
+    await this.datasinkSetterService.client.player.deleteMany();
+    await this.datasinkSetterService.client.nFLTeam.deleteMany();
+    await this.datasinkSetterService.client.news.deleteMany();
   }
 
   // Makes an initial update to the DB with all NFL data & stats before we start to query the API intermittently
@@ -110,7 +111,7 @@ class DataSinkApp {
 
     if (resp.data) {
       const timeframes = Object(resp.data);
-      await this.datasinkDBService.setTimeframes(timeframes);
+      await this.datasinkSetterService.setTimeframes(timeframes);
     }
   }
 
@@ -133,7 +134,7 @@ class DataSinkApp {
           };
         });
 
-        await this.datasinkDBService.setNFLTeams(teams);
+        await this.datasinkSetterService.setNFLTeams(teams);
       }
     }
   }
@@ -179,7 +180,7 @@ class DataSinkApp {
             };
           });
 
-          await this.datasinkDBService.setPlayers(players);
+          await this.datasinkSetterService.setPlayers(players);
 
       }
     }
@@ -210,7 +211,7 @@ class DataSinkApp {
         };
       });
 
-      await this.datasinkDBService.setNews(news);
+      await this.datasinkSetterService.setNews(news);
     }
   }
 
@@ -238,7 +239,7 @@ class DataSinkApp {
             };
           });
 
-        await this.datasinkDBService.setNFLSchedule(games);
+        await this.datasinkSetterService.setNFLSchedule(games);
       }
     }
   }
@@ -253,7 +254,7 @@ class DataSinkApp {
         if (resp.data) {
           const boxScore = Object(resp.data);
 
-          const game = await this.datasinkDBService.updateScore(
+          const game = await this.datasinkSetterService.updateScore(
             Number(boxScore.Score.GameKey),
             boxScore.Score.homeScore,
             boxScore.Score.AwayScore,
@@ -289,7 +290,7 @@ class DataSinkApp {
                 two_point_conversion_receptions: Math.floor(pg.TwoPointConversionReceptions),
               };
 
-              await this.datasinkDBService.updatePlayerGameStats(gameStats);
+              await this.datasinkSetterService.updatePlayerGameStats(gameStats);
             }
           }
         }
@@ -337,7 +338,7 @@ class DataSinkApp {
               two_point_conversion_receptions: Math.floor(proj.TwoPointConversionReceptions),
             };
 
-            await this.datasinkDBService.updatePlayerProjections(gameProjection);
+            await this.datasinkSetterService.updatePlayerProjections(gameProjection);
           }
         }
       }
@@ -354,7 +355,7 @@ class DataSinkApp {
         if (resp.data) {
           const boxScore = Object(resp.data);
 
-          const game = await this.datasinkDBService.updateScore(
+          const game = await this.datasinkSetterService.updateScore(
             Number(boxScore.Score.GameKey),
             boxScore.Score.homeScore,
             boxScore.Score.AwayScore,
@@ -388,7 +389,7 @@ class DataSinkApp {
                 two_point_conversion_receptions: Math.floor(pg.TwoPointConversionReceptions),
               };
 
-              await this.datasinkDBService.updatePlayerGameStats(gameStats);
+              await this.datasinkSetterService.updatePlayerGameStats(gameStats);
             }
           }
         }

@@ -10,8 +10,10 @@ import {
 /*
  * This is supposed to be one of the only places that we interact with the database (via a prisma client)
  * It should be used ONLY by the datasink
+ * It should ONLY intereact with NFL stats models - not our own fantasy related models
+ * It should ONLY UPDATE the models rather than querying data from them
  */
-class DatasinkDatabaseService {
+class DatasinkDatabaseSetterService {
   client: PrismaClient;
 
   constructor() {
@@ -338,4 +340,4 @@ class DatasinkDatabaseService {
 
 }
 
-export default DatasinkDatabaseService;
+export default DatasinkDatabaseSetterService;
