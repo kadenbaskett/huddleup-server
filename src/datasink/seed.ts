@@ -17,6 +17,7 @@ import StatsService from '@/services/stats.service';
 import DatabaseService from '@/services/database.service';
 import { UserRecord } from 'firebase-admin/lib/auth/user-record';
 import { firebaseAdminAuth } from '@/server';
+import { DRAFT, FANTASY_POSITIONS, FLEX_POSITIONS, ROSTER_START_CONSTRAINTS, SEASON, SEED, SETTINGS } from '@/config/huddleup_config';
 
 /*
  *  Seeds the database with mock data. The simulate league function will
@@ -40,6 +41,7 @@ class Seed {
     await this.createLeague('fake name', 'fake description', 1, leagueSettings.id);
   }
 
+  // TODO how is this different from the other fill league?
   async fillLeagueRandomUsers(leagueId: number) {
     const league = await this.client.league.findFirst({
       where: { id: leagueId },
@@ -53,7 +55,7 @@ class Seed {
       },
     });
     let users = await this.dbService.getUsers();
-    // console.log('users', users);
+
     // remove users who are on teams from users to be added to league
     league.teams.forEach((team) => {
       team.managers.forEach((manager) => {
@@ -95,6 +97,7 @@ class Seed {
       },
     });
     let users = await this.createFirebaseUsers();
+
     // remove users who are on teams from users to be added to league
     league.teams.forEach((team) => {
       team.managers.forEach((manager) => {
@@ -162,6 +165,7 @@ class Seed {
     console.log('Timeframe after simulate timeframe called: ', tf);
   }
 
+  // Updates the timeframe and all rosters 
   async simulateWeek(week: number) {
     const previousTimeframe = await this.db.getTimeframe();
 
@@ -187,12 +191,12 @@ class Seed {
   async seedDB() {
     await this.clearLeagueStuff();
 
-    const season = 2022;
-    const numPlayoffTeams = 4;
-    const currentWeek = 2;
-    const numLeagues = 1;
-    const numTeams = 10;
-    const usersPerTeam = 3;
+    const season = SEED.SEASON;
+    const numPlayoffTeams = SEED.NUM_PLAYOFF_TEAMS;
+    const currentWeek = SEED.CURRENT_WEEK;
+    const numLeagues = SEED.NUM_LEAGUES;
+    const numTeams = SEED.NUM_TEAMS;
+    const usersPerTeam = SEED.USERS_PER_TEAM;
     const numUsers = usersPerTeam * numTeams;
     const users = await this.createFirebaseUsers();
     const leagueNames = this.generateLeagueNames(numLeagues);
@@ -259,9 +263,9 @@ class Seed {
   ) {
     await this.simulateTimeframe(currentWeek);
     const teamNames = this.generateTeamNames(numTeams);
-    const description = `example description for ${name}`;
+    const description = `League description example for seeded league named ${name}`;
 
-    const leagueSettings = await this.createLeagueSettings(numTeams, true, 2, numUsers, 'PPR');
+    const leagueSettings = await this.createLeagueSettings(numTeams, SEED.PUBLIC_JOIN, SEED.MIN_PLAYERS_PER_TEAM, numUsers, SEED.PPR);
     const league = await this.createLeague(name, description, commish.id, leagueSettings.id);
     const teams = await this.createTeams(league, users, teamNames);
 
@@ -280,6 +284,7 @@ class Seed {
     }
 
     const currentTF: Timeframe = await this.db.getTimeframe();
+
     console.log('Timeframe after seeding: ', currentTF);
   }
 
@@ -345,42 +350,9 @@ class Seed {
   async createFirebaseUsers() {
     await this.clearFirebaseUsers();
 
-    const userNames = [
-      'talloryx0',
-      'domesticrabbit1',
-      'lovablequail2',
-      'slimybadger3',
-      'scalygoat4',
-      'wildcassowary5',
-      'fierceseahorse6',
-      'herbivorouscobra7',
-      'domesticsandpiper8',
-      'hairywolverine9',
-      'smallgoshawk10',
-      'nosyrook11',
-      'loudhedgehog12',
-      'shortmarten13',
-      'cleverguanaco14',
-      'curiousbear15',
-      'poisonousibex16',
-      'feistytiger17',
-      'carnivorouseel18',
-      'colorfulcassowary19',
-      'malicioussardine20',
-      'scalyhornet21',
-      'viciousspider22',
-      'tenaciouseland23',
-      'sassybear24',
-      'smallmole25',
-      'warmvulture26',
-      'maternalhorse27',
-      'heavymole28',
-      'tinymoose29',
-    ];
-
     const users = [];
 
-    for (const name of userNames) {
+    for (const name of SEED.USERNAMES) {
       const u = {
         username: name,
         email: `${name}@gmail.com`,
@@ -401,9 +373,7 @@ class Seed {
 
       try{
         // add to database
-        const resp = await this.client.user.create({
-          data: user,
-        });
+        const resp = await this.client.user.create({ data: user });
 
         dbUserCount ++;
         createdUsers.push(resp);
@@ -439,12 +409,12 @@ class Seed {
     });
     const scheduleSettings: ScheduleSettings = await this.client.scheduleSettings.create({
       data: {
-        start_week: 1,
-        end_week: 14,
-        playoff_start_week: 15,
-        playoff_end_week: 18,
-        num_playoff_teams: 4,
-        weeks_per_playoff_matchup: 1,
+        start_week: SEASON.START_WEEK,
+        end_week: SEASON.FINAL_SEASON_WEEK,
+        playoff_start_week: SEASON.FINAL_SEASON_WEEK + 1,
+        playoff_end_week: SEASON.FINAL_PLAYOFF_WEEK,
+        num_playoff_teams: SEASON.NUM_PLAYOFF_TEAMS,
+        weeks_per_playoff_matchup: SEASON.WEEKS_PER_PLAYOFF_MATCHUP,
       },
     });
     const scoringSettings: ScoringSettings = await this.client.scoringSettings.create({
@@ -454,26 +424,26 @@ class Seed {
     });
     const tradeSettings: TradeSettings = await this.client.tradeSettings.create({
       data: {
-        review_period_hours: 24,
-        votes_to_veto_trade: 1,
+        review_period_hours: SETTINGS.TRADE.REVIEW_PERIOD_HOURS,
+        votes_to_veto_trade: SETTINGS.TRADE.VOTES_TO_VETO,
       },
     });
     const rosterSettings: RosterSettings = await this.client.rosterSettings.create({
       data: {
-        num_qb: 1,
-        num_rb: 2,
-        num_wr: 2,
-        num_te: 1,
-        num_flex: 1,
-        roster_size_limit: 15,
+        num_qb: ROSTER_START_CONSTRAINTS.QB,
+        num_rb: ROSTER_START_CONSTRAINTS.RB,
+        num_wr: ROSTER_START_CONSTRAINTS.WR,
+        num_te: ROSTER_START_CONSTRAINTS.TE,
+        num_flex: ROSTER_START_CONSTRAINTS.FLEX,
+        roster_size_limit: ROSTER_START_CONSTRAINTS.TOTAL,
       },
     });
     const draftDate = new Date();
-    draftDate.setDate(draftDate.getDate() + 10);
+    draftDate.setDate(draftDate.getDate() + DRAFT.TIME_FROM_CREATION_TO_START_DEFAULT_DAYS);
     const draftSettings: DraftSettings = await this.client.draftSettings.create({
       data: {
         date: draftDate,
-        seconds_per_pick: 30,
+        seconds_per_pick: DRAFT.SECONDS_PER_PICK,
         order_generation_type: 0,
       },
     });
@@ -627,9 +597,6 @@ class Seed {
       TOTAL: 15,
     };
 
-    const allowedPositions = [ 'RB', 'WR', 'TE', 'QB' ];
-    const flexPositions = [ 'RB', 'WR', 'TE' ];
-
     const players = await this.client.player.findMany();
 
     this.shuffleArray(players);
@@ -648,7 +615,7 @@ class Seed {
         constraints['RB'] === 0 &&
         constraints['TE'] === 0;
 
-      if (playerIdsUsed.includes(rp.external_id) || !allowedPositions.includes(p.position)) {
+      if (playerIdsUsed.includes(rp.external_id) || !FANTASY_POSITIONS.includes(p.position)) {
         // Skip the player if someone owns them already or if they play a non fantasy position
         continue;
       } else if (constraints[p.position]) {
@@ -658,7 +625,7 @@ class Seed {
 
         constraints[rp.position]--;
         constraints['TOTAL']--;
-      } else if (constraints['FLEX'] && flexPositions.includes(p.position)) {
+      } else if (constraints['FLEX'] && FLEX_POSITIONS.includes(p.position)) {
         rp.position = 'FLEX';
 
         await this.client.rosterPlayer.create({
@@ -676,7 +643,6 @@ class Seed {
           data: rp,
         });
 
-        // constraints[rp.position]--;
         constraints['TOTAL']--;
       }
 
@@ -734,7 +700,6 @@ class Seed {
   generateLeagueNames(numLeagues) {
     const generate = require('sports-team-name-generator');
     const names = [];
-    const rand = Math.round(Math.random() * 1000);
 
     for (let i = 0; i < numLeagues; i++) {
       names.push(generate());

@@ -35,7 +35,6 @@ export function calculateSeasonLength(numPlayoffTeams)
     const totalWeeks = 18;
     const fantasyWeeks = totalWeeks - 1; // Skip the last week of regular season because sometimes teams rest starters
     const playoffWeeks = Math.floor(Math.log2(numPlayoffTeams));
-    //const teamsOnBye = numPlayoffTeams - Math.pow(2, playoffWeeks);
 
     return fantasyWeeks - playoffWeeks;
 }

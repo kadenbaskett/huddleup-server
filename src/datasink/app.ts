@@ -302,7 +302,7 @@ class DataSinkApp {
           const teamId = await this.db.externalToInternalNFLTeam(proj.TeamID);
           const gameId = await this.db.externalToInternalNFLGame(Number(proj.GameKey));
 
-          if (playerId) {
+          if (playerId && teamId && gameId) {
             const gameProjection = {
               external_player_id: proj.PlayerID,
               external_game_id: Number(proj.GameKey),
