@@ -388,6 +388,7 @@ class DraftSocketServer {
     public async start() {
         // Initialize the draft state before opening up websocket
         try{
+            console.log('Starting the draft');
 
             this.draftState = await this.loadDraftStateFromDB();
 

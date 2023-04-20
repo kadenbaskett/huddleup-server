@@ -16,6 +16,7 @@ export class TaskManager {
   {
     console.log('Starting the task manager');
     setInterval(this.checkForDrafts.bind(this), DRAFT_CONFIG.DRAFT_INTERVAL_TIME);
+    console.log('after start');
   }
 
   async checkForDrafts()
@@ -27,8 +28,10 @@ export class TaskManager {
 
         for(const league of leagues)
         {
-            if(await this.db.leagueHasEnoughTeams(league.id))
+            const ready = await this.db.leagueHasEnoughTeams(league.id);
+            if(ready)
             {
+              console.log('ready', ready);
               if(!this.draftPorts[league.id]) 
               {
                   this.draftPorts[league.id] = getUniquePortForDraft(league.id);
@@ -37,9 +40,11 @@ export class TaskManager {
                   const hasCorrectDraftOrderLength = await this.db.hasCorrectDraftOrderLength(league.id);
                   if(!hasCorrectDraftOrderLength)
                   {
+                    console.log('setting draft order');
                       await this.db.setRandomDraftOrder(league.id);
                   }
   
+                  
                   startDraftChildProcess(league.id, this.draftPorts[league.id]);
               }
             }
