@@ -87,11 +87,11 @@ export function startDraftChildProcess(leagueId: number, port: number): void
     });
 
     child.stdout.on('data', (data) => {
-        console.log(`league(${leagueId}) draft}: ${data}`);
+        console.log(`league(${leagueId}) draft data: ${data}`);
     });
 
     child.stdout.on('error', (error) => {
-        console.error(`league(${leagueId}) draft}: ${error}`);
+        console.error(`league(${leagueId}) draft error: ${error}`);
     });
 
     child.on('exit', console.log.bind(console, 'exited'));
