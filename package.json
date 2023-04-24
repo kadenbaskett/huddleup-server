@@ -50,10 +50,11 @@
     "morgan": "^1.10.0",
     "node-schedule": "^2.1.1",
     "project-name-generator": "^2.1.9",
+    "random-animal-name": "^0.1.1",
     "randomstring": "^1.2.3",
     "sockjs": "^0.3.24",
     "sports-team-name-generator": "^1.0.1",
-    "swagger-jsdoc": "^6.2.1",
+    "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^4.5.0",
     "winston": "^3.8.1",
     "winston-daily-rotate-file": "^4.7.1"

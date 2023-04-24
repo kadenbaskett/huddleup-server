@@ -402,6 +402,7 @@ class Seed {
   async createFirebaseUsers() {
     await this.clearFirebaseUsers();
 
+    // const users = this.createUsernames(100);
     const users = [];
 
     for (const name of SEED.USERNAMES) {
@@ -667,6 +668,7 @@ class Seed {
 
   createUsernames(num) {
     const users = [];
+    console.log('create usernames');
 
     for (let i = 0; i < num; i++) {
       const randomAnimalName = require('random-animal-name');
