@@ -59,7 +59,6 @@ else if(process.env.SERVICE === PROCESSES.TASK_MANAGER)
 
     taskManager = new TaskManager();
     taskManager.start();
-    console.log('After starting task mananger');
   }
   catch(e) {
     console.log(e);
