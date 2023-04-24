@@ -1212,9 +1212,11 @@ class DatabaseService {
                     player_game_stats: {
                         where: {
                             game: {
-                                season: timeframe.season,
+                                week: {
+                                    lte: timeframe.week,
+                                },
                             },
-                        },
+                        } ,
                         include: {
                             game: true,
                         },
@@ -1223,9 +1225,11 @@ class DatabaseService {
                     player_projections: {
                         where: {
                             game: {
-                                season: timeframe.season,
+                                week: {
+                                    lte: timeframe.week,
+                                },
                             },
-                        },
+                        } ,
                         include: {
                             game: true,
                         },
