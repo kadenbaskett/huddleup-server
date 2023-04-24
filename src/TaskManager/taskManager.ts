@@ -42,7 +42,7 @@ export class TaskManager {
                       await this.db.setRandomDraftOrder(league.id);
                   }
                   
-                  startDraftChildProcess(league.id, this.draftPorts[league.id]);
+                  startDraftChildProcess(league.id, this.draftPorts[league.id], this.exitCallback);
               }
             }
             else
@@ -74,6 +74,12 @@ export class TaskManager {
   checkForWaivers()
   {
     console.log('Checking for waivers');
+  }
+
+  exitCallback(leagueId: number)
+  {
+    console.log('Exit callback: ', leagueId);
+    this.draftPorts[leagueId] = null;
   }
 
 }

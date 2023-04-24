@@ -76,13 +76,14 @@ export function getUniquePortForDraft(leagueId: number): number {
     return DRAFT.START_PORT + leagueId; 
 }
 
-export function startDraftChildProcess(leagueId: number, port: number): void
+export function startDraftChildProcess(leagueId: number, port: number, exitCallback): void
 {
     console.log(`Starting up the draft on port ${port} for league ${leagueId}`);
 
     const child = process.env.NODE_ENV === 'production' ? spawn('cross-env', [ 'NODE_ENV=production', 'SERVICE=websocket', 'node dist/server.js', `${leagueId}`, `${port}` ], { shell: true }) : spawn('cross-env', [ 'NODE_ENV=development', 'SERVICE=websocket', 'nodemon', `${leagueId}`, `${port}` ], { shell: true });
       
     child.stdout.on('exit', (code, signal) => {
+        exitCallback(leagueId);
         console.log(`league(${leagueId}) draft process exited with code ${code} and signal ${signal}`);
     });
 
