@@ -62,6 +62,8 @@ class DataSinkApp {
     console.log('Clearing the database before initial update');
 
     // TODO dont access the client from another file
+    await this.datasinkSetterService.client.draftPlayer.deleteMany();
+    await this.datasinkSetterService.client.draftOrder.deleteMany();
     await this.datasinkSetterService.client.transactionPlayer.deleteMany();
     await this.datasinkSetterService.client.transactionAction.deleteMany();
     await this.datasinkSetterService.client.transaction.deleteMany();
