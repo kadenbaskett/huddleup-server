@@ -279,14 +279,19 @@ class Seed {
   async simulateWeek(week: number) {
     const previousTimeframe = await this.dbService.getTimeframe();
 
-    const rosters = await this.dbService.getAllRostersOfWeek(previousTimeframe.week);
-
+    // Update the timeframe object
     await this.simulateTimeframe(week);
 
+    // Remove all the rosters in the future
+    await this.dbService.removeAllRostersAfter(week);
+
+    const rosters = await this.dbService.getAllRostersOfWeek(previousTimeframe.week);
+
+    // Make rosters for all future weeks to simulate
     for(const r of rosters)
     {
         for (let i = previousTimeframe.week + 1; i <= week; i++) {
-          await this.copyRoster(i, r);
+            await this.copyRoster(i, r);
         }
     }
   }

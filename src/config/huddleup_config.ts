@@ -2,7 +2,7 @@ import { hoursToMilliseconds } from '@/services/general.service';
 
 export const DRAFT = {
     DRAFT_BUFFER_TIME_FUTURE_MS: 1000 * 60 * 5, // nything five mins in future
-    DRAFT_BUFFER_TIME_PAST_MS: 1000 * 60 * 20, // Anything five mins in past
+    DRAFT_BUFFER_TIME_PAST_MS: 1000 * 60 * 20, // Anything twenty mins in past
     // DRAFT_BUFFER_TIME_PAST_MS: 1000 * 60 * 0, // No drafts that have started
     DRAFT_INTERVAL_TIME: 1000 * 5,
     START_PORT: 49152,
@@ -87,6 +87,7 @@ export const SEASON = {
     NUM_PLAYOFF_TEAMS: 4,
     FINAL_PLAYOFF_WEEK: 17,
     WEEKS_PER_PLAYOFF_MATCHUP: 1,
+    NFL_FINAL_WEEK: 18,
 };
 
 export const SETTINGS = {
