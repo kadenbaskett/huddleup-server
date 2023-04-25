@@ -391,6 +391,10 @@ class DatabaseRoute implements Routes {
      */
     this.router.post(`${this.path}/user`, this.controller.createUser);
 
+    this.router.post(`${this.path}/advanceWeek`, this.controller.advanceWeek);
+
+    this.router.post(`${this.path}/resetToWeekOne`, this.controller.resetToWeekOne);
+
     /**
      * @swagger
      * tags:

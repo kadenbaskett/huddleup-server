@@ -2,11 +2,11 @@ import DatabaseService from '@services/database.service';
 import TransactionService from '@services/transaction.service';
 import { calculateFantasyPoints, getUniquePortForDraft } from '@/services/general.service';
 import { Request, Response } from 'express';
-import { Roster, RosterPlayer, Team, Transaction } from '@prisma/client';
+import { Roster, RosterPlayer, Team, Timeframe, Transaction } from '@prisma/client';
 import randomstring from 'randomstring';
 import { TransactionWithPlayers } from '@/interfaces/prisma.interface';
 import Seed from '@/datasink/seed';
-import { DRAFT } from '@/config/huddleup_config';
+import { DRAFT, SEASON } from '@/config/huddleup_config';
 
 
 class DatabaseController {
@@ -492,6 +492,21 @@ class DatabaseController {
       const roster = await this.databaseService.getCurrentTeamRoster(teamId);
 
       roster ? res.status(200).json(roster) : res.sendStatus(400);
+  };
+
+  public advanceWeek = async (req: Request, res: Response): Promise<void> => {
+      let week = Number(req.params.week);
+      const timeframe: Timeframe = await this.databaseService.getTimeframe();
+      const nextWeek = Math.min(SEASON.FINAL_SEASON_WEEK, Number(timeframe.week + 1));
+      week = week ? week : nextWeek;
+      await this.seed.simulateWeek(week);
+      res.sendStatus(200);
+  };
+
+
+  public resetToWeekOne = async (req: Request, res: Response): Promise<void> => {
+      await this.seed.simulateTimeframe(1);
+      res.sendStatus(200);
   };
 
   public getLeaguePlayers = async (req: Request, res: Response): Promise<void> => {
