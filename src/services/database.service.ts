@@ -1,6 +1,6 @@
 import { TransactionWithPlayers, LeagueInfo, LeagueWithTeamAndSettings } from '@/interfaces/prisma.interface';
 import { League, PrismaClient, NFLGame, Player, NFLTeam, PlayerGameStats, Team, Roster, RosterPlayer, Timeframe, User, LeagueSettings, WaiverSettings, ScheduleSettings, ScoringSettings, RosterSettings, DraftSettings, TradeSettings, News, PlayerProjections, TransactionPlayer, Transaction, TransactionAction, TeamSettings, UserToTeam, DraftPlayer, DraftQueue, DraftOrder, Matchup } from '@prisma/client';
-import { ROSTER_START_CONSTRAINTS } from '@/config/huddleup_config';
+import { ROSTER_START_CONSTRAINTS, SEASON } from '@/config/huddleup_config';
 
 
 /*
@@ -1202,6 +1202,57 @@ class DatabaseService {
         catch(e)
         {
             console.log(e);
+            return null;
+        }
+    }
+
+    public async removeAllPlayoffMatchups() {
+        try {
+            await this.client.matchup.deleteMany({
+                where: {
+                    week: {
+                        gt: SEASON.FINAL_SEASON_WEEK,
+                    },
+                },
+            });
+        }
+        catch(err)
+        {
+            console.log(err);
+            return null;
+        }
+    }
+
+    public async getPlayoffMatchups(leagueId: number): Promise<Matchup[]> {
+        try {
+            return await this.client.matchup.findMany({
+                where: {
+                    week: {
+                        gt: SEASON.FINAL_SEASON_WEEK,
+                    },
+                    league: {
+                        id: leagueId,
+                    },
+                },
+                orderBy: {
+                    week: 'asc',
+                },
+            });
+        }
+        catch(err)
+        {
+            console.log(err);
+            return null;
+        }
+    }
+
+    public async getAllLeagues(): Promise<League[]> {
+        try {
+            return await this.client.league.findMany();
+        }
+        catch(err)
+        {
+            console.log(err);
             return null;
         }
     }

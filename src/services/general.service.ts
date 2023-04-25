@@ -40,6 +40,116 @@ export function calculateSeasonLength()
     return SEASON.FINAL_PLAYOFF_WEEK - playoffWeeks;
 }
 
+export function calculateMatchupResults(teams, matchups, currentWeek) {
+  const results = [];
+
+  for (let m of matchups) {
+    if (m.week <= currentWeek) {
+      const homeTeam = teams.find((t) => t.id === m.home_team_id);
+      const awayTeam = teams.find((t) => t.id === m.away_team_id);
+
+      const homeRoster = homeTeam.rosters.find((r) => r.week === m.week);
+      const awayRoster = awayTeam.rosters.find((r) => r.week === m.week);
+
+      let homeScore = 0;
+      for (const p of homeRoster.players) {
+        const pgs = p.player.player_game_stats.find((pgs) => pgs.game.week === m.week);
+        homeScore += Number(calculateFantasyPoints(pgs));
+      }
+
+      let awayScore = 0;
+      for (const p of awayRoster.players) {
+        const pgs = p.player.player_game_stats.find((pgs) => pgs.game.week === m.week);
+        awayScore += Number(calculateFantasyPoints(pgs));
+      }
+
+      m = {
+        ...m,
+        homeScore,
+        awayScore,
+      };
+
+      results.push(m);
+    }
+  }
+
+  return results;
+}
+
+export function calculateStandings(league, currentWeek) {
+  const matchupResults = calculateMatchupResults(league.teams, league.matchups, currentWeek);
+  const teams = league.teams.map((t) => {
+    return {
+      ...t,
+      league,
+      wins: 0,
+      losses: 0,
+    };
+  });
+
+  for (const m of matchupResults) {
+    const winnerId = m.homeScore > m.awayScore ? m.home_team_id : m.away_team_id;
+    const loserId = m.homeScore > m.awayScore ? m.away_team_id : m.home_team_id;
+    const winnerIndex = teams.findIndex((t) => t.id === winnerId);
+    const loserIndex = teams.findIndex((t) => t.id === loserId);
+
+    teams[winnerIndex].wins++;
+    teams[loserIndex].losses++;
+  }
+
+  return teams.sort((teamOne, teamTwo) => teamTwo.wins - teamOne.wins);
+}
+
+export function firstPlayoffWeek()
+{
+    return SEASON.FINAL_SEASON_WEEK + 1;
+}
+
+export function expectedNumberOfPlayoffMatchups()
+{
+    return Math.log2(SEASON.NUM_PLAYOFF_TEAMS);
+}
+
+// League should be with info
+export function getPlayoffMatchups(league, week: number, previousWeekPlayoffMatchups)
+{
+    if(week === SEASON.FINAL_SEASON_WEEK + 1)
+    {
+        // if its the first week of playoffs
+        const standings = calculateStandings(league, SEASON.FINAL_SEASON_WEEK);
+        const matchups = [
+            {
+                week,
+                home_team_id: standings[0].id,
+                away_team_id: standings[3].id,
+            },
+            {
+                week,
+                home_team_id: standings[1].id,
+                away_team_id: standings[2].id,
+            },
+        ];
+        
+        return matchups;
+    }
+    else {
+        const roundResults = calculateMatchupResults(league.teams, previousWeekPlayoffMatchups, week);
+        console.log(roundResults);
+        const mOneWinnerId = roundResults[0].homeScore > roundResults[1].awayScore ? roundResults[0].home_team_id : roundResults[0].away_team_id;
+        const mTwoWinnerId = roundResults[1].homeScore > roundResults[1].awayScore ? roundResults[1].home_team_id : roundResults[1].away_team_id;
+
+        const matchups = [
+            {
+                week,
+                home_team_id: mOneWinnerId,
+                away_team_id: mTwoWinnerId,
+            },
+        ];
+        
+        return matchups;
+    }    
+}
+
 // Requires an even number of teams
 export function createMatchups(teams, numWeeks)
 {

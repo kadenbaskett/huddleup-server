@@ -86,8 +86,14 @@ class App {
       apis: [ 'src/**/*.ts' ],
     };
 
-    const specs = swaggerJSDoc(options);
-    this.app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, { explorer: true }));
+    try {
+      const specs = swaggerJSDoc(options);
+      this.app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, { explorer: true }));
+    }
+    catch(err)
+    {
+      console.log(err);
+    }
   }
 }
 

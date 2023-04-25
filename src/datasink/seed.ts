@@ -10,7 +10,7 @@ import {
   TradeSettings,
   WaiverSettings,
 } from '@prisma/client';
-import { calculateSeasonLength, createMatchups } from '@services/general.service';
+import { calculateSeasonLength, createMatchups, createPlayoffMatchups, expectedNumberOfPlayoffMatchups, getPlayoffMatchups } from '@services/general.service';
 import randomstring from 'randomstring';
 import DatabaseService from '@/services/database.service';
 import { UserRecord } from 'firebase-admin/lib/auth/user-record';
@@ -261,9 +261,10 @@ class Seed {
         tf.has_ended = false;
         tf.has_started = false;
       } else if (Number(tf.season) > 2021 && Number(tf.week) === week && Number(tf.type) === 1) {
+        console.log(Number(tf.season));
         tf.has_ended = false;
         tf.has_started = true;
-      } else if (Number(tf.season) > 2021 && Number(tf.week) < week && Number(tf.type) === 1) {
+      } else if ((Number(tf.season) < 2022 || Number(tf.week) < week) && Number(tf.type) === 1) {
         tf.has_ended = true;
         tf.has_started = true;
       }
@@ -273,10 +274,67 @@ class Seed {
     const tf: Timeframe = await this.dbService.getTimeframe();
 
     console.log('Timeframe after simulate timeframe called: ', tf);
+
+    await this.updateSeasonWithPlayoffs();
+
+  }
+
+  async updateSeasonWithPlayoffs()
+  {
+    const timeframe = await this.dbService.getTimeframe();
+
+    if(timeframe.week <= SEASON.FINAL_SEASON_WEEK)
+    {
+      console.log('removing all playoff matchups');
+      await this.dbService.removeAllPlayoffMatchups();
+      // delete all playoff matchups
+    }
+    else if(timeframe.week > SEASON.FINAL_PLAYOFF_WEEK)
+    {
+      // TODO still sim playoffs
+      console.log('season complete');
+    }
+    else if(timeframe.week > SEASON.FINAL_SEASON_WEEK)
+    {
+      console.log('simulateing playoff matchups');
+      const leagues = await this.dbService.getAllLeagues();
+
+      for(const league of leagues)
+      {
+        // Sorted matchups by week
+        let playoffMatchups = await this.dbService.getPlayoffMatchups(league.id);
+
+        let week = 0;
+
+        if(playoffMatchups.length === 0)
+        {
+          week = SEASON.FINAL_SEASON_WEEK + 1;
+        }
+        else {
+          // Start creating matchups for the most recent playoff week
+          week = playoffMatchups[0].week + 1;
+        }
+
+        while(week <= timeframe.week)
+        {
+          const leagueInfo = await this.dbService.getLeagueInfo(league.id);
+          playoffMatchups = await this.dbService.getPlayoffMatchups(league.id);
+          const matchupsObjs = getPlayoffMatchups(leagueInfo, week, playoffMatchups);
+          for(const m of matchupsObjs)
+          {
+          console.log('creating matchup');
+            await this.dbService.createMatchup(m, league.id);
+          }
+          week += 1;
+        }
+      }
+
+    }
   }
 
   // Updates the timeframe and all rosters 
   async simulateWeek(week: number) {
+    console.log('simulate week', week);
     const previousTimeframe = await this.dbService.getTimeframe();
 
     // Update the timeframe object
@@ -339,6 +397,7 @@ class Seed {
     currentWeek,
     numUsers,
   ) {
+    console.log('current week for seed: ', currentWeek);
     await this.simulateTimeframe(currentWeek);
     const teamNames = this.generateTeamNames(numTeams);
     const description = `League description example for seeded league named ${name}`;
