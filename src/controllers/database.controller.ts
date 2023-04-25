@@ -495,12 +495,21 @@ class DatabaseController {
   };
 
   public advanceWeek = async (req: Request, res: Response): Promise<void> => {
-      let week = Number(req.params.week);
-      const timeframe: Timeframe = await this.databaseService.getTimeframe();
-      const nextWeek = Math.min(SEASON.FINAL_SEASON_WEEK, Number(timeframe.week + 1));
-      week = week ? week : nextWeek;
-      await this.seed.simulateWeek(week);
-      res.sendStatus(200);
+      let week = Number(req.body.week);
+      console.log(week);
+
+      if(week === SEASON.NFL_FINAL_WEEK)
+      {
+        await this.databaseService.clearLeagueStuff();
+        res.sendStatus(200);
+      }
+      else {
+        const timeframe: Timeframe = await this.databaseService.getTimeframe();
+        const nextWeek = Math.min(SEASON.FINAL_SEASON_WEEK, Number(timeframe.week + 1));
+        week = week ? week : nextWeek;
+        await this.seed.simulateWeek(week);
+        res.sendStatus(200);
+      }
   };
 
 

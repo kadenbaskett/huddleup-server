@@ -28,7 +28,7 @@ class App {
 
     this.initializeMiddlewares();
     this.initializeRoutes(routes);
-    this.initializeSwagger();
+    // this.initializeSwagger();
   }
 
   public listen() {
