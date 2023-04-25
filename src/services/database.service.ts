@@ -16,6 +16,11 @@ class DatabaseService {
         this.client = new PrismaClient();
     }
 
+    async clearForSeed() {
+        this.clearLeagueStuff();
+        await this.client.user.deleteMany();
+    }
+
 
     async clearLeagueStuff() {
         // The order that the tables are cleared in is important
@@ -40,7 +45,6 @@ class DatabaseService {
         await this.client.scoringSettings.deleteMany();
         await this.client.scheduleSettings.deleteMany();
         await this.client.waiverSettings.deleteMany();
-        await this.client.user.deleteMany();
 
         console.log('Cleared db successfully of old league data');
     }
@@ -847,6 +851,23 @@ class DatabaseService {
         }
         catch(e)
         {
+            return null;
+        }
+    }
+
+    public async removeAllRostersAfter(week: number): Promise<void> {
+        try {
+            await this.client.roster.deleteMany({
+                where: {
+                    week: {
+                        gt: week,
+                    },
+                },
+            });
+        }
+        catch(error)
+        {
+            console.log(error);
             return null;
         }
     }
