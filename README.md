@@ -12,7 +12,9 @@ DATABASE_URL =  mysql://username:password@host:port/database
 
 #sportsdata.io api key
 #using 2 keys for when requests limit is reached
-#API_KEY = fbe269d8e236420cbe406d50bfee3ea3
+#API_KEY=fbe269d8e236420cbe406d50bfee3ea3
+#API_KEY=eb42be4f18d14053b6eeb2be151ebdcf
+#API_KEY=92b33b3c766b4421923b11b00b62adc5
 API_KEY = 10cc693545fa4ca78fe5d7df99cfdc0d
 
 #firebase service account configs
